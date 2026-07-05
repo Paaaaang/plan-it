@@ -1,0 +1,16 @@
+/* ============================================================
+   Planit — Radius tokens
+   Aggressively rounded ladder + full pill. No iOS squircle/blob.
+   ============================================================ */
+
+:root {
+  --radius-xs:   4px;   /* small badges */
+  --radius-s:    8px;   /* inline tags */
+  --radius-m:    12px;  /* text inputs, M button */
+  --radius-l:    14px;  /* L button (48px) */
+  --radius-xl:   16px;  /* XL button (56px), cards */
+  --radius-2xl:  20px;  /* sheets, dialogs */
+  --radius-3xl:  24px;  /* big cards / sections, floating tab-bar */
+  --radius-4xl:  32px;  /* hero blocks */
+  --radius-full: 999px; /* chips, pills, capsules */
+}

@@ -1,0 +1,29 @@
+<!-- @dsCard group="Type" viewport="700x180" name="Labels, Captions & Numerals" subtitle="Tabular for live data, proportional for emphasis" -->
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"/>
+<link rel="stylesheet" href="../styles.css"/>
+<style>
+  body{margin:0;padding:24px;background:var(--surface-card);font-family:var(--font-sans);color:var(--text-primary);}
+  .wrap{display:flex;gap:40px;}
+  .r{display:flex;align-items:baseline;gap:14px;padding:6px 0;}
+  .tag{flex:0 0 84px;font:600 11px/1 var(--font-mono,monospace);color:var(--text-tertiary);}
+  .col{flex:1;}
+  .num{font:700 22px/1 var(--font-sans);}
+  .cap{font:600 10px/1 var(--font-sans);letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:6px;display:block;}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="col">
+    <div class="r"><span class="tag">label-l · 17</span><span class="t-label-l">공유 링크 만들기</span></div>
+    <div class="r"><span class="tag">label-m · 15</span><span class="t-label-m">다음</span></div>
+    <div class="r"><span class="tag">label-s · 13</span><span class="t-label-s">주소 복사</span></div>
+    <div class="r"><span class="tag">caption · 12</span><span class="t-caption" style="color:var(--text-tertiary)">오후 2:30 · 성산일출봉</span></div>
+  </div>
+  <div class="col" style="flex:0 0 220px;">
+    <span class="cap">Tabular · 조회수/시간</span>
+    <div class="num tabular" style="color:var(--text-brand)">1,280 · 09:00–18:30</div>
+    <span class="cap" style="margin-top:16px;">Proportional · 강조</span>
+    <div class="num proportional">12명이 함께해요</div>
+  </div>
+</div>
+</body></html>

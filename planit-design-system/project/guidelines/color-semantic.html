@@ -1,0 +1,29 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Semantic hues" subtitle="Status only — never as a second accent" -->
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"/>
+<link rel="stylesheet" href="../styles.css"/>
+<style>
+  body{margin:0;padding:20px;background:var(--surface-card);font-family:var(--font-sans);}
+  .row{display:flex;gap:12px;}
+  .grp{flex:1;display:flex;flex-direction:column;gap:6px;}
+  .pair{display:flex;gap:6px;}
+  .sw{flex:1;height:56px;border-radius:var(--radius-s);display:flex;align-items:flex-end;padding:6px;box-sizing:border-box;color:#fff;font:700 11px/1 var(--font-sans);}
+  .wash{flex:1;height:26px;border-radius:var(--radius-s);display:flex;align-items:center;padding:0 8px;box-sizing:border-box;font:600 11px/1 var(--font-sans);}
+  .cap{font:600 10px/1 var(--font-sans);letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary);}
+</style></head>
+<body>
+<div class="row">
+  <div class="grp"><span class="cap">Danger</span>
+    <div class="sw" style="background:var(--red-500)">#F0424E</div>
+    <div class="wash" style="background:var(--red-50);color:var(--text-danger)">비공개</div></div>
+  <div class="grp"><span class="cap">Success</span>
+    <div class="sw" style="background:var(--green-500)">#12B886</div>
+    <div class="wash" style="background:var(--green-50);color:var(--text-success)">공개중</div></div>
+  <div class="grp"><span class="cap">Warning</span>
+    <div class="sw" style="background:var(--amber-500)">#F5A623</div>
+    <div class="wash" style="background:var(--amber-50);color:var(--text-warning)">임시저장</div></div>
+  <div class="grp"><span class="cap">Info · Map</span>
+    <div class="sw" style="background:var(--blue-500)">#3182F6</div>
+    <div class="wash" style="background:var(--blue-50);color:var(--text-info)">미리보기</div></div>
+</div>
+</body></html>

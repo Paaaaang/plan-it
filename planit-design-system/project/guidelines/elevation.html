@@ -1,0 +1,20 @@
+<!-- @dsCard group="Effects" viewport="700x180" name="Elevation" subtitle="Flat by default; shadows only on floating surfaces" -->
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"/>
+<link rel="stylesheet" href="../styles.css"/>
+<style>
+  body{margin:0;padding:28px;background:var(--surface-page);font-family:var(--font-sans);}
+  .row{display:flex;gap:22px;}
+  .c{display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .box{width:120px;height:70px;background:var(--surface-card);border-radius:var(--radius-l);}
+  .n{font:600 11px/1.3 var(--font-sans);color:var(--text-primary);text-align:center;}
+  .u{font:500 10px/1 var(--font-sans);color:var(--text-tertiary);}
+</style></head>
+<body>
+<div class="row">
+  <div class="c"><div class="box" style="box-shadow:var(--shadow-1)"></div><span class="n">shadow-1<br/><span class="u">menu · segment</span></span></div>
+  <div class="c"><div class="box" style="box-shadow:var(--shadow-2)"></div><span class="n">shadow-2<br/><span class="u">tooltip · card hover</span></span></div>
+  <div class="c"><div class="box" style="box-shadow:var(--shadow-3)"></div><span class="n">shadow-3<br/><span class="u">dialog</span></span></div>
+  <div class="c"><div class="box" style="box-shadow:var(--shadow-toast);background:var(--fill-primary)"></div><span class="n">shadow-toast<br/><span class="u">toast</span></span></div>
+</div>
+</body></html>

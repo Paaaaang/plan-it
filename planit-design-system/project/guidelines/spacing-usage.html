@@ -1,0 +1,31 @@
+<!-- @dsCard group="Spacing" viewport="700x170" name="Spacing in use" subtitle="24 screen padding · 16 row gap · 8 pair gap" -->
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"/>
+<link rel="stylesheet" href="../styles.css"/>
+<style>
+  body{margin:0;padding:20px;background:var(--surface-page);font-family:var(--font-sans);}
+  .phone{max-width:300px;background:var(--surface-card);border:1px solid var(--border-secondary);border-radius:var(--radius-xl);overflow:hidden;}
+  .pad{padding:24px;}
+  .tag{position:relative;}
+  .row{display:flex;flex-direction:column;gap:16px;}
+  .item{display:flex;flex-direction:column;gap:8px;}
+  .t{font:600 15px/1 var(--font-sans);color:var(--text-primary);}
+  .s{font:400 13px/1 var(--font-sans);color:var(--text-tertiary);}
+  .note{font:500 11px/1.4 var(--font-sans);color:var(--text-brand);margin-top:4px;}
+  .box{height:34px;background:var(--fill-secondary);border-radius:var(--radius-m);}
+</style></head>
+<body>
+<div style="display:flex;gap:24px;align-items:center;">
+  <div class="phone"><div class="pad">
+    <div class="row">
+      <div class="item"><span class="t">일정 제목</span><div class="box"></div></div>
+      <div class="item"><span class="t">기간</span><div class="box"></div></div>
+    </div>
+  </div></div>
+  <div>
+    <div class="note">24px — 화면 외곽 padding</div>
+    <div class="note">16px — 행(row) 사이</div>
+    <div class="note">8px — 라벨 + 입력 사이</div>
+  </div>
+</div>
+</body></html>

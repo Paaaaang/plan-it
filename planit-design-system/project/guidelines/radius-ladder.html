@@ -1,0 +1,26 @@
+<!-- @dsCard group="Radius" viewport="700x160" name="Radius ladder" subtitle="4→32 + full; buttons scale radius with size" -->
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"/>
+<link rel="stylesheet" href="../styles.css"/>
+<style>
+  body{margin:0;padding:24px;background:var(--surface-card);font-family:var(--font-sans);}
+  .row{display:flex;gap:14px;align-items:flex-end;}
+  .c{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .box{width:60px;height:60px;background:var(--fill-brand-weak);border:1.5px solid var(--blue-300);}
+  .n{font:700 11px/1 var(--font-sans);color:var(--text-primary);}
+  .u{font:500 10px/1 var(--font-sans);color:var(--text-tertiary);}
+  .pill{width:76px;height:38px;border-radius:var(--radius-full);}
+</style></head>
+<body>
+<div class="row">
+  <div class="c"><div class="box" style="border-radius:var(--radius-xs)"></div><span class="n">xs</span><span class="u">4</span></div>
+  <div class="c"><div class="box" style="border-radius:var(--radius-s)"></div><span class="n">s</span><span class="u">8</span></div>
+  <div class="c"><div class="box" style="border-radius:var(--radius-m)"></div><span class="n">m</span><span class="u">12</span></div>
+  <div class="c"><div class="box" style="border-radius:var(--radius-l)"></div><span class="n">l</span><span class="u">14</span></div>
+  <div class="c"><div class="box" style="border-radius:var(--radius-xl)"></div><span class="n">xl</span><span class="u">16</span></div>
+  <div class="c"><div class="box" style="border-radius:var(--radius-2xl)"></div><span class="n">2xl</span><span class="u">20</span></div>
+  <div class="c"><div class="box" style="border-radius:var(--radius-3xl)"></div><span class="n">3xl</span><span class="u">24</span></div>
+  <div class="c"><div class="box" style="border-radius:var(--radius-4xl)"></div><span class="n">4xl</span><span class="u">32</span></div>
+  <div class="c"><div class="box pill"></div><span class="n">full</span><span class="u">999</span></div>
+</div>
+</body></html>

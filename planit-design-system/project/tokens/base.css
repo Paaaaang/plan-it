@@ -1,0 +1,24 @@
+/* ============================================================
+   Planit — base resets & document defaults
+   Minimal, non-invasive. Applies the Pretendard stack + soft ink.
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--body-2-size);
+  line-height: var(--body-2-lh);
+  letter-spacing: var(--body-2-ls);
+  color: var(--text-primary);
+  background: var(--surface-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tabular figures for anything financial/temporal by opt-in class */
+[data-tnum], .tnum { font-feature-settings: var(--num-tabular); }
+
+button { font-family: inherit; }

@@ -1,0 +1,23 @@
+<!-- @dsCard group="Effects" viewport="700x150" name="Motion" subtitle="120/200/320ms · ease-out-expo · no bounce" -->
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"/>
+<link rel="stylesheet" href="../styles.css"/>
+<style>
+  body{margin:0;padding:24px;background:var(--surface-card);font-family:var(--font-sans);}
+  .row{display:flex;gap:16px;}
+  .c{flex:1;background:var(--surface-page);border:1px solid var(--border-secondary);border-radius:var(--radius-m);padding:14px;}
+  .n{font:700 14px/1 var(--font-sans);color:var(--text-primary);}
+  .u{font:500 11px/1.5 var(--font-sans);color:var(--text-tertiary);margin-top:4px;}
+  .track{margin-top:12px;height:6px;background:var(--grey-200);border-radius:999px;overflow:hidden;}
+  .fill{height:100%;background:var(--fill-brand);border-radius:999px;animation:run 2.4s var(--ease) infinite;}
+  @keyframes run{0%{width:0}60%{width:100%}100%{width:100%}}
+  .meta{margin-top:14px;font:500 11px/1.6 var(--font-sans);color:var(--text-secondary);}
+</style></head>
+<body>
+<div class="row">
+  <div class="c"><span class="n">fast · 120ms</span><div class="u">button press</div><div class="track"><div class="fill" style="animation-duration:1.6s"></div></div></div>
+  <div class="c"><span class="n">base · 200ms</span><div class="u">toggle · hover</div><div class="track"><div class="fill" style="animation-duration:2s"></div></div></div>
+  <div class="c"><span class="n">slow · 320ms</span><div class="u">sheet · dialog</div><div class="track"><div class="fill" style="animation-duration:2.6s"></div></div></div>
+</div>
+<div class="meta">ease-out-expo · cubic-bezier(0.22, 0.61, 0.36, 1) — 바운스·시머·패럴랙스 없음</div>
+</body></html>

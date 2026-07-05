@@ -1,0 +1,79 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Forms" subtitle="Button · TextField · Search · Checkbox · Switch · Segmented" -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="../../_ds_bundle.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface-page); }
+  .grid { display: flex; flex-direction: column; gap: 22px; max-width: 640px; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .lbl { font: 500 11px/1 var(--font-sans); letter-spacing: .04em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 10px; }
+  .cell { }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { Button, TextField, SearchField, Checkbox, Switch, SegmentedControl } = window.PlanitDesignSystem_e6392f;
+function Demo(){
+  const [tab,setTab]=React.useState("타임테이블");
+  const [chk,setChk]=React.useState(true);
+  const [sw,setSw]=React.useState(true);
+  const [q,setQ]=React.useState("제주");
+  return (
+    <div className="grid">
+      <div className="cell">
+        <div className="lbl">Button · variants</div>
+        <div className="row">
+          <Button variant="primary" size="l">공유 링크 만들기</Button>
+          <Button variant="secondary" size="l">취소</Button>
+          <Button variant="danger" size="l">삭제</Button>
+          <Button variant="ghost" size="l">건너뛰기</Button>
+        </div>
+      </div>
+      <div className="cell">
+        <div className="lbl">Button · sizes &amp; states</div>
+        <div className="row">
+          <Button size="xl">XL 56</Button>
+          <Button size="m" variant="secondary">M 40</Button>
+          <Button size="s" variant="secondary">S 32</Button>
+          <Button size="l" loading>로딩</Button>
+          <Button size="l" disabled>비활성</Button>
+        </div>
+      </div>
+      <div className="row" style={{gap:24, alignItems:"flex-start"}}>
+        <div className="cell" style={{flex:1, minWidth:220}}>
+          <div className="lbl">TextField</div>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <TextField label="일정 제목" value="제주 워크샵" onChange={()=>{}} />
+            <TextField label="이메일" value="hi@" onChange={()=>{}} error="이메일 형식이 올바르지 않아요." />
+          </div>
+        </div>
+        <div className="cell" style={{flex:1, minWidth:220}}>
+          <div className="lbl">Search</div>
+          <SearchField value={q} onChange={e=>setQ(e.target.value)} onClear={()=>setQ("")} placeholder="일정 검색" />
+          <div className="lbl" style={{marginTop:20}}>Segmented</div>
+          <SegmentedControl options={["타임테이블","하이라이트","장소"]} value={tab} onChange={setTab} />
+        </div>
+      </div>
+      <div className="cell">
+        <div className="lbl">Checkbox · Switch</div>
+        <div className="row" style={{gap:28}}>
+          <Checkbox checked={chk} onChange={setChk} label="공개 일정으로 만들기" />
+          <Checkbox checked={false} onChange={()=>{}} label="비공개" />
+          <Switch checked={sw} onChange={setSw} />
+          <Switch checked={false} onChange={()=>{}} />
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo/>);
+</script>
+</body>
+</html>

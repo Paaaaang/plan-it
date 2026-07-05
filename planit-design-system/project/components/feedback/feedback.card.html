@@ -1,0 +1,77 @@
+<!-- @dsCard group="Components" viewport="700x520" name="Feedback" subtitle="Toast · Dialog · BottomSheet · Loader" -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="../../_ds_bundle.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface-page); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 640px; align-items: start; }
+  .lbl { font: 500 11px/1 var(--font-sans); letter-spacing: .04em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 10px; }
+  .stack { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .fakemodal { position: relative; border-radius: var(--radius-2xl); overflow: hidden; border: 1px solid var(--border-secondary); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { Toast, Dialog, BottomSheet, Loader, Button } = window.PlanitDesignSystem_e6392f;
+function Static({children,h=200}){
+  // render an overlay-based component within a clipped, relatively-positioned box
+  return <div style={{position:"relative", height:h, background:"var(--surface-sunken)", borderRadius:"var(--radius-xl)", overflow:"hidden"}}>{children}</div>;
+}
+function Demo(){
+  return (
+    <div className="grid">
+      <div>
+        <div className="lbl">Toast</div>
+        <div className="stack">
+          <Toast tone="success">주소를 복사했어요</Toast>
+          <Toast>미리보기 링크를 열었어요</Toast>
+          <Toast tone="danger">링크를 불러오지 못했어요</Toast>
+        </div>
+        <div className="lbl" style={{marginTop:20}}>Loader</div>
+        <div className="stack" style={{flexDirection:"row",alignItems:"center",gap:20}}>
+          <Loader/>
+          <Button size="l" loading>불러오는 중</Button>
+        </div>
+      </div>
+      <div>
+        <div className="lbl">Dialog</div>
+        <div className="fakemodal" style={{height:250}}>
+          <div style={{position:"absolute",inset:0,background:"var(--overlay-scrim)"}}></div>
+          <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"86%",maxWidth:300,background:"var(--surface-card)",borderRadius:"var(--radius-2xl)",padding:24,boxShadow:"var(--shadow-3)",textAlign:"center"}}>
+            <div style={{font:"var(--title-1-fw) var(--title-1-size) var(--font-sans)",color:"var(--text-primary)",marginBottom:8}}>링크를 비활성화할까요?</div>
+            <div style={{font:"var(--body-2-fw) var(--body-2-size)/1.5 var(--font-sans)",color:"var(--text-secondary)",marginBottom:20}}>비활성화하면 참가자가 더 이상 열어볼 수 없어요.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <Button variant="primary" size="l" block>비활성화</Button>
+              <Button variant="secondary" size="l" block>취소</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{gridColumn:"1 / -1"}}>
+        <div className="lbl">BottomSheet</div>
+        <div className="fakemodal" style={{height:230}}>
+          <div style={{position:"absolute",inset:0,background:"var(--overlay-scrim)"}}></div>
+          <div style={{position:"absolute",left:0,right:0,bottom:0,background:"var(--surface-card)",borderTopLeftRadius:"var(--radius-3xl)",borderTopRightRadius:"var(--radius-3xl)",padding:"10px 24px 24px",boxShadow:"var(--shadow-sheet)"}}>
+            <div style={{width:40,height:4,borderRadius:999,background:"var(--grey-200)",margin:"0 auto 16px"}}></div>
+            <div style={{font:"var(--h4-fw) var(--h4-size) var(--font-sans)",color:"var(--text-primary)",marginBottom:16}}>공유하기</div>
+            <div style={{display:"flex",gap:8}}>
+              <Button variant="secondary" size="l" block>링크 복사</Button>
+              <Button variant="primary" size="l" block>카카오톡 공유</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo/>);
+</script>
+</body>
+</html>

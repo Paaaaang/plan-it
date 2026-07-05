@@ -1,0 +1,39 @@
+<!-- @dsCard group="Brand" viewport="700x230" name="Voice · 해요체" subtitle="Polite, plain, low-friction — buttons say what happens" -->
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"/>
+<link rel="stylesheet" href="../styles.css"/>
+<style>
+  body{margin:0;padding:24px;background:var(--surface-card);font-family:var(--font-sans);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .c{border-radius:var(--radius-m);padding:14px 16px;}
+  .do{background:var(--green-50);}
+  .dont{background:var(--red-50);}
+  .h{display:flex;align-items:center;gap:6px;font:700 12px/1 var(--font-sans);margin-bottom:8px;}
+  .do .h{color:var(--text-success);} .dont .h{color:var(--text-danger);}
+  .l{font:400 14px/1.7 var(--font-sans);color:var(--text-primary);}
+  .l s{color:var(--text-tertiary);}
+</style></head>
+<body>
+<div class="grid">
+  <div class="c do">
+    <div class="h">DO · 해요체</div>
+    <div class="l">
+      링크가 만들어졌어요<br/>
+      오늘 일정만 모아서 보여드려요<br/>
+      아직 등록된 장소가 없어요<br/>
+      주소 복사 · 공유 링크 만들기<br/>
+      링크가 만료됐거나 비공개로 바뀐 것 같아요
+    </div>
+  </div>
+  <div class="c dont">
+    <div class="h">DON'T</div>
+    <div class="l">
+      <s>링크가 생성되었습니다</s> (격식체)<br/>
+      <s>일정을 등록하십시오</s> (명령형)<br/>
+      <s>지금 바로 만들어보세요!</s> (챗봇 톤)<br/>
+      <s>혁신적인 일정 공유</s> (마케팅 과장)<br/>
+      <s>여기를 눌러주세요</s> (디렉티브 라벨)
+    </div>
+  </div>
+</div>
+</body></html>

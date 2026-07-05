@@ -1,0 +1,111 @@
+/* ============================================================
+   Planit — Color tokens
+   Single-accent discipline (Toss-reference blue) on a cool
+   near-neutral canvas.
+   Base palette (raw steps) → Semantic aliases → Component intent.
+   ============================================================ */
+
+:root {
+  /* ---- Brand: Planit Blue --------------------------------- */
+  /* Canonical accent = --blue-500 (#3182F6, Toss reference blue).
+     One primary action per screen. */
+  --blue-50:  #EBF3FE;
+  --blue-100: #D6E7FD;
+  --blue-200: #ADCBFB;
+  --blue-300: #7FAAF8;
+  --blue-400: #5296F7;
+  --blue-500: #3182F6;  /* canonical Planit Blue — primary CTA */
+  --blue-600: #1F6FE5;  /* pressed step */
+  --blue-700: #1B5FCB;  /* deep pressed / gradient stop */
+  --blue-800: #17489B;
+  --blue-900: #12336B;
+
+  /* ---- Neutrals: cool near-neutral greys ------------------ */
+  /* grey-900 is a soft ink, never pure black. */
+  --grey-900: #17171F;  /* primary text */
+  --grey-800: #2C2C38;
+  --grey-700: #45454F;  /* secondary text */
+  --grey-600: #61616D;
+  --grey-500: #82828E;
+  --grey-400: #A5A5B0;  /* disabled text, strong line */
+  --grey-300: #C6C6CF;
+  --grey-200: #E5E5EB;  /* default divider / border */
+  --grey-150: #EDEDF1;
+  --grey-100: #F4F4F7;  /* secondary surface */
+  --grey-50:  #FAFAFC;
+  --white:    #FFFFFF;
+  --black:    #000000;
+
+  /* ---- Semantic hues -------------------------------------- */
+  --red-50:    #FDECEC;
+  --red-500:   #F0424E;  /* error / danger */
+  --red-600:   #D8303C;
+
+  --green-50:  #E7F7F0;
+  --green-500: #12B886;  /* success */
+  --green-600: #0CA678;
+
+  --amber-50:  #FEF4E6;
+  --amber-500: #F5A623;  /* warning */
+  --amber-600: #E5920A;
+
+  /* Ink base used for shadows / scrims (soft cool ink); rgb of #14161F */
+  --ink-base: 20, 22, 31; /* @kind other */
+
+  /* ---- Alpha tokens --------------------------------------- */
+  --fg-tertiary:   rgba(var(--ink-base), 0.56);  /* muted body text */
+  --fg-quaternary: rgba(var(--ink-base), 0.30);  /* placeholder */
+  --line-subtle:   rgba(0, 0, 0, 0.07);          /* card border over tint */
+  --bg-overlay:    rgba(var(--ink-base), 0.55);  /* bottom-sheet scrim */
+  --press-overlay: rgba(0, 0, 0, 0.06);          /* universal pressed tint */
+  --disabled-opacity: 0.32; /* @kind other */
+
+  /* ============================================================
+     SEMANTIC ALIASES — call these in product surfaces.
+     Reference the base palette directly only when defining a new role.
+     ============================================================ */
+
+  /* Fill (backgrounds / surfaces) */
+  --fill-brand:      var(--blue-500);
+  --fill-brand-weak: var(--blue-50);
+  --fill-primary:    var(--grey-900);
+  --fill-secondary:  var(--grey-100);
+  --fill-weak:       var(--grey-50);
+  --fill-danger:     var(--red-500);
+  --fill-success:    var(--green-500);
+  --fill-warning:    var(--amber-500);
+  --fill-info:       var(--blue-500);
+
+  /* Text / foreground */
+  --text-primary:     var(--grey-900);
+  --text-secondary:   var(--grey-700);
+  --text-tertiary:    var(--fg-tertiary);
+  --text-placeholder: var(--fg-quaternary);
+  --text-disabled:    var(--grey-400);
+  --text-alt:         var(--white);   /* text on filled/brand surfaces */
+  --text-brand:       var(--blue-500);
+  --text-danger:      var(--red-500);
+  --text-success:     var(--green-600);
+  --text-warning:     var(--amber-600);
+  --text-info:        var(--blue-500);
+
+  /* Border / line */
+  --border-primary:   var(--blue-500);  /* focused input */
+  --border-secondary: var(--grey-200);    /* default divider */
+  --border-strong:    var(--grey-400);
+  --border-subtle:    var(--line-subtle);
+
+  /* Surface */
+  --surface-page:      var(--grey-50);
+  --surface-card:      var(--white);
+  --surface-raised:    var(--white);
+  --surface-sunken:    var(--grey-100);
+
+  /* Overlay & state */
+  --overlay-scrim: var(--bg-overlay);
+  --overlay-press: var(--press-overlay);
+
+  /* "Now / Today" viewer highlight (uses brand, tinted) */
+  --now-fill:   var(--blue-50);
+  --now-accent: var(--blue-500);
+}

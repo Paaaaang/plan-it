@@ -1,0 +1,109 @@
+/* ============================================================
+   Planit — Typography tokens
+   Pretendard ramp. Bold display with tight tracking; 15px/1.5 body
+   as the Korean-readability default; tabular vs proportional figures
+   split for live data vs emphasis.
+   ============================================================ */
+
+:root {
+  /* Families */
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+
+  /* Weights */
+  --fw-regular:  400; /* @kind font */
+  --fw-medium:   500; /* @kind font */
+  --fw-semibold: 600; /* @kind font */
+  --fw-bold:     700; /* @kind font */
+
+  /* Numeric features — tabular for live data, proportional for emphasis */
+  --num-tabular:      "tnum" 1; /* @kind other */
+  --num-proportional: "pnum" 1; /* @kind other */
+
+  /* ---- Type ramp: size / line-height / tracking / weight ---- */
+  --display-1-size: 56px; /* @kind spacing */
+  --display-1-lh: 1.30; /* @kind font */
+  --display-1-ls: -0.005em; /* @kind font */
+  --display-1-fw: 700; /* @kind font */
+  --display-2-size: 40px; /* @kind spacing */
+  --display-2-lh: 1.20; /* @kind font */
+  --display-2-ls: -0.020em; /* @kind font */
+  --display-2-fw: 700; /* @kind font */
+  --h1-size: 28px; /* @kind spacing */
+  --h1-lh: 1.30; /* @kind font */
+  --h1-ls: -0.020em; /* @kind font */
+  --h1-fw: 700; /* @kind font */
+  --h2-size: 24px; /* @kind spacing */
+  --h2-lh: 1.30; /* @kind font */
+  --h2-ls: -0.020em; /* @kind font */
+  --h2-fw: 700; /* @kind font */
+  --h3-size: 22px; /* @kind spacing */
+  --h3-lh: 1.30; /* @kind font */
+  --h3-ls: -0.015em; /* @kind font */
+  --h3-fw: 700; /* @kind font */
+  --h4-size: 20px; /* @kind spacing */
+  --h4-lh: 1.35; /* @kind font */
+  --h4-ls: -0.015em; /* @kind font */
+  --h4-fw: 700; /* @kind font */
+  --title-1-size: 18px; /* @kind spacing */
+  --title-1-lh: 1.45; /* @kind font */
+  --title-1-ls: -0.010em; /* @kind font */
+  --title-1-fw: 600; /* @kind font */
+  --title-2-size: 17px; /* @kind spacing */
+  --title-2-lh: 1.45; /* @kind font */
+  --title-2-ls: -0.010em; /* @kind font */
+  --title-2-fw: 600; /* @kind font */
+  --body-1-size: 17px; /* @kind spacing */
+  --body-1-lh: 1.50; /* @kind font */
+  --body-1-ls: -0.005em; /* @kind font */
+  --body-1-fw: 400; /* @kind font */
+  --body-2-size: 15px; /* @kind spacing */
+  --body-2-lh: 1.50; /* @kind font */
+  --body-2-ls: -0.005em; /* @kind font */
+  --body-2-fw: 400; /* @kind font */
+  --body-3-size: 13px; /* @kind spacing */
+  --body-3-lh: 1.50; /* @kind font */
+  --body-3-ls: 0; /* @kind font */
+  --body-3-fw: 400; /* @kind font */
+  --label-l-size: 17px; /* @kind spacing */
+  --label-l-lh: 1.25; /* @kind font */
+  --label-l-ls: -0.005em; /* @kind font */
+  --label-l-fw: 700; /* @kind font */
+  --label-m-size: 15px; /* @kind spacing */
+  --label-m-lh: 1.25; /* @kind font */
+  --label-m-ls: -0.005em; /* @kind font */
+  --label-m-fw: 600; /* @kind font */
+  --label-s-size: 13px; /* @kind spacing */
+  --label-s-lh: 1.25; /* @kind font */
+  --label-s-ls: 0; /* @kind font */
+  --label-s-fw: 600; /* @kind font */
+  --caption-size: 12px; /* @kind spacing */
+  --caption-lh: 1.40; /* @kind font */
+  --caption-ls: 0; /* @kind font */
+  --caption-fw: 500; /* @kind font */
+  --caption-s-size: 11px; /* @kind spacing */
+  --caption-s-lh: 1.40; /* @kind font */
+  --caption-s-ls: 0; /* @kind font */
+  --caption-s-fw: 500; /* @kind font */
+}
+
+/* Convenience text classes (optional; tokens above are the source of truth) */
+.t-display-1 { font: var(--display-1-fw) var(--display-1-size)/var(--display-1-lh) var(--font-sans); letter-spacing: var(--display-1-ls); }
+.t-display-2 { font: var(--display-2-fw) var(--display-2-size)/var(--display-2-lh) var(--font-sans); letter-spacing: var(--display-2-ls); }
+.t-h1 { font: var(--h1-fw) var(--h1-size)/var(--h1-lh) var(--font-sans); letter-spacing: var(--h1-ls); }
+.t-h2 { font: var(--h2-fw) var(--h2-size)/var(--h2-lh) var(--font-sans); letter-spacing: var(--h2-ls); }
+.t-h3 { font: var(--h3-fw) var(--h3-size)/var(--h3-lh) var(--font-sans); letter-spacing: var(--h3-ls); }
+.t-h4 { font: var(--h4-fw) var(--h4-size)/var(--h4-lh) var(--font-sans); letter-spacing: var(--h4-ls); }
+.t-title-1 { font: var(--title-1-fw) var(--title-1-size)/var(--title-1-lh) var(--font-sans); letter-spacing: var(--title-1-ls); }
+.t-title-2 { font: var(--title-2-fw) var(--title-2-size)/var(--title-2-lh) var(--font-sans); letter-spacing: var(--title-2-ls); }
+.t-body-1 { font: var(--body-1-fw) var(--body-1-size)/var(--body-1-lh) var(--font-sans); letter-spacing: var(--body-1-ls); }
+.t-body-2 { font: var(--body-2-fw) var(--body-2-size)/var(--body-2-lh) var(--font-sans); letter-spacing: var(--body-2-ls); }
+.t-body-3 { font: var(--body-3-fw) var(--body-3-size)/var(--body-3-lh) var(--font-sans); letter-spacing: var(--body-3-ls); }
+.t-label-l { font: var(--label-l-fw) var(--label-l-size)/var(--label-l-lh) var(--font-sans); letter-spacing: var(--label-l-ls); }
+.t-label-m { font: var(--label-m-fw) var(--label-m-size)/var(--label-m-lh) var(--font-sans); letter-spacing: var(--label-m-ls); }
+.t-label-s { font: var(--label-s-fw) var(--label-s-size)/var(--label-s-lh) var(--font-sans); letter-spacing: var(--label-s-ls); }
+.t-caption { font: var(--caption-fw) var(--caption-size)/var(--caption-lh) var(--font-sans); letter-spacing: var(--caption-ls); }
+.tabular { font-feature-settings: var(--num-tabular); }
+.proportional { font-feature-settings: var(--num-proportional); }
