@@ -31,17 +31,7 @@
 - **인증 토큰**: JWT 등은 `httpOnly` + `secure` 쿠키에 저장한다. `localStorage` 사용 금지.
 - **Server/Client 분리**: API 키, DB 접근 등 민감 로직은 Server Component 또는 Server Action에서만 처리한다. `'use client'` 파일에 노출하지 않는다.
 
-## 3. API 보안
-
-- `Access-Control-Allow-Origin: *` 사용 금지. 허용 도메인을 명시한다.
-- API 라우트(`app/api/`)에는 인증 미들웨어를 적용한다.
-- 프로덕션 에러 응답에 스택 트레이스나 내부 구현 정보를 노출하지 않는다.
-
-## 4. 의존성 관리
+## 3. 의존성 관리
 
 - 새 패키지 설치 후 `npm audit`으로 취약점을 확인한다.
 - `package-lock.json`을 커밋하여 버전을 고정한다.
-
-## 5. 데이터 삭제
-
-- 데이터 삭제 로직은 물리 삭제보다 논리 삭제(soft delete)를 우선 적용한다.
