@@ -1,20 +1,41 @@
 /**
  * @file 관리자 대시보드 — KPI 모니터링
- * @description 운영 KPI 위젯을 표시하는 관리자 메인 페이지.
- *              주간 생성 수, 공유 전환율, 평균 조회수, 실용 액션 클릭률.
- *
  * @route /admin
  * @auth 관리자 권한 필요
- * @spec F-ADMIN-2~6 (KPI 위젯: 주간 생성 수/공유 전환율/평균 조회수/실용 액션 클릭률)
- *
- * @connects
- *  - components/admin/kpi-widget.tsx    → KPI 위젯 컴포넌트
- *  - actions/admin-actions.ts           → getSummary (KPI 집계 데이터)
- *  - types/analytics.ts                 → AnalyticsEvent 타입
- *
- * @data analytics_events 테이블 집계
- *  - plan_created → 주간 생성 수
- *  - plan_published / plan_created → 공유 전환율
- *  - plan_viewed / plan → 평균 조회수
- *  - action_click / plan_viewed → 실용 액션 클릭률
+ * @spec F-ADMIN-2~6
  */
+
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "KPI 모니터링 — 플랜잇 관리자",
+};
+
+export default function AdminDashboardPage() {
+  return (
+    <div style={{ padding: "var(--space-8) var(--screen-padding)" }}>
+      <h1
+        style={{
+          font: "var(--h2-fw) var(--h2-size)/var(--h2-lh) var(--font-sans)",
+          letterSpacing: "var(--h2-ls)",
+          color: "var(--text-primary)",
+          marginBottom: "var(--space-8)",
+        }}
+      >
+        운영 KPI
+      </h1>
+
+      {/* KPI 위젯 그리드 */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: "var(--space-4)",
+        }}
+      >
+        {/* TODO: components/admin/kpi-widget.tsx × 4 */}
+        {/* 주간 생성 수, 공유 전환율, 평균 조회수, 실용 액션 클릭률 */}
+      </div>
+    </div>
+  );
+}

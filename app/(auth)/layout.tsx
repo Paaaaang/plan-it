@@ -1,13 +1,54 @@
 /**
  * @file 인증 페이지 공통 레이아웃
- * @description 로그인/회원가입 페이지에 공통으로 적용되는 레이아웃.
- *              인증 페이지 전용 UI (로고, 중앙 정렬 카드 등)를 제공한다.
+ * @description 로그인/회원가입 페이지에 공통 적용되는 레이아웃.
+ *              중앙 정렬 카드 + 로고 표시.
  *
  * @connects
- *  - app/(auth)/login/page.tsx   → 로그인 페이지
- *  - app/(auth)/signup/page.tsx  → 회원가입 페이지
- *
- * @notes
- *  - 이미 로그인된 사용자는 middleware.ts에서 대시보드로 리다이렉트 처리.
- *  - 루트 layout.tsx 하위로 중첩됨.
+ *  - app/(auth)/login/page.tsx
+ *  - app/(auth)/signup/page.tsx
  */
+
+import Image from "next/image";
+import Link from "next/link";
+
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        minHeight: "100dvh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "var(--screen-padding)",
+        background: "var(--surface-page)",
+      }}
+    >
+      <Link href="/" style={{ marginBottom: "var(--space-8)" }}>
+        <Image
+          src="/logos/Logo_Black.png"
+          alt="플랜잇"
+          width={48}
+          height={48}
+          priority
+        />
+      </Link>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 400,
+          background: "var(--surface-card)",
+          border: "1px solid var(--border-secondary)",
+          borderRadius: "var(--radius-2xl)",
+          padding: "var(--space-8)",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}

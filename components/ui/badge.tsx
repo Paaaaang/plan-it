@@ -1,10 +1,54 @@
+"use client";
+
+import { ReactNode } from "react";
+
 /**
- * @file 상태 배지 컴포넌트
- * @description 상태(공개/비공개/임시저장)를 색상으로 구분하여 표시하는 뱃지.
+ * Planit Badge — 22px, 6px radius, washed semantic background.
  *
- * @spec F-DASH-6 (목록에서 상태 배지 표시)
- *
- * @connects
- *  - components/dashboard/status-badge.tsx → 대시보드용 상태 배지 래퍼
- *  - types/plan.ts                         → Plan.status ('draft' | 'public' | 'private')
+ * @source planit-design-system/project/components/display/Badge.jsx
  */
+
+type BadgeTone = "neutral" | "brand" | "success" | "danger" | "warning" | "info";
+
+interface BadgeProps {
+  children: ReactNode;
+  tone?: BadgeTone;
+  dot?: boolean;
+  style?: React.CSSProperties;
+}
+
+const TONES: Record<BadgeTone, { bg: string; fg: string }> = {
+  neutral: { bg: "var(--grey-100)",  fg: "var(--text-secondary)" },
+  brand:   { bg: "var(--blue-50)",   fg: "var(--text-brand)" },
+  success: { bg: "var(--green-50)",  fg: "var(--text-success)" },
+  danger:  { bg: "var(--red-50)",    fg: "var(--text-danger)" },
+  warning: { bg: "var(--amber-50)",  fg: "var(--text-warning)" },
+  info:    { bg: "var(--blue-50)",   fg: "var(--text-info)" },
+};
+
+export function Badge({ children, tone = "neutral", dot = false, style = {} }: BadgeProps) {
+  const t = TONES[tone];
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        height: 22,
+        padding: "0 8px",
+        borderRadius: 6,
+        background: t.bg,
+        color: t.fg,
+        font: "var(--label-s-fw) 12px/1 var(--font-sans)",
+        ...style,
+      }}
+    >
+      {dot && (
+        <span
+          style={{ width: 6, height: 6, borderRadius: "50%", background: t.fg }}
+        />
+      )}
+      {children}
+    </span>
+  );
+}

@@ -1,12 +1,81 @@
+"use client";
+
+import { ReactNode } from "react";
+
 /**
- * @file 모바일 BottomSheet 컴포넌트
- * @description 모바일 환경에서 화면 하단에서 슬라이드 업하는 시트 컴포넌트.
- *              스와이프 다운 또는 배경 탭으로 닫힘.
+ * Planit BottomSheet — 모바일 하단 시트. radius-3xl, sheet shadow, scrim, grabber handle.
  *
- * @spec F-DASH-4 (모바일에서 BottomSheet로 미리보기 오픈)
- *
- * @connects
- *  - hooks/use-bottom-sheet.ts              → BottomSheet 열기/닫기 제어
- *  - hooks/use-media-query.ts               → 모바일 여부 판단
- *  - components/dashboard/plan-preview.tsx  → BottomSheet 내부에 미리보기 렌더링
+ * @source planit-design-system/project/components/feedback/BottomSheet.jsx
  */
+
+interface BottomSheetProps {
+  open?: boolean;
+  title?: string;
+  children: ReactNode;
+  onClose?: () => void;
+  header?: ReactNode;
+}
+
+export function BottomSheet({
+  open = true,
+  title,
+  children,
+  onClose,
+  header = null,
+}: BottomSheetProps) {
+  if (!open) return null;
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 80,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-end",
+        background: "var(--overlay-scrim)",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "var(--surface-card)",
+          borderTopLeftRadius: "var(--radius-3xl)",
+          borderTopRightRadius: "var(--radius-3xl)",
+          boxShadow: "var(--shadow-sheet)",
+          padding: "10px 24px calc(24px + env(safe-area-inset-bottom))",
+          animation: "planit-sheet-in var(--dur-slow) var(--ease-out)",
+          maxHeight: "86%",
+          overflowY: "auto",
+        }}
+      >
+        {/* Grabber handle */}
+        <div
+          style={{
+            width: 40,
+            height: 4,
+            borderRadius: 999,
+            background: "var(--grey-200)",
+            margin: "0 auto 16px",
+          }}
+        />
+        {header}
+        {title && (
+          <div
+            style={{
+              font: "var(--h4-fw) var(--h4-size)/1.35 var(--font-sans)",
+              letterSpacing: "-0.015em",
+              color: "var(--text-primary)",
+              marginBottom: 16,
+            }}
+          >
+            {title}
+          </div>
+        )}
+        {children}
+      </div>
+    </div>
+  );
+}
