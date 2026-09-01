@@ -132,6 +132,14 @@ test.describe('Card · Badge · Chip', () => {
     await expect(page.getByTestId('card-interactive')).toHaveAttribute('tabindex', '0');
   });
 
+  test('interactive 카드는 Enter로도 눌려요', async ({ page }) => {
+    await page.goto('/ui');
+    const card = page.getByTestId('card-interactive');
+    await card.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('card-click-count')).toHaveText('1');
+  });
+
   test('danger 뱃지는 점과 문구를 함께 내요 — 색만으로 말하지 않아요', async ({ page }) => {
     await page.goto('/ui');
     const badge = page.getByTestId('badge-danger');

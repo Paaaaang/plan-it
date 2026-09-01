@@ -1,8 +1,8 @@
 import type { HTMLAttributes, ReactNode } from "react";
 
 /**
- * Card — 플랫이 기본. 그림자는 떠 있는 것에만 쓴다.
- * interactive면 키보드로도 눌린다.
+ * Card — elevated는 강한 그림자(shadow-pop), 기본도 옅은 그림자(shadow-card)를 쓴다.
+ * 완전 플랫은 쓰지 않는다. interactive면 키보드로도 눌린다.
  */
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -16,22 +16,26 @@ export function Card({
   interactive = false,
   className = "",
   onClick,
+  role,
+  tabIndex,
+  onKeyDown,
   ...rest
 }: CardProps) {
   return (
     <div
-      role={interactive ? "button" : undefined}
-      tabIndex={interactive ? 0 : undefined}
+      role={role ?? (interactive ? "button" : undefined)}
+      tabIndex={tabIndex ?? (interactive ? 0 : undefined)}
       onClick={onClick}
       onKeyDown={
         interactive
           ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
+              onKeyDown?.(e);
+              if (!e.defaultPrevented && (e.key === "Enter" || e.key === " ")) {
                 e.preventDefault();
                 (e.currentTarget as HTMLDivElement).click();
               }
             }
-          : undefined
+          : onKeyDown
       }
       className={[
         "rounded-card bg-surface p-4",

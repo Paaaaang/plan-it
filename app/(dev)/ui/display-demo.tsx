@@ -7,6 +7,7 @@ import { Chip } from "@/components/ui/chip";
 
 export function DisplayDemo() {
   const [day, setDay] = useState(1);
+  const [cardClicks, setCardClicks] = useState(0);
 
   return (
     <div className="flex flex-col gap-5">
@@ -15,9 +16,17 @@ export function DisplayDemo() {
           <div className="text-item-title font-bold">제주공항 집결</div>
           <div className="mt-1 text-caption text-tertiary">제주국제공항</div>
         </Card>
-        <Card data-testid="card-interactive" interactive elevated onClick={() => {}}>
+        <Card
+          data-testid="card-interactive"
+          interactive
+          elevated
+          onClick={() => setCardClicks((c) => c + 1)}
+        >
           <div className="text-item-title font-bold">눌리는 카드</div>
-          <div className="mt-1 text-caption text-tertiary">Enter나 Space로도 눌려요</div>
+          <div className="mt-1 text-caption text-tertiary">
+            Enter나 Space로도 눌려요 — 클릭{" "}
+            <b data-testid="card-click-count" className="tnum">{cardClicks}</b>
+          </div>
         </Card>
       </div>
 
