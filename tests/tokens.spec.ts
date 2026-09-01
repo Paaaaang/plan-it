@@ -8,6 +8,12 @@ async function tokens(page: Page, names: string[]) {
   }, names);
 }
 
+/** 헥스 색의 R+G+B 합(밝기 근사). Lightning CSS가 #fff처럼 3자리로 축약할 수 있어 6자리로 편 뒤 파싱한다. */
+function lum(hex: string) {
+  const h = hex.length === 4 ? hex.slice(1).split('').map((c) => c + c).join('') : hex.slice(1);
+  return parseInt(h.slice(0, 2), 16) + parseInt(h.slice(2, 4), 16) + parseInt(h.slice(4, 6), 16);
+}
+
 test.describe('디자인 토큰', () => {
   test('라이트 팔레트가 bare :root에 정의되어 있어요', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
@@ -43,11 +49,6 @@ test.describe('디자인 토큰', () => {
     await page.goto('/ui');
     const t = await tokens(page, ['--surface', '--surface-sunken']);
     // #1B1F29(27,31,41) vs #131720(19,23,32) — sunken이 더 어두워야 한다
-    // Lightning CSS가 #fff처럼 3자리로 축약할 수 있어 6자리로 편 뒤 파싱한다.
-    const lum = (hex: string) => {
-      const h = hex.length === 4 ? hex.slice(1).split('').map((c) => c + c).join('') : hex.slice(1);
-      return parseInt(h.slice(0, 2), 16) + parseInt(h.slice(2, 4), 16) + parseInt(h.slice(4, 6), 16);
-    };
     expect(lum(t['--surface-sunken'])).toBeLessThan(lum(t['--surface']));
   });
 
@@ -55,10 +56,6 @@ test.describe('디자인 토큰', () => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/ui');
     const t = await tokens(page, ['--surface', '--surface-sunken']);
-    const lum = (hex: string) => {
-      const h = hex.length === 4 ? hex.slice(1).split('').map((c) => c + c).join('') : hex.slice(1);
-      return parseInt(h.slice(0, 2), 16) + parseInt(h.slice(2, 4), 16) + parseInt(h.slice(4, 6), 16);
-    };
     expect(lum(t['--surface-sunken'])).toBeLessThan(lum(t['--surface']));
   });
 
