@@ -113,3 +113,40 @@ test.describe('DateField', () => {
     await expect(page.getByLabel('시작일')).toHaveValue('2026-10-24');
   });
 });
+
+test.describe('Card · Badge · Chip', () => {
+  test('기본 카드는 표면색에 그림자 하나예요', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/ui');
+    const s = await page.getByTestId('card-flat').evaluate((el) => {
+      const c = getComputedStyle(el);
+      return { bg: c.backgroundColor, shadow: c.boxShadow };
+    });
+    expect(s.bg).toBe('rgb(255, 255, 255)');
+    expect(s.shadow).not.toBe('none');
+  });
+
+  test('interactive 카드는 버튼 역할을 가져요', async ({ page }) => {
+    await page.goto('/ui');
+    await expect(page.getByTestId('card-interactive')).toHaveAttribute('role', 'button');
+    await expect(page.getByTestId('card-interactive')).toHaveAttribute('tabindex', '0');
+  });
+
+  test('danger 뱃지는 점과 문구를 함께 내요 — 색만으로 말하지 않아요', async ({ page }) => {
+    await page.goto('/ui');
+    const badge = page.getByTestId('badge-danger');
+    await expect(badge).toContainText('숨김');
+    await expect(badge.locator('[aria-hidden="true"]')).toHaveCount(1);
+  });
+
+  test('선택된 칩은 aria-pressed로 상태를 알려줘요', async ({ page }) => {
+    await page.goto('/ui');
+    await expect(page.getByTestId('chip-day1')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('chip-day2')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('정보형 칩은 버튼이 아니에요', async ({ page }) => {
+    await page.goto('/ui');
+    expect(await page.getByTestId('chip-info').evaluate((n) => n.tagName)).toBe('SPAN');
+  });
+});

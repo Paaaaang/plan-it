@@ -3,6 +3,7 @@ import { getTheme } from "@/lib/theme";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ButtonDemo } from "./button-demo";
 import { FormDemo } from "./form-demo";
+import { DisplayDemo } from "./display-demo";
 
 /**
  * 컴포넌트 갤러리 — 개발 전용.
@@ -52,6 +53,11 @@ export default async function UiGalleryPage() {
           오류는 색만으로 말하지 않아요. aria-invalid와 문구를 함께 내요.
         </p>
         <div className="mt-4"><FormDemo /></div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-title-3 font-bold">Card · Badge · Chip</h2>
+        <div className="mt-4"><DisplayDemo /></div>
       </section>
     </main>
   );

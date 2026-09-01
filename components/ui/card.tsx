@@ -1,52 +1,44 @@
-"use client";
-
-import { ReactNode, useState } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
 /**
- * Planit Card — flat white surface, hairline border, rounded.
- * `interactive` adds hover lift (shadow-2). `elevated` uses shadow instead of border.
- *
- * @source planit-design-system/project/components/display/Card.jsx
+ * Card — 플랫이 기본. 그림자는 떠 있는 것에만 쓴다.
+ * interactive면 키보드로도 눌린다.
  */
-
-interface CardProps {
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
-  padding?: number;
-  radius?: string;
-  interactive?: boolean;
   elevated?: boolean;
-  style?: React.CSSProperties;
-  onClick?: () => void;
+  interactive?: boolean;
 }
 
 export function Card({
   children,
-  padding = 20,
-  radius = "var(--radius-xl)",
-  interactive = false,
   elevated = false,
-  style = {},
+  interactive = false,
+  className = "",
   onClick,
   ...rest
 }: CardProps) {
-  const [hover, setHover] = useState(false);
-
   return (
     <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
       onClick={onClick}
-      onMouseEnter={() => interactive && setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        background: "var(--surface-card)",
-        border: elevated ? "none" : "1px solid var(--border-secondary)",
-        borderRadius: radius,
-        padding,
-        boxShadow: elevated ? "var(--shadow-2)" : hover ? "var(--shadow-2)" : "none",
-        transform: interactive && hover ? "translateY(-2px)" : "none",
-        transition: "box-shadow var(--dur-base) var(--ease), transform var(--dur-base) var(--ease)",
-        cursor: interactive || onClick ? "pointer" : "default",
-        ...style,
-      }}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                (e.currentTarget as HTMLDivElement).click();
+              }
+            }
+          : undefined
+      }
+      className={[
+        "rounded-card bg-surface p-4",
+        elevated ? "shadow-pop" : "shadow-card",
+        interactive ? "cursor-pointer transition-transform duration-[120ms] ease-planit hover:-translate-y-0.5" : "",
+        className,
+      ].join(" ")}
       {...rest}
     >
       {children}
