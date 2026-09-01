@@ -182,6 +182,7 @@ test.describe('Tabs · SegmentedControl', () => {
     await page.keyboard.press('ArrowRight');
     await expect(page.getByTestId('tabs-demo').getByRole('tab', { name: '장소' }))
       .toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByTestId('tabs-demo').getByRole('tab', { name: '장소' })).toBeFocused();
   });
 
   test('세그먼트가 라디오 그룹이에요', async ({ page }) => {
