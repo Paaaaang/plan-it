@@ -5,10 +5,16 @@
 export function Loader({
   size = 20,
   label = "불러오는 중이에요",
+  className = "",
   ...rest
-}: { size?: number; label?: string } & React.HTMLAttributes<HTMLSpanElement>) {
+}: { size?: number; label?: string; className?: string } & React.HTMLAttributes<HTMLSpanElement>) {
   return (
-    <span {...rest} role="status" aria-label={label} className="inline-flex">
+    <span
+      {...rest}
+      role="status"
+      aria-label={label}
+      className={["inline-flex", className].filter(Boolean).join(" ")}
+    >
       <span
         aria-hidden="true"
         className="block rounded-full border-2 border-default border-t-brand"

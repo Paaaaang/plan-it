@@ -51,6 +51,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             role="status"
+            data-testid="toast"
             className={[
               "pointer-events-auto flex items-center gap-2 rounded-[14px] px-4 py-3",
               "text-label font-semibold shadow-pop",

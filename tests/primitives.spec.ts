@@ -204,15 +204,17 @@ test.describe('Toast · Loader', () => {
   test('토스트가 뜨고 문구가 보여요', async ({ page }) => {
     await page.goto('/ui');
     await page.getByTestId('toast-trigger').click();
-    // 갤러리에는 role="status"인 다른 요소(로딩 버튼, Loader)도 함께 떠 있어서 문구로 좁힌다.
-    const toast = page.getByRole('status').filter({ hasText: '주소를 복사했어요' });
+    // 구조(data-testid)로 찾는다 — 갤러리에는 role="status"인 다른 요소(로딩 버튼, Loader)도 있어
+    // role만으로는 모호하다. role="status" 계약 자체는 아래에서 별도로 검증한다.
+    const toast = page.getByTestId('toast');
+    await expect(toast).toHaveAttribute('role', 'status');
     await expect(toast).toContainText('주소를 복사했어요');
   });
 
   test('토스트가 스스로 사라져요', async ({ page }) => {
     await page.goto('/ui');
     await page.getByTestId('toast-trigger').click();
-    const toast = page.getByRole('status').filter({ hasText: '주소를 복사했어요' });
+    const toast = page.getByTestId('toast');
     await expect(toast).toBeVisible();
     await expect(toast).toHaveCount(0, { timeout: 6000 });
   });
@@ -220,7 +222,7 @@ test.describe('Toast · Loader', () => {
   test('오류 토스트는 아이콘을 함께 내요', async ({ page }) => {
     await page.goto('/ui');
     await page.getByTestId('toast-error').click();
-    const toast = page.getByRole('status').filter({ hasText: '링크를 복사하지 못했어요' });
+    const toast = page.getByTestId('toast');
     await expect(toast).toContainText('링크를 복사하지 못했어요');
     await expect(toast.locator('svg')).toHaveCount(1);
   });
