@@ -10,29 +10,31 @@ import { FieldChrome, useFieldA11y } from "./field-shell";
  */
 type Props = { label: string; hint?: string; error?: string } & Omit<
   InputHTMLAttributes<HTMLInputElement>,
-  "type" | "className" | "id"
+  "type" | "className" | "id" | "aria-invalid" | "aria-describedby"
 >;
 
 export function DateField({ label, hint, error, ...rest }: Props) {
   const { id, msgId, message, describedBy, invalid } = useFieldA11y(error, hint);
 
+  // rest를 먼저 펼치고 계약이 있는 속성을 뒤에 둔다 — caller가 rest로 무엇을 넘기든
+  // 이 필드의 접근성 배선(id·type·aria-invalid·aria-describedby)은 항상 이긴다.
   return (
     <FieldChrome id={id} label={label} msgId={msgId} message={message} isError={!!error}>
       <input
+        {...rest}
         id={id}
         type="date"
         aria-invalid={invalid}
         aria-describedby={describedBy}
         className={[
-          "w-full rounded-[11px] border bg-sunken px-3 py-2.5",
+          "w-full rounded-field border bg-sunken px-3 py-2.5",
           "text-label font-medium text-primary tnum",
-          "transition-colors duration-[120ms] ease-planit",
+          "transition-colors duration-fast ease-planit",
           "focus:outline-none focus:ring-[3px]",
           error
             ? "border-danger focus:border-danger focus:ring-danger-weak"
             : "border-default focus:border-brand focus:ring-accent-ring",
         ].join(" ")}
-        {...rest}
       />
     </FieldChrome>
   );

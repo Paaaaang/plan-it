@@ -68,6 +68,18 @@ test.describe('TextField', () => {
     await expect(page.locator(`#${describedBy}`)).toContainText('제목을 입력해 주세요');
   });
 
+  test('caller가 aria-describedby를 넘겨도 오류 메시지 연결이 깨지지 않아요', async ({ page }) => {
+    // TextField는 rest를 펼친 뒤 aria-describedby를 계약 속성으로 뒤에 덧씌운다.
+    // caller가 (실수로든 의도로든) aria-describedby를 직접 넘겨도 오류 문구 연결이 이겨야 한다.
+    await page.goto('/ui');
+    const field = page.getByTestId('field-error-caller-described-by');
+    const input = field.getByRole('textbox');
+    const describedBy = await input.getAttribute('aria-describedby');
+    expect(describedBy).not.toBe('caller-supplied-id');
+    expect(describedBy).toBeTruthy();
+    await expect(page.locator(`#${describedBy}`)).toContainText('제목을 입력해 주세요');
+  });
+
   test('다크에서 입력 표면이 카드보다 어두워요', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/ui');
@@ -153,6 +165,14 @@ test.describe('Card · Badge · Chip', () => {
     await expect(page.getByTestId('chip-day2')).toHaveAttribute('aria-pressed', 'false');
   });
 
+  test('칩을 누르면 선택 상태가 옮겨가요', async ({ page }) => {
+    // 초기값만 보면 onClick이 아예 빠져도 통과한다 — 실제로 눌러서 상태가 옮겨가는지 본다.
+    await page.goto('/ui');
+    await page.getByTestId('chip-day2').click();
+    await expect(page.getByTestId('chip-day2')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('chip-day1')).toHaveAttribute('aria-pressed', 'false');
+  });
+
   test('정보형 칩은 버튼이 아니에요', async ({ page }) => {
     await page.goto('/ui');
     expect(await page.getByTestId('chip-info').evaluate((n) => n.tagName)).toBe('SPAN');
@@ -204,10 +224,12 @@ test.describe('Toast · Loader', () => {
   test('토스트가 뜨고 문구가 보여요', async ({ page }) => {
     await page.goto('/ui');
     await page.getByTestId('toast-trigger').click();
-    // 구조(data-testid)로 찾는다 — 갤러리에는 role="status"인 다른 요소(로딩 버튼, Loader)도 있어
-    // role만으로는 모호하다. role="status" 계약 자체는 아래에서 별도로 검증한다.
+    // role="status"/aria-live는 처음부터 떠 있는 wrapper에 붙어야 스크린리더가 안정적으로 읽는다.
+    // 콘텐츠와 함께 나타나는 개별 토스트 항목에 붙이면 일부 스크린리더가 announce하지 않는다.
+    const region = page.getByTestId('toast-region');
+    await expect(region).toHaveAttribute('role', 'status');
+    await expect(region).toHaveAttribute('aria-live', 'polite');
     const toast = page.getByTestId('toast');
-    await expect(toast).toHaveAttribute('role', 'status');
     await expect(toast).toContainText('주소를 복사했어요');
   });
 
@@ -219,12 +241,14 @@ test.describe('Toast · Loader', () => {
     await expect(toast).toHaveCount(0, { timeout: 6000 });
   });
 
-  test('오류 토스트는 아이콘을 함께 내요', async ({ page }) => {
+  test('오류 토스트는 아이콘을 함께 내고 wrapper가 더 급하게 알려요', async ({ page }) => {
     await page.goto('/ui');
     await page.getByTestId('toast-error').click();
     const toast = page.getByTestId('toast');
     await expect(toast).toContainText('링크를 복사하지 못했어요');
     await expect(toast.locator('svg')).toHaveCount(1);
+    // 오류 톤이 떠 있는 동안은 wrapper의 aria-live가 assertive로 올라가야 한다.
+    await expect(page.getByTestId('toast-region')).toHaveAttribute('aria-live', 'assertive');
   });
 
   test('로더가 스크린리더에 상태를 알려줘요', async ({ page }) => {
@@ -290,6 +314,24 @@ test.describe('BottomSheet · Dialog', () => {
     await page.goto('/ui');
     await page.getByTestId('dialog-open').click();
     await page.getByRole('button', { name: '그대로 둘게요' }).click();
+    await expect(page.getByTestId('delete-result')).toHaveText('안 지웠어요');
+  });
+
+  test('Escape로 다이얼로그가 닫혀요', async ({ page }) => {
+    await page.goto('/ui');
+    await page.getByTestId('dialog-open').click();
+    await expect(page.getByTestId('dialog-panel')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('dialog-panel')).toHaveCount(0);
+    await expect(page.getByTestId('delete-result')).toHaveText('안 지웠어요');
+  });
+
+  test('스크림을 눌러도 다이얼로그는 안 닫혀요 — 파괴적 행동이라 명시적 선택이 필요해요', async ({ page }) => {
+    await page.goto('/ui');
+    await page.getByTestId('dialog-open').click();
+    await expect(page.getByTestId('dialog-panel')).toBeVisible();
+    await page.getByTestId('dialog-scrim').click({ position: { x: 5, y: 5 } });
+    await expect(page.getByTestId('dialog-panel')).toBeVisible();
     await expect(page.getByTestId('delete-result')).toHaveText('안 지웠어요');
   });
 });

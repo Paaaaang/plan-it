@@ -2,11 +2,12 @@
 
 import { useEffect, useId } from "react";
 
-// 스크롤 잠금 참조 카운트 — 시트가 중첩 열려도 마지막 하나가 닫힐 때만 복원한다.
+// 스크롤 잠금 참조 카운트 — 시트/다이얼로그가 중첩 열려도 마지막 하나가 닫힐 때만 복원한다.
+// Dialog도 이 헬퍼를 가져다 쓴다 — 구현을 복제하지 않는다.
 let lockCount = 0;
 let savedOverflow = "";
 
-function lockBodyScroll() {
+export function lockBodyScroll() {
   if (lockCount === 0) {
     savedOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -14,7 +15,7 @@ function lockBodyScroll() {
   lockCount += 1;
 }
 
-function unlockBodyScroll() {
+export function unlockBodyScroll() {
   lockCount = Math.max(0, lockCount - 1);
   if (lockCount === 0) document.body.style.overflow = savedOverflow;
 }

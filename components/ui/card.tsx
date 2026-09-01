@@ -40,7 +40,7 @@ export function Card({
       className={[
         "rounded-card bg-surface p-4",
         elevated ? "shadow-pop" : "shadow-card",
-        interactive ? "cursor-pointer transition-transform duration-[120ms] ease-planit hover:-translate-y-0.5" : "",
+        interactive ? "cursor-pointer transition-transform duration-fast ease-planit hover:-translate-y-0.5" : "",
         className,
       ].join(" ")}
       {...rest}

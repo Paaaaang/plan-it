@@ -21,12 +21,13 @@ export function SegmentedControl({
   label?: string;
   className?: string;
   // HTMLAttributes의 onChange와 충돌하므로 Omit한다.
-} & Omit<React.HTMLAttributes<HTMLDivElement>, "onChange">) {
+  // aria-label도 Omit한다 — 안 그러면 rest의 aria-label이 label prop을 조용히 덮어쓴다.
+} & Omit<React.HTMLAttributes<HTMLDivElement>, "onChange" | "aria-label">) {
   return (
     <div
       role={role ?? "radiogroup"}
       aria-label={label}
-      className={`inline-flex gap-0.5 rounded-[10px] bg-neutral-fill p-0.5 ${className}`}
+      className={`inline-flex gap-0.5 rounded-control bg-neutral-fill p-0.5 ${className}`}
       {...rest}
     >
       {items.map((it) => {
@@ -39,8 +40,8 @@ export function SegmentedControl({
             aria-checked={active}
             onClick={() => onChange(it.value)}
             className={[
-              "rounded-[8px] px-3.5 py-1.5 text-caption font-bold",
-              "transition-colors duration-[120ms] ease-planit",
+              "rounded-xs px-3.5 py-1.5 text-caption font-bold",
+              "transition-colors duration-fast ease-planit",
               active ? "bg-surface text-primary shadow-card" : "text-tertiary hover:text-secondary",
             ].join(" ")}
           >

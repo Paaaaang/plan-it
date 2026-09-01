@@ -21,14 +21,14 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const SIZE: Record<Size, string> = {
   sm: "h-9 px-3.5 text-caption rounded-xs gap-1.5",
   md: "h-11 px-4 text-label rounded-btn gap-2",
-  lg: "h-[52px] px-6 text-item-title rounded-[14px] gap-2",
+  lg: "h-[52px] px-6 text-item-title rounded-pop gap-2",
 };
 
 const VARIANT: Record<Variant, string> = {
   primary: "bg-brand text-on-accent hover:bg-brand-hover",
   secondary: "bg-neutral-fill text-primary hover:bg-strong/30",
   ghost: "bg-transparent text-secondary hover:bg-neutral-fill",
-  danger: "bg-danger text-white hover:opacity-90",
+  danger: "bg-danger text-on-danger hover:opacity-90",
 };
 
 export function Button({
@@ -41,18 +41,20 @@ export function Button({
   leadingIcon = null,
   trailingIcon = null,
   className = "",
+  type = "button",
+  "aria-busy": ariaBusy,
   ...rest
 }: ButtonProps) {
   const isOff = disabled || loading;
 
   return (
     <button
-      type="button"
+      type={type}
       disabled={isOff}
-      aria-busy={loading || undefined}
+      aria-busy={ariaBusy ?? (loading || undefined)}
       className={[
         "relative inline-flex items-center justify-center font-bold tracking-tight",
-        "transition-colors duration-[120ms] ease-planit",
+        "transition-colors duration-fast ease-planit",
         "disabled:cursor-default disabled:opacity-40",
         block ? "flex w-full" : "",
         SIZE[size],

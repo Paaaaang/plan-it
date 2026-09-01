@@ -2,6 +2,7 @@
 
 import { useEffect, useId } from "react";
 import { Button } from "@/components/ui/button";
+import { lockBodyScroll, unlockBodyScroll } from "@/components/ui/bottom-sheet";
 
 /**
  * Dialog — 되돌리기 어려운 행동을 확인받는 자리.
@@ -36,20 +37,27 @@ export function Dialog({
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    lockBodyScroll();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      unlockBodyScroll();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-      <div onClick={onClose} className="absolute inset-0" style={{ background: "var(--overlay-scrim)" }} />
+      {/* 파괴적 행동을 확인받는 alertdialog다 — 스크림 클릭으로는 닫히지 않는다.
+          Escape는 취소와 동등해서 안전하니 남겨둔다(위 useEffect). */}
+      <div data-testid="dialog-scrim" className="absolute inset-0" style={{ background: "var(--overlay-scrim)" }} />
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
-        className="relative w-full max-w-sm rounded-[20px] bg-raised p-5 shadow-pop"
+        data-testid="dialog-panel"
+        className="relative w-full max-w-sm rounded-dialog bg-raised p-5 shadow-pop"
         style={{ animation: "planit-dialog-in var(--dur-base) var(--ease-out)" }}
       >
         <h2 id={titleId} className="text-title-3 font-extrabold tracking-tight">{title}</h2>

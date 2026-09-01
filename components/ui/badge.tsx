@@ -3,15 +3,16 @@ import type { ReactNode } from "react";
 /**
  * Badge — 상태 표시.
  * 색만으로 상태를 말하지 않는다: tone이 중립이 아니면 점을 함께 찍는다.
+ * dot={false}로 점을 끄면 이 제약이 깨진다 — 문구만으로 의미가 전달되는 자리에서만 써라.
  */
 type Tone = "brand" | "neutral" | "success" | "warning" | "danger";
 
 const TONE: Record<Tone, string> = {
   brand: "bg-brand-weak text-on-brand-weak",
   neutral: "bg-neutral-fill text-secondary",
-  success: "bg-success-weak text-success",
-  warning: "bg-warning-weak text-warning",
-  danger: "bg-danger-weak text-danger",
+  success: "bg-success-weak text-on-success-weak",
+  warning: "bg-warning-weak text-on-warning-weak",
+  danger: "bg-danger-weak text-on-danger-weak",
 };
 
 export function Badge({

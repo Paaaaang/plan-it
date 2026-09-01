@@ -16,22 +16,26 @@ export function Chip({
   children: ReactNode;
   selected?: boolean;
   interactive?: boolean;
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLButtonElement | HTMLSpanElement>;
   className?: string;
-} & Omit<React.HTMLAttributes<HTMLElement>, "onClick">) {
+} & Omit<React.HTMLAttributes<HTMLElement>, "onClick" | "aria-pressed">) {
   const look = [
     "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5",
-    "text-caption font-bold transition-colors duration-[120ms] ease-planit",
+    "text-caption font-bold transition-colors duration-fast ease-planit",
     selected ? "bg-brand text-on-accent" : "bg-neutral-fill text-tertiary",
     className,
   ].join(" ");
 
   if (!interactive) {
-    return <span className={look} {...rest}>{children}</span>;
+    return (
+      <span {...rest} onClick={onClick} className={look}>
+        {children}
+      </span>
+    );
   }
 
   return (
-    <button type="button" aria-pressed={selected} onClick={onClick} className={look} {...rest}>
+    <button {...rest} type="button" aria-pressed={selected} onClick={onClick} className={look}>
       {children}
     </button>
   );

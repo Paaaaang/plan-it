@@ -62,6 +62,10 @@
   --r-card: 16px;
   --r-sheet: 26px;
   --r-full: 999px;
+  --r-control: 10px;
+  --r-field: 11px;
+  --r-pop: 14px;
+  --r-dialog: 20px;
 
   /* 모션 */
   --ease-out: cubic-bezier(0.16, 1, 0.30, 1);
@@ -116,8 +120,9 @@
 
   --text-primary:    var(--neutral-900);
   --text-secondary:  var(--neutral-600);
-  --text-tertiary:   #8A92A6;
+  --text-tertiary:   #656D80;
   --text-on-accent:  var(--neutral-0);
+  --text-on-danger:  var(--neutral-0);
 
   --fill-brand:       var(--coral-500);
   --fill-brand-hover: var(--coral-600);
@@ -130,10 +135,13 @@
 
   --success:      var(--green-500);
   --success-weak: var(--green-50);
+  --text-on-success-weak: #0B6B4C;
   --warning:      var(--amber-500);
   --warning-weak: var(--amber-50);
+  --text-on-warning-weak: #7A5410;
   --danger:       var(--rose-500);
   --danger-weak:  var(--rose-50);
+  --text-on-danger-weak: #A31F3B;
 
   --overlay-scrim: rgba(8, 10, 16, 0.52);
   --overlay-press: rgba(0, 0, 0, 0.06);
@@ -160,6 +168,7 @@
     --text-secondary:  var(--dark-text-secondary);
     --text-tertiary:   var(--dark-text-tertiary);
     --text-on-accent:  var(--ink-on-coral);
+    --text-on-danger:  var(--ink-on-coral);
 
     --fill-brand:       var(--dark-fill-brand);
     --fill-brand-hover: var(--dark-fill-brand-hover);
@@ -172,10 +181,13 @@
 
     --success:      var(--green-300);
     --success-weak: var(--green-950);
+    --text-on-success-weak: var(--green-300);
     --warning:      var(--amber-300);
     --warning-weak: var(--amber-950);
+    --text-on-warning-weak: var(--amber-300);
     --danger:       var(--rose-300);
     --danger-weak:  var(--rose-950);
+    --text-on-danger-weak: var(--rose-300);
 
     --overlay-press: var(--dark-overlay-press);
 
@@ -201,6 +213,7 @@
   --text-secondary:  var(--dark-text-secondary);
   --text-tertiary:   var(--dark-text-tertiary);
   --text-on-accent:  var(--ink-on-coral);
+  --text-on-danger:  var(--ink-on-coral);
 
   --fill-brand:       var(--dark-fill-brand);
   --fill-brand-hover: var(--dark-fill-brand-hover);
@@ -213,10 +226,13 @@
 
   --success:      var(--green-300);
   --success-weak: var(--green-950);
+  --text-on-success-weak: var(--green-300);
   --warning:      var(--amber-300);
   --warning-weak: var(--amber-950);
+  --text-on-warning-weak: var(--amber-300);
   --danger:       var(--rose-300);
   --danger-weak:  var(--rose-950);
+  --text-on-danger-weak: var(--rose-300);
 
   --overlay-press: var(--dark-overlay-press);
 
@@ -242,6 +258,7 @@
   --color-secondary:      var(--text-secondary);
   --color-tertiary:       var(--text-tertiary);
   --color-on-accent:      var(--text-on-accent);
+  --color-on-danger:      var(--text-on-danger);
   --color-brand:          var(--fill-brand);
   --color-brand-hover:    var(--fill-brand-hover);
   --color-brand-weak:     var(--fill-brand-weak);
@@ -251,10 +268,13 @@
   --color-accent-border:  var(--accent-border);
   --color-success:        var(--success);
   --color-success-weak:   var(--success-weak);
+  --color-on-success-weak: var(--text-on-success-weak);
   --color-warning:        var(--warning);
   --color-warning-weak:   var(--warning-weak);
+  --color-on-warning-weak: var(--text-on-warning-weak);
   --color-danger:         var(--danger);
   --color-danger-weak:    var(--danger-weak);
+  --color-on-danger-weak: var(--text-on-danger-weak);
 
   /* Tailwind v4는 --text-<name>--line-height / --letter-spacing 짝을 인식한다.
      크기만 매핑하면 행간·자간을 컴포넌트마다 손으로 붙이게 되고 곧 어긋난다. */
@@ -283,34 +303,43 @@
   --text-micro--line-height:        var(--lh-micro);
   --text-micro--letter-spacing:     var(--ls-micro);
 
-  --radius-xs:    var(--r-xs);
-  --radius-btn:   var(--r-btn);
-  --radius-card:  var(--r-card);
-  --radius-sheet: var(--r-sheet);
+  --radius-xs:      var(--r-xs);
+  --radius-btn:     var(--r-btn);
+  --radius-card:    var(--r-card);
+  --radius-sheet:   var(--r-sheet);
+  --radius-control: var(--r-control);
+  --radius-field:   var(--r-field);
+  --radius-pop:     var(--r-pop);
+  --radius-dialog:  var(--r-dialog);
+  --radius-full:    var(--r-full);
 
   --shadow-card:   var(--shadow-1);
   --shadow-pop:    var(--shadow-2);
   --shadow-sheet:  var(--shadow-3);
 
   --ease-planit: var(--ease-out);
+
+  --transition-duration-fast: var(--dur-fast);
+  --transition-duration-base: var(--dur-base);
+  --transition-duration-slow: var(--dur-slow);
 }
 
 /* ============================================================
    4. 리셋
    ============================================================ */
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  font-size: var(--fs-body);
-  line-height: var(--lh-body);
-  -webkit-font-smoothing: antialiased;
-}
-
 @layer base {
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
   button, input, textarea, select { font: inherit; color: inherit; }
   button { background: none; border: 0; padding: 0; cursor: pointer; }
 

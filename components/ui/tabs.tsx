@@ -60,7 +60,7 @@ export function Tabs({
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(t.value)}
             className={[
-              "-mb-px border-b-2 pb-2.5 text-label transition-colors duration-[120ms] ease-planit",
+              "-mb-px border-b-2 pb-2.5 text-label transition-colors duration-fast ease-planit",
               active ? "border-brand font-bold text-brand" : "border-transparent font-semibold text-tertiary hover:text-secondary",
             ].join(" ")}
           >

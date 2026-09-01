@@ -46,16 +46,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastCtx.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex flex-col items-center gap-2 px-4">
+      <div
+        role="status"
+        aria-live={items.some((t) => t.tone === "danger") ? "assertive" : "polite"}
+        data-testid="toast-region"
+        className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex flex-col items-center gap-2 px-4"
+      >
         {items.map((t) => (
           <div
             key={t.id}
-            role="status"
             data-testid="toast"
             className={[
-              "pointer-events-auto flex items-center gap-2 rounded-[14px] px-4 py-3",
+              "pointer-events-auto flex items-center gap-2 rounded-pop px-4 py-3",
               "text-label font-semibold shadow-pop",
-              t.tone === "danger" ? "bg-danger text-white" : "bg-raised text-primary",
+              t.tone === "danger" ? "bg-danger text-on-danger" : "bg-raised text-primary",
             ].join(" ")}
             style={{ animation: "planit-toast-in var(--dur-base) var(--ease-out)" }}
           >
