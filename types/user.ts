@@ -8,5 +8,5 @@
  * @used-by
  *  - hooks/use-auth.ts           → 인증 상태 관리
  *  - app/(admin)/layout.tsx      → role='admin' 검증
- *  - middleware.ts               → 권한 기반 라우팅
+ *  - proxy.ts                    → 권한 기반 라우팅
  */

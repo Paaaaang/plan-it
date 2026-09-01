@@ -1,3 +1,7 @@
+/* ---- Font: Pretendard (OFL) --------------------------------
+   공식 dynamic-subset CSS. 한글은 사용된 글리프 범위만 내려받는다.
+   @font-face를 직접 쓰지 말 것 — 업스트림 경로가 바뀌면 조용히 깨진다. */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
 
 /* ============================================================
@@ -6,14 +10,6 @@
    planit-design-system/project/tokens/ 기반.
    ============================================================ */
 
-/* ---- Font Face: Pretendard (OFL, jsDelivr CDN) ------------ */
-@font-face {
-  font-family: "Pretendard Variable";
-  font-weight: 45 920;
-  font-style: normal;
-  font-display: swap;
-  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2-variations");
-}
 
 :root {
   /* ---- Brand: Planit Blue --------------------------------- */

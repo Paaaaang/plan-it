@@ -4,7 +4,7 @@
  *              request/response 쿠키를 통한 세션 갱신 처리.
  *
  * @connects
- *  - middleware.ts → Next.js 미들웨어에서 세션 확인 및 갱신
+ *  - proxy.ts → Next.js Proxy에서 세션 확인 및 갱신
  *
  * @env NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
  */
