@@ -1,7 +1,7 @@
 "use client";
 
-import { useId } from "react";
 import type { InputHTMLAttributes } from "react";
+import { FieldChrome, useFieldA11y } from "./field-shell";
 
 /**
  * DateField — 네이티브 <input type="date">를 쓴다.
@@ -10,24 +10,19 @@ import type { InputHTMLAttributes } from "react";
  */
 type Props = { label: string; hint?: string; error?: string } & Omit<
   InputHTMLAttributes<HTMLInputElement>,
-  "type" | "className"
+  "type" | "className" | "id"
 >;
 
 export function DateField({ label, hint, error, ...rest }: Props) {
-  const id = useId();
-  const msgId = `${id}-msg`;
-  const message = error ?? hint;
+  const { id, msgId, message, describedBy, invalid } = useFieldA11y(error, hint);
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-caption font-bold text-tertiary">
-        {label}
-      </label>
+    <FieldChrome id={id} label={label} msgId={msgId} message={message} isError={!!error}>
       <input
         id={id}
         type="date"
-        aria-invalid={error ? true : undefined}
-        aria-describedby={message ? msgId : undefined}
+        aria-invalid={invalid}
+        aria-describedby={describedBy}
         className={[
           "w-full rounded-[11px] border bg-sunken px-3 py-2.5",
           "text-label font-medium text-primary tnum",
@@ -39,11 +34,6 @@ export function DateField({ label, hint, error, ...rest }: Props) {
         ].join(" ")}
         {...rest}
       />
-      {message && (
-        <p id={msgId} className={`text-caption ${error ? "text-danger font-semibold" : "text-tertiary"}`}>
-          {message}
-        </p>
-      )}
-    </div>
+    </FieldChrome>
   );
 }

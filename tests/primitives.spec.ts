@@ -81,6 +81,23 @@ test.describe('TextField', () => {
     const el = page.getByLabel('메모');
     expect(await el.evaluate((n) => n.tagName)).toBe('TEXTAREA');
   });
+
+  test('오류가 없으면 힌트가 보이고 aria-invalid는 안 붙어요', async ({ page }) => {
+    await page.goto('/ui');
+    const input = page.getByLabel('메모');
+    await expect(input).not.toHaveAttribute('aria-invalid', /.*/);
+    const describedBy = await input.getAttribute('aria-describedby');
+    expect(describedBy).toBeTruthy();
+    await expect(page.locator(`#${describedBy}`)).toContainText('참가자에게 보여요');
+  });
+
+  test('입력 포커스가 눈에 보여요', async ({ page }) => {
+    await page.goto('/ui');
+    const input = page.getByLabel('일정 제목');
+    await input.focus();
+    const ring = await input.evaluate((el) => getComputedStyle(el).boxShadow);
+    expect(ring).not.toBe('none');
+  });
 });
 
 test.describe('DateField', () => {
