@@ -45,3 +45,54 @@ test.describe('Button', () => {
     expect(outline).not.toBe('0px');
   });
 });
+
+test.describe('TextField', () => {
+  test('라벨이 입력과 연결돼요', async ({ page }) => {
+    await page.goto('/ui');
+    await page.getByLabel('일정 제목').fill('제주 워크샵');
+    await expect(page.getByLabel('일정 제목')).toHaveValue('제주 워크샵');
+  });
+
+  test('오류가 있으면 문구와 aria-invalid가 함께 나와요', async ({ page }) => {
+    await page.goto('/ui');
+    const input = page.getByTestId('field-error').getByRole('textbox');
+    await expect(input).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.getByTestId('field-error')).toContainText('제목을 입력해 주세요');
+  });
+
+  test('오류 메시지가 aria-describedby로 연결돼요', async ({ page }) => {
+    await page.goto('/ui');
+    const input = page.getByTestId('field-error').getByRole('textbox');
+    const describedBy = await input.getAttribute('aria-describedby');
+    expect(describedBy).toBeTruthy();
+    await expect(page.locator(`#${describedBy}`)).toContainText('제목을 입력해 주세요');
+  });
+
+  test('다크에서 입력 표면이 카드보다 어두워요', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/ui');
+    const bg = await page.getByLabel('일정 제목')
+      .evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(bg).toBe('rgb(19, 23, 32)'); // #131720
+  });
+
+  test('multiline은 textarea로 렌더돼요', async ({ page }) => {
+    await page.goto('/ui');
+    const el = page.getByLabel('메모');
+    expect(await el.evaluate((n) => n.tagName)).toBe('TEXTAREA');
+  });
+});
+
+test.describe('DateField', () => {
+  test('네이티브 날짜 입력을 써요', async ({ page }) => {
+    await page.goto('/ui');
+    const el = page.getByLabel('시작일');
+    expect(await el.getAttribute('type')).toBe('date');
+  });
+
+  test('값이 YYYY-MM-DD로 들어가요', async ({ page }) => {
+    await page.goto('/ui');
+    await page.getByLabel('시작일').fill('2026-10-24');
+    await expect(page.getByLabel('시작일')).toHaveValue('2026-10-24');
+  });
+});
