@@ -91,12 +91,12 @@ export function Modal({
         )}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {primary && (
-            <Button variant="primary" size="l" block onClick={onPrimary}>
+            <Button variant="primary" size="lg" block onClick={onPrimary}>
               {primary}
             </Button>
           )}
           {secondary && (
-            <Button variant="secondary" size="l" block onClick={onSecondary || onClose}>
+            <Button variant="secondary" size="lg" block onClick={onSecondary || onClose}>
               {secondary}
             </Button>
           )}

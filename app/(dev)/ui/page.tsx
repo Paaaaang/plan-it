@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTheme } from "@/lib/theme";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ButtonDemo } from "./button-demo";
 
 /**
  * 컴포넌트 갤러리 — 개발 전용.
@@ -34,6 +35,14 @@ export default async function UiGalleryPage() {
             </span>
           ))}
         </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-title-3 font-bold">Button</h2>
+        <p className="mt-1 text-caption text-secondary">
+          primary는 화면당 하나만 써요. 나머지 액션은 secondary나 ghost로 눌러요.
+        </p>
+        <div className="mt-4"><ButtonDemo /></div>
       </section>
     </main>
   );
