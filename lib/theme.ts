@@ -9,7 +9,7 @@ export type Theme = "light" | "dark" | "system";
 
 export const THEME_COOKIE = "planit-theme";
 
-const VALID: readonly Theme[] = ["light", "dark", "system"];
+export const VALID: readonly Theme[] = ["light", "dark", "system"];
 
 function parse(value: string | undefined): Theme {
   return VALID.includes(value as Theme) ? (value as Theme) : "system";

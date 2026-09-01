@@ -16,9 +16,7 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { THEME_COOKIE, type Theme } from "@/lib/theme";
-
-const VALID: readonly Theme[] = ["light", "dark", "system"];
+import { THEME_COOKIE, VALID, type Theme } from "@/lib/theme";
 
 /**
  * 테마 선호를 쿠키에 저장한다.

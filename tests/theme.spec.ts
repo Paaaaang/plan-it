@@ -38,4 +38,12 @@ test.describe('테마 전환', () => {
     const html = await res.text();
     expect(html).toContain('data-theme="dark"');
   });
+
+  test('조작된 쿠키 값은 시스템으로 떨어져요', async ({ page, context, baseURL }) => {
+    await context.addCookies([
+      { name: 'planit-theme', value: '<script>', url: baseURL! },
+    ]);
+    await page.goto('/ui');
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.*/);
+  });
 });

@@ -18,7 +18,7 @@ export function ThemeToggle({ current }: { current: Theme }) {
     <div
       role="radiogroup"
       aria-label="화면 테마"
-      className="inline-flex gap-0.5 rounded-xs bg-neutral-fill p-0.5"
+      className="inline-flex gap-0.5 rounded-[10px] bg-neutral-fill p-0.5"
     >
       {OPTIONS.map(({ value, label, Icon }) => {
         const active = current === value;
@@ -33,7 +33,7 @@ export function ThemeToggle({ current }: { current: Theme }) {
             disabled={pending}
             onClick={() => startTransition(() => setTheme(value))}
             className={[
-              "inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5",
+              "inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5",
               "text-caption font-bold transition-colors duration-[120ms]",
               active
                 ? "bg-surface text-primary shadow-card"
