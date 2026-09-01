@@ -42,7 +42,7 @@ export function SegmentedControl({
             className={[
               "rounded-xs px-3.5 py-1.5 text-caption font-bold",
               "transition-colors duration-fast ease-planit",
-              active ? "bg-surface text-primary shadow-card" : "text-tertiary hover:text-secondary",
+              active ? "bg-surface text-primary shadow-card" : "text-secondary hover:text-primary",
             ].join(" ")}
           >
             {it.label}

@@ -22,7 +22,7 @@ export function Chip({
   const look = [
     "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5",
     "text-caption font-bold transition-colors duration-fast ease-planit",
-    selected ? "bg-brand text-on-accent" : "bg-neutral-fill text-tertiary",
+    selected ? "bg-brand text-on-accent" : "bg-neutral-fill text-secondary",
     className,
   ].join(" ");
 

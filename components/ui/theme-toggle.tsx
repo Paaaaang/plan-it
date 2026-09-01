@@ -37,7 +37,7 @@ export function ThemeToggle({ current }: { current: Theme }) {
               "text-caption font-bold transition-colors duration-fast",
               active
                 ? "bg-surface text-primary shadow-card"
-                : "text-tertiary hover:text-secondary",
+                : "text-secondary hover:text-primary",
             ].join(" ")}
           >
             <Icon size={14} strokeWidth={2.2} aria-hidden />
