@@ -233,3 +233,52 @@ test.describe('Toast · Loader', () => {
     await expect(page.getByTestId('loader-inline')).toHaveAccessibleName(/불러오는 중/);
   });
 });
+
+test.describe('BottomSheet · Dialog', () => {
+  test('시트가 열리고 dialog 역할을 가져요', async ({ page }) => {
+    await page.goto('/ui');
+    await page.getByTestId('sheet-open').click();
+    const sheet = page.getByRole('dialog', { name: '흑돼지 명가' });
+    await expect(sheet).toBeVisible();
+  });
+
+  test('Escape로 시트가 닫혀요', async ({ page }) => {
+    await page.goto('/ui');
+    await page.getByTestId('sheet-open').click();
+    await expect(page.getByRole('dialog', { name: '흑돼지 명가' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: '흑돼지 명가' })).toHaveCount(0);
+  });
+
+  test('스크림을 누르면 시트가 닫혀요', async ({ page }) => {
+    await page.goto('/ui');
+    await page.getByTestId('sheet-open').click();
+    await page.getByTestId('sheet-scrim').click({ position: { x: 5, y: 5 } });
+    await expect(page.getByRole('dialog', { name: '흑돼지 명가' })).toHaveCount(0);
+  });
+
+  test('다크에서 시트 표면이 배경보다 밝아요', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/ui');
+    await page.getByTestId('sheet-open').click();
+    const s = await page.getByTestId('sheet-panel').evaluate((el) => getComputedStyle(el).backgroundColor);
+    const bodyBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    const sum = (rgb: string) => rgb.match(/\d+/g)!.slice(0, 3).reduce((a, b) => a + Number(b), 0);
+    expect(sum(s)).toBeGreaterThan(sum(bodyBg));
+  });
+
+  test('삭제 다이얼로그는 확인을 눌러야 실행돼요', async ({ page }) => {
+    await page.goto('/ui');
+    await page.getByTestId('dialog-open').click();
+    await expect(page.getByTestId('delete-result')).toHaveText('안 지웠어요');
+    await page.getByRole('button', { name: '삭제할게요' }).click();
+    await expect(page.getByTestId('delete-result')).toHaveText('지웠어요');
+  });
+
+  test('다이얼로그 취소는 아무것도 안 해요', async ({ page }) => {
+    await page.goto('/ui');
+    await page.getByTestId('dialog-open').click();
+    await page.getByRole('button', { name: '그대로 둘게요' }).click();
+    await expect(page.getByTestId('delete-result')).toHaveText('안 지웠어요');
+  });
+});

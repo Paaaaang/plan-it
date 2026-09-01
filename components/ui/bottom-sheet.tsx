@@ -1,78 +1,62 @@
 "use client";
 
-import { ReactNode } from "react";
+import { useEffect, useId } from "react";
 
 /**
- * Planit BottomSheet — 모바일 하단 시트. radius-3xl, sheet shadow, scrim, grabber handle.
- *
- * @source planit-design-system/project/components/feedback/BottomSheet.jsx
+ * BottomSheet — 모바일에서 상세를 여는 자리.
+ * 다크에서는 표면을 배경보다 밝게 올린다. 그림자만으로는 떠 보이지 않는다.
  */
-
-interface BottomSheetProps {
-  open?: boolean;
-  title?: string;
-  children: ReactNode;
-  onClose?: () => void;
-  header?: ReactNode;
-}
-
 export function BottomSheet({
-  open = true,
+  open,
+  onClose,
   title,
   children,
-  onClose,
-  header = null,
-}: BottomSheetProps) {
+}: {
+  open: boolean;
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  const titleId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 80,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-end",
-        background: "var(--overlay-scrim)",
-      }}
-    >
+    <div className="fixed inset-0 z-40">
       <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "var(--surface-card)",
-          borderTopLeftRadius: "var(--radius-3xl)",
-          borderTopRightRadius: "var(--radius-3xl)",
-          boxShadow: "var(--shadow-sheet)",
-          padding: "10px 24px calc(24px + env(safe-area-inset-bottom))",
-          animation: "planit-sheet-in var(--dur-slow) var(--ease-out)",
-          maxHeight: "86%",
-          overflowY: "auto",
-        }}
+        data-testid="sheet-scrim"
+        onClick={onClose}
+        className="absolute inset-0"
+        style={{ background: "var(--overlay-scrim)", animation: "planit-fade-in var(--dur-fast) var(--ease-out)" }}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : "상세"}
+        data-testid="sheet-panel"
+        className="absolute inset-x-0 bottom-0 rounded-t-sheet bg-raised px-5 pb-5 pt-2.5 shadow-sheet"
+        style={{ animation: "planit-sheet-in var(--dur-base) var(--ease-out)" }}
       >
-        {/* Grabber handle */}
-        <div
-          style={{
-            width: 40,
-            height: 4,
-            borderRadius: 999,
-            background: "var(--grey-200)",
-            margin: "0 auto 16px",
-          }}
-        />
-        {header}
+        <div aria-hidden="true" className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-strong" />
         {title && (
-          <div
-            style={{
-              font: "var(--h4-fw) var(--h4-size)/1.35 var(--font-sans)",
-              letterSpacing: "-0.015em",
-              color: "var(--text-primary)",
-              marginBottom: 16,
-            }}
-          >
+          <h2 id={titleId} className="text-title-2 font-extrabold tracking-tight">
             {title}
-          </div>
+          </h2>
         )}
         {children}
       </div>

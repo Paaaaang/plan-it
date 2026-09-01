@@ -6,6 +6,7 @@ import { FormDemo } from "./form-demo";
 import { DisplayDemo } from "./display-demo";
 import { NavDemo } from "./nav-demo";
 import { FeedbackDemo } from "./feedback-demo";
+import { OverlayDemo } from "./overlay-demo";
 
 /**
  * 컴포넌트 갤러리 — 개발 전용.
@@ -73,6 +74,14 @@ export default async function UiGalleryPage() {
       <section className="mt-10">
         <h2 className="text-title-3 font-bold">Toast · Loader</h2>
         <div className="mt-4"><FeedbackDemo /></div>
+      </section>
+
+      <section className="mt-10 mb-20">
+        <h2 className="text-title-3 font-bold">BottomSheet · Dialog</h2>
+        <p className="mt-1 text-caption text-secondary">
+          다이얼로그는 취소에 기본 초점을 둬요. 실수로 Enter를 눌러도 지워지지 않게요.
+        </p>
+        <div className="mt-4"><OverlayDemo /></div>
       </section>
     </main>
   );
