@@ -63,6 +63,7 @@ npm run test:ui    # playwright UI 모드
 | 버그·테스트 실패·이상 동작 | `superpowers:systematic-debugging` | 추측으로 고치지 않는다 |
 | "다 됐다 / 고쳤다"고 말하기 직전 | `superpowers:verification-before-completion` | 명령 실행 결과 없이 완료 주장 금지 |
 | **UI를 건드린 모든 작업 후** | `npx playwright test` + 스크린샷 | 아래 4-3 |
+| 프리미티브를 고쳤을 때 | `/ui` 갤러리 + `npx playwright test tests/visual.spec.ts` | 시각 회귀 확인. 의도한 변경이면 `--update-snapshots` |
 | 새 컴포넌트 설계 / UI 개선·리뷰 | `ui-ux-pro-max` 스킬 | |
 | 브랜드 자산·목업·프로토타입 | `planit-design` 스킬 (DS 번들 내) | |
 | 모션·인터랙션 컴포넌트 레퍼런스 | 21st.dev Magic MCP | 아래 4-4 |
