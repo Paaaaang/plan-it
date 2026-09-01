@@ -158,3 +158,43 @@ test.describe('Card · Badge · Chip', () => {
     expect(await page.getByTestId('chip-info').evaluate((n) => n.tagName)).toBe('SPAN');
   });
 });
+
+test.describe('Tabs · SegmentedControl', () => {
+  test('탭이 ARIA 탭 패턴을 따라요', async ({ page }) => {
+    await page.goto('/ui');
+    const list = page.getByTestId('tabs-demo');
+    await expect(list).toHaveAttribute('role', 'tablist');
+    await expect(list.getByRole('tab', { name: '타임테이블' })).toHaveAttribute('aria-selected', 'true');
+    await expect(list.getByRole('tab', { name: '장소' })).toHaveAttribute('aria-selected', 'false');
+  });
+
+  test('탭을 누르면 선택이 옮겨가요', async ({ page }) => {
+    await page.goto('/ui');
+    await page.getByTestId('tabs-demo').getByRole('tab', { name: '장소' }).click();
+    await expect(page.getByTestId('tabs-demo').getByRole('tab', { name: '장소' }))
+      .toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('좌우 화살표로 탭을 옮길 수 있어요', async ({ page }) => {
+    await page.goto('/ui');
+    const first = page.getByTestId('tabs-demo').getByRole('tab', { name: '타임테이블' });
+    await first.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByTestId('tabs-demo').getByRole('tab', { name: '장소' }))
+      .toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('세그먼트가 라디오 그룹이에요', async ({ page }) => {
+    await page.goto('/ui');
+    const group = page.getByTestId('segment-demo');
+    await expect(group).toHaveAttribute('role', 'radiogroup');
+    await expect(group.getByRole('radio', { name: '공개', exact: true })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('세그먼트를 눌러 상태를 바꿔요', async ({ page }) => {
+    await page.goto('/ui');
+    await page.getByTestId('segment-demo').getByRole('radio', { name: '비공개' }).click();
+    await expect(page.getByTestId('segment-demo').getByRole('radio', { name: '비공개' }))
+      .toHaveAttribute('aria-checked', 'true');
+  });
+});
