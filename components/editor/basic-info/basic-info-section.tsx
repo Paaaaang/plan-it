@@ -12,7 +12,7 @@
  *  - actions/plan-actions.ts                              → update (제목/기간/설명 저장)
  *  - actions/schedule-actions.ts                          → Day 자동 생성/조정 트리거
  *  - components/editor/timetable/timetable-section.tsx    → 기간 ↔ Day 단일 소스 연동
- *  - components/ui/modal.tsx                              → 기간 축소 시 경고 모달
+ *  - components/ui/dialog.tsx                             → 기간 축소 시 경고 모달
  *  - types/plan.ts                                        → Plan.title, start_date, end_date
  *
  * @important 기간은 타임테이블 섹션의 Day와 "단일 소스(Single Source of Truth)"로 연동됨

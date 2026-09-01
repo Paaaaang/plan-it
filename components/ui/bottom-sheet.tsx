@@ -2,6 +2,23 @@
 
 import { useEffect, useId } from "react";
 
+// 스크롤 잠금 참조 카운트 — 시트가 중첩 열려도 마지막 하나가 닫힐 때만 복원한다.
+let lockCount = 0;
+let savedOverflow = "";
+
+function lockBodyScroll() {
+  if (lockCount === 0) {
+    savedOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+  }
+  lockCount += 1;
+}
+
+function unlockBodyScroll() {
+  lockCount = Math.max(0, lockCount - 1);
+  if (lockCount === 0) document.body.style.overflow = savedOverflow;
+}
+
 /**
  * BottomSheet — 모바일에서 상세를 여는 자리.
  * 다크에서는 표면을 배경보다 밝게 올린다. 그림자만으로는 떠 보이지 않는다.
@@ -25,11 +42,10 @@ export function BottomSheet({
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      unlockBodyScroll();
     };
   }, [open, onClose]);
 

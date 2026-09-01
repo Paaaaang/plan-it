@@ -267,6 +267,17 @@ test.describe('BottomSheet · Dialog', () => {
     expect(sum(s)).toBeGreaterThan(sum(bodyBg));
   });
 
+  test('시트를 닫으면 배경 스크롤이 돌아와요', async ({ page }) => {
+    await page.goto('/ui');
+    const before = await page.evaluate(() => document.body.style.overflow);
+    await page.getByTestId('sheet-open').click();
+    await expect(page.getByTestId('sheet-panel')).toBeVisible();
+    expect(await page.evaluate(() => document.body.style.overflow)).toBe('hidden');
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('sheet-panel')).toHaveCount(0);
+    expect(await page.evaluate(() => document.body.style.overflow)).toBe(before);
+  });
+
   test('삭제 다이얼로그는 확인을 눌러야 실행돼요', async ({ page }) => {
     await page.goto('/ui');
     await page.getByTestId('dialog-open').click();
