@@ -1,112 +1,68 @@
 "use client";
 
-import { ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { CircleAlert } from "lucide-react";
 
 /**
- * Planit Toast — grey-900 surface + white label, radius-l, shadow-toast.
- * tone: default / success (green check) / danger (red alert).
- * `floating` positions it fixed at bottom center.
- *
- * @source planit-design-system/project/components/feedback/Toast.jsx
+ * Toast — 짧은 확인 메시지.
+ * 오류 톤은 색만으로 말하지 않는다: 아이콘을 함께 낸다.
+ * 4초 뒤 스스로 사라진다.
  */
+type Tone = "neutral" | "danger";
+type Item = { id: number; message: string; tone: Tone };
 
-type ToastTone = "default" | "success" | "danger";
+const ToastCtx = createContext<{ show: (message: string, tone?: Tone) => void } | null>(null);
 
-interface ToastProps {
-  children: ReactNode;
-  tone?: ToastTone;
-  floating?: boolean;
-  style?: React.CSSProperties;
+export function useToast() {
+  const ctx = useContext(ToastCtx);
+  if (!ctx) throw new Error("useToast는 ToastProvider 안에서만 쓸 수 있어요");
+  return ctx;
 }
 
-function SuccessIcon() {
-  return (
-    <span
-      style={{
-        display: "grid",
-        placeItems: "center",
-        width: 20,
-        height: 20,
-        borderRadius: "50%",
-        background: "var(--fill-success)",
-        flex: "0 0 auto",
-      }}
-    >
-      <svg
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="var(--white)"
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M4 12.5 9.5 18 20 6.5" />
-      </svg>
-    </span>
-  );
-}
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<Item[]>([]);
+  const timers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
-function DangerIcon() {
-  return (
-    <span
-      style={{
-        display: "grid",
-        placeItems: "center",
-        width: 20,
-        height: 20,
-        borderRadius: "50%",
-        background: "var(--fill-danger)",
-        flex: "0 0 auto",
-      }}
-    >
-      <svg
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        stroke="var(--white)"
-        strokeWidth="3"
-        strokeLinecap="round"
-      >
-        <path d="M12 7v6M12 17h.01" />
-      </svg>
-    </span>
-  );
-}
+  useEffect(() => {
+    const active = timers.current;
+    return () => {
+      active.forEach((timer) => clearTimeout(timer));
+      active.clear();
+    };
+  }, []);
 
-export function Toast({ children, tone = "default", floating = false, style = {} }: ToastProps) {
-  const icon =
-    tone === "success" ? <SuccessIcon /> : tone === "danger" ? <DangerIcon /> : null;
+  const show = useCallback((message: string, tone: Tone = "neutral") => {
+    const id = Date.now() + Math.random();
+    setItems((prev) => [...prev, { id, message, tone }]);
+    const timer = setTimeout(() => {
+      timers.current.delete(timer);
+      setItems((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+    timers.current.add(timer);
+  }, []);
+
+  const value = useMemo(() => ({ show }), [show]);
 
   return (
-    <div
-      style={{
-        ...(floating
-          ? {
-              position: "fixed",
-              left: "50%",
-              bottom: 32,
-              transform: "translateX(-50%)",
-              zIndex: 60,
-            }
-          : {}),
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 10,
-        maxWidth: 440,
-        padding: "13px 18px",
-        background: "var(--fill-primary)",
-        color: "var(--text-alt)",
-        borderRadius: "var(--radius-l)",
-        boxShadow: "var(--shadow-toast)",
-        font: "var(--label-m-fw) var(--label-m-size)/1.35 var(--font-sans)",
-        animation: "planit-toast-in var(--dur-base) var(--ease-out)",
-        ...style,
-      }}
-    >
-      {icon}
+    <ToastCtx.Provider value={value}>
       {children}
-    </div>
+      <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex flex-col items-center gap-2 px-4">
+        {items.map((t) => (
+          <div
+            key={t.id}
+            role="status"
+            className={[
+              "pointer-events-auto flex items-center gap-2 rounded-[14px] px-4 py-3",
+              "text-label font-semibold shadow-pop",
+              t.tone === "danger" ? "bg-danger text-white" : "bg-raised text-primary",
+            ].join(" ")}
+            style={{ animation: "planit-toast-in var(--dur-base) var(--ease-out)" }}
+          >
+            {t.tone === "danger" && <CircleAlert size={17} strokeWidth={2.2} aria-hidden />}
+            {t.message}
+          </div>
+        ))}
+      </div>
+    </ToastCtx.Provider>
   );
 }
