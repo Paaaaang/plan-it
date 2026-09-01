@@ -1,250 +1,382 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
 
 /* ============================================================
-   Planit Design System — Token Layer
-   디자인 시스템 토큰을 CSS 커스텀 프로퍼티로 통합.
-   planit-design-system/project/tokens/ 기반.
+   1. 원시 토큰 — 값 그 자체. 컴포넌트에서 직접 쓰지 않는다.
    ============================================================ */
-
-/* ---- Font Face: Pretendard (OFL, jsDelivr CDN) ------------ */
-@font-face {
-  font-family: "Pretendard Variable";
-  font-weight: 45 920;
-  font-style: normal;
-  font-display: swap;
-  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2-variations");
-}
-
 :root {
-  /* ---- Brand: Planit Blue --------------------------------- */
-  --blue-50:  #EBF3FE;
-  --blue-100: #D6E7FD;
-  --blue-200: #ADCBFB;
-  --blue-300: #7FAAF8;
-  --blue-400: #5296F7;
-  --blue-500: #3182F6;
-  --blue-600: #1F6FE5;
-  --blue-700: #1B5FCB;
-  --blue-800: #17489B;
-  --blue-900: #12336B;
+  --coral-50:  #FFF1ED;
+  --coral-100: #FFE2DA;
+  --coral-200: #FFC7B7;
+  --coral-300: #FFA890;
+  --coral-400: #FF8969;
+  --coral-500: #FF6B4A;
+  --coral-600: #E8513A;
+  --coral-700: #C43D2A;
+  --coral-800: #9C2F20;
+  --coral-900: #6E2016;
 
-  /* ---- Neutrals: cool near-neutral greys ------------------ */
-  --grey-900: #17171F;
-  --grey-800: #2C2C38;
-  --grey-700: #45454F;
-  --grey-600: #61616D;
-  --grey-500: #82828E;
-  --grey-400: #A5A5B0;
-  --grey-300: #C6C6CF;
-  --grey-200: #E5E5EB;
-  --grey-150: #EDEDF1;
-  --grey-100: #F4F4F7;
-  --grey-50:  #FAFAFC;
-  --white:    #FFFFFF;
-  --black:    #000000;
+  --neutral-0:   #FFFFFF;
+  --neutral-50:  #F7F8FB;
+  --neutral-100: #F2F4F8;
+  --neutral-200: #E4E8EF;
+  --neutral-300: #C9D0DC;
+  --neutral-400: #9AA2B4;
+  --neutral-500: #7A8299;
+  --neutral-600: #5C6379;
+  --neutral-700: #414759;
+  --neutral-800: #2A2F3D;
+  --neutral-900: #161A23;
 
-  /* ---- Semantic hues -------------------------------------- */
-  --red-50:    #FDECEC;
-  --red-500:   #F0424E;
-  --red-600:   #D8303C;
-  --green-50:  #E7F7F0;
-  --green-500: #12B886;
-  --green-600: #0CA678;
-  --amber-50:  #FEF4E6;
-  --amber-500: #F5A623;
-  --amber-600: #E5920A;
+  --green-500: #12A374;
+  --green-300: #2ED19B;
+  --green-50:  #E4F7F0;
+  --green-950: #0E2C24;
 
-  /* ---- Alpha tokens --------------------------------------- */
-  --ink-base: 20, 22, 31;
-  --fg-tertiary:   rgba(var(--ink-base), 0.56);
-  --fg-quaternary: rgba(var(--ink-base), 0.30);
-  --line-subtle:   rgba(0, 0, 0, 0.07);
-  --bg-overlay:    rgba(var(--ink-base), 0.55);
-  --press-overlay: rgba(0, 0, 0, 0.06);
-  --disabled-opacity: 0.32;
+  --amber-500: #E8A317;
+  --amber-300: #F2BC4B;
+  --amber-50:  #FDF3DF;
+  --amber-950: #2E2411;
 
-  /* ---- Semantic Aliases ----------------------------------- */
-  /* Fill */
-  --fill-brand:      var(--blue-500);
-  --fill-brand-weak: var(--blue-50);
-  --fill-primary:    var(--grey-900);
-  --fill-secondary:  var(--grey-100);
-  --fill-weak:       var(--grey-50);
-  --fill-danger:     var(--red-500);
-  --fill-success:    var(--green-500);
-  --fill-warning:    var(--amber-500);
-  --fill-info:       var(--blue-500);
+  --rose-500: #D92D4E;
+  --rose-300: #FF6B85;
+  --rose-50:  #FDE8EC;
+  --rose-950: #33141C;
 
-  /* Text */
-  --text-primary:     var(--grey-900);
-  --text-secondary:   var(--grey-700);
-  --text-tertiary:    var(--fg-tertiary);
-  --text-placeholder: var(--fg-quaternary);
-  --text-disabled:    var(--grey-400);
-  --text-alt:         var(--white);
-  --text-brand:       var(--blue-500);
-  --text-danger:      var(--red-500);
-  --text-success:     var(--green-600);
-  --text-warning:     var(--amber-600);
-  --text-info:        var(--blue-500);
+  --ink-on-coral: #1A0E09;
 
-  /* Border */
-  --border-primary:   var(--blue-500);
-  --border-secondary: var(--grey-200);
-  --border-strong:    var(--grey-400);
-  --border-subtle:    var(--line-subtle);
+  /* 타이포 — 크기/행간/자간 */
+  --fs-display:    46px;  --lh-display:    1.18;  --ls-display:    -0.04em;
+  --fs-title-1:    24px;  --lh-title-1:    1.25;  --ls-title-1:    -0.03em;
+  --fs-title-2:    20px;  --lh-title-2:    1.3;   --ls-title-2:    -0.025em;
+  --fs-title-3:    16px;  --lh-title-3:    1.35;  --ls-title-3:    -0.02em;
+  --fs-body:       15px;  --lh-body:       1.5;   --ls-body:       0;
+  --fs-item-title: 14.5px;--lh-item-title: 1.4;   --ls-item-title: -0.01em;
+  --fs-label:      13px;  --lh-label:      1.4;   --ls-label:      0;
+  --fs-caption:    12px;  --lh-caption:    1.5;   --ls-caption:    0;
+  --fs-micro:      11px;  --lh-micro:      1.4;   --ls-micro:      0.06em;
 
-  /* Surface */
-  --surface-page:      var(--grey-50);
-  --surface-card:      var(--white);
-  --surface-raised:    var(--white);
-  --surface-sunken:    var(--grey-100);
+  /* 곡률 */
+  --r-xs: 8px;
+  --r-btn: 13px;
+  --r-card: 16px;
+  --r-sheet: 26px;
+  --r-full: 999px;
+  --r-control: 10px;
+  --r-field: 11px;
+  --r-pop: 14px;
+  --r-dialog: 20px;
 
-  /* Overlay */
-  --overlay-scrim: var(--bg-overlay);
-  --overlay-press: var(--press-overlay);
+  /* 모션 */
+  --ease-out: cubic-bezier(0.16, 1, 0.30, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
 
-  /* Now/Today viewer highlight */
-  --now-fill:   var(--blue-50);
-  --now-accent: var(--blue-500);
+  /* 다크 팔레트 값 — 시스템 다크·강제 다크 두 선택자가 여기만 참조한다.
+     값은 이 한 곳에만 존재한다. */
+  --dark-bg:              #101219;
+  --dark-surface:         #1B1F29;
+  --dark-surface-sunken:  #131720;
+  --dark-surface-raised:  #232833;
 
-  /* ---- Typography ----------------------------------------- */
-  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
-    BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+  --dark-border:          #2A303D;
+  --dark-border-strong:   #3A4250;
 
-  --fw-regular:  400;
-  --fw-medium:   500;
-  --fw-semibold: 600;
-  --fw-bold:     700;
+  --dark-text-primary:    #EDEFF4;
+  --dark-text-secondary:  #A0A8BC;
+  --dark-text-tertiary:   #7C8497;
 
-  --num-tabular:      "tnum" 1;
-  --num-proportional: "pnum" 1;
+  --dark-fill-brand:       #FF8163;
+  --dark-fill-brand-hover: #FF9C83;
+  --dark-fill-brand-weak:  #2A1712;
+  --dark-fill-neutral:     #232833;
+  --dark-text-on-brand-weak: #FFA890;
 
-  /* Display */
-  --display-1-size: 56px; --display-1-lh: 1.30; --display-1-ls: -0.005em; --display-1-fw: 700;
-  --display-2-size: 40px; --display-2-lh: 1.20; --display-2-ls: -0.020em; --display-2-fw: 700;
-  /* Headings */
-  --h1-size: 28px; --h1-lh: 1.30; --h1-ls: -0.020em; --h1-fw: 700;
-  --h2-size: 24px; --h2-lh: 1.30; --h2-ls: -0.020em; --h2-fw: 700;
-  --h3-size: 22px; --h3-lh: 1.30; --h3-ls: -0.015em; --h3-fw: 700;
-  --h4-size: 20px; --h4-lh: 1.35; --h4-ls: -0.015em; --h4-fw: 700;
-  /* Title */
-  --title-1-size: 18px; --title-1-lh: 1.45; --title-1-ls: -0.010em; --title-1-fw: 600;
-  --title-2-size: 17px; --title-2-lh: 1.45; --title-2-ls: -0.010em; --title-2-fw: 600;
-  /* Body */
-  --body-1-size: 17px; --body-1-lh: 1.50; --body-1-ls: -0.005em; --body-1-fw: 400;
-  --body-2-size: 15px; --body-2-lh: 1.50; --body-2-ls: -0.005em; --body-2-fw: 400;
-  --body-3-size: 13px; --body-3-lh: 1.50; --body-3-ls: 0;        --body-3-fw: 400;
-  /* Label */
-  --label-l-size: 17px; --label-l-lh: 1.25; --label-l-ls: -0.005em; --label-l-fw: 700;
-  --label-m-size: 15px; --label-m-lh: 1.25; --label-m-ls: -0.005em; --label-m-fw: 600;
-  --label-s-size: 13px; --label-s-lh: 1.25; --label-s-ls: 0;        --label-s-fw: 600;
-  /* Caption */
-  --caption-size: 12px; --caption-lh: 1.40; --caption-ls: 0; --caption-fw: 500;
-  --caption-s-size: 11px; --caption-s-lh: 1.40; --caption-s-ls: 0; --caption-s-fw: 500;
+  --dark-accent-ring:   #3D2018;
+  --dark-accent-border: #5C3226;
 
-  /* ---- Spacing (4px base ladder) -------------------------- */
-  --space-1:  4px;
-  --space-2:  8px;
-  --space-3:  12px;
-  --space-4:  16px;
-  --space-5:  20px;
-  --space-6:  24px;
-  --space-7:  28px;
-  --space-8:  32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-16: 64px;
-  --space-20: 80px;
-  --screen-padding: 24px;
-  --row-gap:        16px;
-  --pair-gap:       8px;
+  --dark-overlay-press: rgba(255, 255, 255, 0.08);
 
-  /* ---- Radius --------------------------------------------- */
-  --radius-xs:   4px;
-  --radius-s:    8px;
-  --radius-m:    12px;
-  --radius-l:    14px;
-  --radius-xl:   16px;
-  --radius-2xl:  20px;
-  --radius-3xl:  24px;
-  --radius-4xl:  32px;
-  --radius-full: 999px;
-
-  /* ---- Elevation & Shadow --------------------------------- */
-  --shadow-1:
-    0 1px 2px rgba(var(--ink-base), 0.05),
-    0 1px 1px rgba(var(--ink-base), 0.04);
-  --shadow-2:
-    0 4px 12px rgba(var(--ink-base), 0.07),
-    0 1px 2px rgba(var(--ink-base), 0.04);
-  --shadow-3:
-    0 12px 32px rgba(var(--ink-base), 0.12),
-    0 2px 6px rgba(var(--ink-base), 0.06);
-  --shadow-toast:
-    0 8px 24px rgba(var(--ink-base), 0.18);
-  --shadow-sheet:
-    0 -2px 12px rgba(var(--ink-base), 0.07);
-
-  /* ---- Motion --------------------------------------------- */
-  --ease:      cubic-bezier(0.22, 0.61, 0.36, 1);
-  --ease-out:  cubic-bezier(0.16, 1, 0.30, 1);
-  --dur-fast:  120ms;
-  --dur-base:  200ms;
-  --dur-slow:  320ms;
+  --dark-shadow-1: 0 4px 14px rgba(0, 0, 0, 0.34), 0 1px 2px rgba(0, 0, 0, 0.30);
+  --dark-shadow-2: 0 8px 22px rgba(0, 0, 0, 0.42);
+  --dark-shadow-3: 0 -8px 34px rgba(0, 0, 0, 0.52);
 }
 
-/* ---- Tailwind v4 Theme Integration ----------------------- */
+/* ============================================================
+   2. 의미 토큰 — 라이트가 기준. 컴포넌트는 이것만 참조한다.
+      색은 반드시 bare :root에 한 번 정의한다.
+   ============================================================ */
+:root {
+  color-scheme: light;
+
+  --bg:              var(--neutral-100);
+  --surface:         var(--neutral-0);
+  --surface-sunken:  var(--neutral-50);
+  --surface-raised:  var(--neutral-0);
+
+  --border:          var(--neutral-200);
+  --border-strong:   var(--neutral-300);
+
+  --text-primary:    var(--neutral-900);
+  --text-secondary:  var(--neutral-600);
+  --text-tertiary:   #656D80;
+  --text-on-accent:  var(--neutral-0);
+  --text-on-danger:  var(--neutral-0);
+
+  --fill-brand:       var(--coral-500);
+  --fill-brand-hover: var(--coral-600);
+  --fill-brand-weak:  var(--coral-50);
+  --fill-neutral:     var(--neutral-200);
+  --text-on-brand-weak: var(--coral-700);
+
+  --accent-ring:   var(--coral-100);
+  --accent-border: var(--coral-200);
+
+  --success:      var(--green-500);
+  --success-weak: var(--green-50);
+  --text-on-success-weak: #0B6B4C;
+  --warning:      var(--amber-500);
+  --warning-weak: var(--amber-50);
+  --text-on-warning-weak: #7A5410;
+  --danger:       var(--rose-500);
+  --danger-weak:  var(--rose-50);
+  --text-on-danger-weak: #A31F3B;
+
+  --overlay-scrim: rgba(8, 10, 16, 0.52);
+  --overlay-press: rgba(0, 0, 0, 0.06);
+
+  --shadow-1: 0 4px 14px rgba(30, 40, 70, 0.06), 0 1px 2px rgba(30, 40, 70, 0.04);
+  --shadow-2: 0 8px 22px rgba(30, 40, 70, 0.10);
+  --shadow-3: 0 -8px 34px rgba(20, 26, 44, 0.20);
+}
+
+/* 시스템이 다크이고, 사용자가 라이트를 명시하지 않았을 때 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg:              var(--dark-bg);
+    --surface:         var(--dark-surface);
+    --surface-sunken:  var(--dark-surface-sunken);
+    --surface-raised:  var(--dark-surface-raised);
+
+    --border:          var(--dark-border);
+    --border-strong:   var(--dark-border-strong);
+
+    --text-primary:    var(--dark-text-primary);
+    --text-secondary:  var(--dark-text-secondary);
+    --text-tertiary:   var(--dark-text-tertiary);
+    --text-on-accent:  var(--ink-on-coral);
+    --text-on-danger:  var(--ink-on-coral);
+
+    --fill-brand:       var(--dark-fill-brand);
+    --fill-brand-hover: var(--dark-fill-brand-hover);
+    --fill-brand-weak:  var(--dark-fill-brand-weak);
+    --fill-neutral:     var(--dark-fill-neutral);
+    --text-on-brand-weak: var(--dark-text-on-brand-weak);
+
+    --accent-ring:   var(--dark-accent-ring);
+    --accent-border: var(--dark-accent-border);
+
+    --success:      var(--green-300);
+    --success-weak: var(--green-950);
+    --text-on-success-weak: var(--green-300);
+    --warning:      var(--amber-300);
+    --warning-weak: var(--amber-950);
+    --text-on-warning-weak: var(--amber-300);
+    --danger:       var(--rose-300);
+    --danger-weak:  var(--rose-950);
+    --text-on-danger-weak: var(--rose-300);
+
+    --overlay-press: var(--dark-overlay-press);
+
+    --shadow-1: var(--dark-shadow-1);
+    --shadow-2: var(--dark-shadow-2);
+    --shadow-3: var(--dark-shadow-3);
+  }
+}
+
+/* 사용자가 다크를 명시했을 때 — 시스템이 라이트여도 이긴다 */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg:              var(--dark-bg);
+  --surface:         var(--dark-surface);
+  --surface-sunken:  var(--dark-surface-sunken);
+  --surface-raised:  var(--dark-surface-raised);
+
+  --border:          var(--dark-border);
+  --border-strong:   var(--dark-border-strong);
+
+  --text-primary:    var(--dark-text-primary);
+  --text-secondary:  var(--dark-text-secondary);
+  --text-tertiary:   var(--dark-text-tertiary);
+  --text-on-accent:  var(--ink-on-coral);
+  --text-on-danger:  var(--ink-on-coral);
+
+  --fill-brand:       var(--dark-fill-brand);
+  --fill-brand-hover: var(--dark-fill-brand-hover);
+  --fill-brand-weak:  var(--dark-fill-brand-weak);
+  --fill-neutral:     var(--dark-fill-neutral);
+  --text-on-brand-weak: var(--dark-text-on-brand-weak);
+
+  --accent-ring:   var(--dark-accent-ring);
+  --accent-border: var(--dark-accent-border);
+
+  --success:      var(--green-300);
+  --success-weak: var(--green-950);
+  --text-on-success-weak: var(--green-300);
+  --warning:      var(--amber-300);
+  --warning-weak: var(--amber-950);
+  --text-on-warning-weak: var(--amber-300);
+  --danger:       var(--rose-300);
+  --danger-weak:  var(--rose-950);
+  --text-on-danger-weak: var(--rose-300);
+
+  --overlay-press: var(--dark-overlay-press);
+
+  --shadow-1: var(--dark-shadow-1);
+  --shadow-2: var(--dark-shadow-2);
+  --shadow-3: var(--dark-shadow-3);
+}
+
+/* ============================================================
+   3. Tailwind 매핑 — 유틸리티로 노출한다.
+   ============================================================ */
 @theme inline {
-  --color-background: var(--surface-page);
-  --color-foreground: var(--text-primary);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
+               BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif;
+
+  --color-bg:             var(--bg);
+  --color-surface:        var(--surface);
+  --color-sunken:         var(--surface-sunken);
+  --color-raised:         var(--surface-raised);
+  --color-default:        var(--border);
+  --color-strong:         var(--border-strong);
+  --color-primary:        var(--text-primary);
+  --color-secondary:      var(--text-secondary);
+  --color-tertiary:       var(--text-tertiary);
+  --color-on-accent:      var(--text-on-accent);
+  --color-on-danger:      var(--text-on-danger);
+  --color-brand:          var(--fill-brand);
+  --color-brand-hover:    var(--fill-brand-hover);
+  --color-brand-weak:     var(--fill-brand-weak);
+  --color-on-brand-weak:  var(--text-on-brand-weak);
+  --color-neutral-fill:   var(--fill-neutral);
+  --color-accent-ring:    var(--accent-ring);
+  --color-accent-border:  var(--accent-border);
+  --color-success:        var(--success);
+  --color-success-weak:   var(--success-weak);
+  --color-on-success-weak: var(--text-on-success-weak);
+  --color-warning:        var(--warning);
+  --color-warning-weak:   var(--warning-weak);
+  --color-on-warning-weak: var(--text-on-warning-weak);
+  --color-danger:         var(--danger);
+  --color-danger-weak:    var(--danger-weak);
+  --color-on-danger-weak: var(--text-on-danger-weak);
+
+  /* Tailwind v4는 --text-<name>--line-height / --letter-spacing 짝을 인식한다.
+     크기만 매핑하면 행간·자간을 컴포넌트마다 손으로 붙이게 되고 곧 어긋난다. */
+  --text-display:                   var(--fs-display);
+  --text-display--line-height:      var(--lh-display);
+  --text-display--letter-spacing:   var(--ls-display);
+  --text-title-1:                   var(--fs-title-1);
+  --text-title-1--line-height:      var(--lh-title-1);
+  --text-title-1--letter-spacing:   var(--ls-title-1);
+  --text-title-2:                   var(--fs-title-2);
+  --text-title-2--line-height:      var(--lh-title-2);
+  --text-title-2--letter-spacing:   var(--ls-title-2);
+  --text-title-3:                   var(--fs-title-3);
+  --text-title-3--line-height:      var(--lh-title-3);
+  --text-title-3--letter-spacing:   var(--ls-title-3);
+  --text-body:                      var(--fs-body);
+  --text-body--line-height:         var(--lh-body);
+  --text-item-title:                var(--fs-item-title);
+  --text-item-title--line-height:   var(--lh-item-title);
+  --text-item-title--letter-spacing: var(--ls-item-title);
+  --text-label:                     var(--fs-label);
+  --text-label--line-height:        var(--lh-label);
+  --text-caption:                   var(--fs-caption);
+  --text-caption--line-height:      var(--lh-caption);
+  --text-micro:                     var(--fs-micro);
+  --text-micro--line-height:        var(--lh-micro);
+  --text-micro--letter-spacing:     var(--ls-micro);
+
+  --radius-xs:      var(--r-xs);
+  --radius-btn:     var(--r-btn);
+  --radius-card:    var(--r-card);
+  --radius-sheet:   var(--r-sheet);
+  --radius-control: var(--r-control);
+  --radius-field:   var(--r-field);
+  --radius-pop:     var(--r-pop);
+  --radius-dialog:  var(--r-dialog);
+  --radius-full:    var(--r-full);
+
+  --shadow-card:   var(--shadow-1);
+  --shadow-pop:    var(--shadow-2);
+  --shadow-sheet:  var(--shadow-3);
+
+  --ease-planit: var(--ease-out);
+
+  --transition-duration-fast: var(--dur-fast);
+  --transition-duration-base: var(--dur-base);
+  --transition-duration-slow: var(--dur-slow);
 }
 
-/* ---- Base Reset & Document Defaults ---------------------- */
-*, *::before, *::after { box-sizing: border-box; }
+/* ============================================================
+   4. 리셋
+   ============================================================ */
+@layer base {
+  * { box-sizing: border-box; }
 
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-  font-size: var(--body-2-size);
-  line-height: var(--body-2-lh);
-  letter-spacing: var(--body-2-ls);
-  color: var(--text-primary);
-  background: var(--surface-page);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button, input, textarea, select { font: inherit; color: inherit; }
+  button { background: none; border: 0; padding: 0; cursor: pointer; }
+
+  :focus-visible {
+    outline: 2px solid var(--fill-brand);
+    outline-offset: 2px;
+  }
 }
 
-[data-tnum], .tnum { font-feature-settings: var(--num-tabular); }
-button { font-family: inherit; }
+[data-tnum], .tnum { font-variant-numeric: tabular-nums; }
 
-/* ---- Keyframes ------------------------------------------- */
+/* ============================================================
+   5. Keyframes
+   ============================================================ */
 @keyframes planit-dot {
-  0%, 100% { opacity: 0.3; transform: translateY(0); }
-  50% { opacity: 1; transform: translateY(-2px); }
+  0%, 60%, 100% { transform: translateY(0); opacity: .5; }
+  30%           { transform: translateY(-4px); opacity: 1; }
 }
-
-@keyframes planit-loader {
-  0%, 100% { opacity: 0.3; transform: translateY(0); }
-  50% { opacity: 1; transform: translateY(-3px); }
-}
-
-@keyframes planit-dialog-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.98); }
-  to { opacity: 1; transform: none; }
-}
-
+@keyframes planit-spin { to { transform: rotate(360deg); } }
 @keyframes planit-sheet-in {
   from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  to   { transform: translateY(0); }
 }
-
+@keyframes planit-dialog-in {
+  from { transform: scale(.96); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
 @keyframes planit-toast-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes planit-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

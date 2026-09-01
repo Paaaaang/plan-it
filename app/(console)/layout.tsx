@@ -1,7 +1,7 @@
 /**
  * @file 기획자 콘솔 공통 레이아웃
  * @description 대시보드·편집 페이지의 공통 레이아웃. 좌측 내비 + 상단 헤더.
- * @auth 인증 필요 — middleware.ts에서 비인증 사용자 리다이렉트
+ * @auth 인증 필요 — proxy.ts에서 비인증 사용자 리다이렉트
  * @spec F-AUTH-2
  */
 

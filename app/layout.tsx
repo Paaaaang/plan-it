@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTheme } from "@/lib/theme";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,13 +16,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const theme = await getTheme();
+
   return (
-    <html lang="ko">
+    // theme이 "system"이면 속성을 아예 붙이지 않는다.
+    // 붙이지 않아야 prefers-color-scheme이 결정권을 갖는다.
+    <html lang="ko" data-theme={theme === "system" ? undefined : theme}>
       <body>{children}</body>
     </html>
   );

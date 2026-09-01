@@ -10,6 +10,6 @@
  *  - actions/plan-actions.ts       → updateStatus / setPassword
  *  - lib/utils/validation.ts       → 공개 전환 시 필수 항목 검증
  *  - lib/utils/cache.ts            → 상태 변경 시 캐시 무효화 트리거
- *  - components/ui/modal.tsx       → 상태 변경 확인 다이얼로그
+ *  - components/ui/dialog.tsx      → 상태 변경 확인 다이얼로그
  *  - types/plan.ts                 → Plan.status, Plan.password_hash
  */

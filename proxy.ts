@@ -1,5 +1,5 @@
 /**
- * @file Next.js 미들웨어
+ * @file Next.js Proxy (구 middleware — Next 16에서 이름 변경)
  * @description 인증/권한 체크 + 라우팅
  *
  * @routing-rules
@@ -15,8 +15,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
-  // TODO: lib/supabase/middleware.ts 연동 — 세션 갱신 + 인증 체크
+export function proxy(request: NextRequest) {
+  // TODO: lib/supabase/session.ts 연동 — 세션 갱신 + 인증 체크
   // TODO: 콘솔 경로 비인증 리다이렉트
   // TODO: 관리자 경로 권한 체크
   // TODO: 인증 페이지 로그인 상태 리다이렉트

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 디자인 시스템 핸드오프 번들 — 원본 프로토타입이라 린트 대상 아님.
+    "planit-design-system/**",
   ]),
 ]);
 

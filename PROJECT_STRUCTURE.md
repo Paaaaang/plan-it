@@ -124,7 +124,7 @@ plan-it/
 │   ├── supabase/                           # 🗄️ Supabase 클라이언트
 │   │   ├── client.ts                       #    브라우저 클라이언트 (Client Component)
 │   │   ├── server.ts                       #    서버 클라이언트 (Server Component/Action)
-│   │   ├── middleware.ts                   #    미들웨어용 클라이언트
+│   │   ├── session.ts                      #    Proxy용 세션 갱신 클라이언트
 │   │   └── admin.ts                        #    관리자/서비스 롤 클라이언트
 │   │
 │   └── utils/                              # 🔧 유틸리티 함수
@@ -164,8 +164,6 @@ plan-it/
 │   ├── analytics-actions.ts               #    KPI 이벤트 로깅 (logEvent)
 │   └── admin-actions.ts                    #    관리자 전용 (KPI집계/모더레이션/공지)
 │
-├── styles/                                 # 🎨 스타일 관련 (추가 CSS/토큰)
-│
 ├── public/                                 # 정적 리소스 파일
 │   └── logos/
 │       ├── Logo_Black.png
@@ -176,16 +174,28 @@ plan-it/
 │   ├── 1_PLAN_IT_PRD.md                    #    제품 요구사항 (PRD)
 │   ├── 2_PLAN_IT_기능명세서.md               #    기능명세서
 │   ├── 3_PLAN_IT_유저플로우.md               #    유저플로우
-│   └── update/                             #    업데이트 문서 디렉터리
+│   ├── design-system-mapping.md            #    DS → 프로덕션 코드 포팅 현황
+│   └── update/                             #    작업 기록 (날짜별, 로컬 전용)
 │
-├── middleware.ts                           # Next.js 미들웨어 (인증/권한 라우팅)
+├── tests/                                  # 🧪 Playwright E2E
+│   └── smoke.spec.ts                       #    공개 라우트 렌더 + 콘솔 에러 검사
+│
+├── planit-design-system/                   # 🎨 Claude Design 핸드오프 번들 (원본 — 수정 금지)
+│   ├── README.md
+│   └── project/                            #    tokens / components / guidelines / ui_kits / assets
+│
+├── .github/workflows/playwright.yml        # CI — push/PR 시 E2E 실행
+│
+├── proxy.ts                                # Next.js Proxy (구 middleware) — 인증/권한 라우팅
 ├── eslint.config.mjs                       # ESLint 정적 분석 설정
 ├── next-env.d.ts                           # Next.js 타입 정의
 ├── next.config.ts                          # Next.js 프레임워크 설정
 ├── package.json                            # 의존성 패키지 및 스크립트
+├── playwright.config.ts                    # E2E 설정 (desktop / mobile 2개 프로젝트)
 ├── postcss.config.mjs                      # CSS 후처리 설정 (Tailwind 연동)
 ├── tsconfig.json                           # TypeScript 컴파일러 설정
-└── 폴더 구조도.md                           # 본 폴더 구조 설명 파일
+├── CLAUDE.md                               # 에이전트 작업 지침 (스택·도구·규칙)
+└── PROJECT_STRUCTURE.md                    # 본 폴더 구조 설명 파일
 ```
 
 ---
@@ -255,7 +265,7 @@ Next.js Server Actions. 기능명세서의 API 개요(§7)를 기반으로 도�
 
 ### 7. 주요 설정 파일 (Configuration Files)
 
-- **`middleware.ts`** — Next.js 미들웨어. 인증 체크(콘솔), 관리자 권한 체크(admin), 뷰어 라우팅. ✅ 보일러플레이트 완료.
+- **`proxy.ts`** — Next.js Proxy(구 `middleware.ts`, Next 16에서 이름 변경). 인증 체크(콘솔), 관리자 권한 체크(admin), 뷰어 라우팅. ✅ 보일러플레이트 완료.
 - **`package.json`** — 주요 의존성: `next`, `react`, `tailwindcss v4`, `@supabase/supabase-js`
 - **`next.config.ts`** — Next.js 설정. ISR, 이미지 도메인, 환경 변수.
 - **`tsconfig.json`** — TypeScript 설정. Path alias(`@/*`).
