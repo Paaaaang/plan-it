@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { lockBodyScroll, unlockBodyScroll } from "@/components/ui/bottom-sheet";
+import { useFocusTrap } from "@/lib/focus-trap";
 
 /**
  * Dialog — 되돌리기 어려운 행동을 확인받는 자리.
@@ -30,6 +31,8 @@ export function Dialog({
 }) {
   const titleId = useId();
   const descId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(open, panelRef);
 
   useEffect(() => {
     if (!open) return;
@@ -52,6 +55,7 @@ export function Dialog({
           Escape는 취소와 동등해서 안전하니 남겨둔다(위 useEffect). */}
       <div data-testid="dialog-scrim" className="absolute inset-0" style={{ background: "var(--overlay-scrim)" }} />
       <div
+        ref={panelRef}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId } from "react";
+import { useEffect, useId, useRef } from "react";
+import { useFocusTrap } from "@/lib/focus-trap";
 
 // 스크롤 잠금 참조 카운트 — 시트/다이얼로그가 중첩 열려도 마지막 하나가 닫힐 때만 복원한다.
 // Dialog도 이 헬퍼를 가져다 쓴다 — 구현을 복제하지 않는다.
@@ -36,6 +37,8 @@ export function BottomSheet({
   children: React.ReactNode;
 }) {
   const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(open, panelRef);
 
   useEffect(() => {
     if (!open) return;
@@ -61,6 +64,7 @@ export function BottomSheet({
         style={{ background: "var(--overlay-scrim)", animation: "planit-fade-in var(--dur-fast) var(--ease-out)" }}
       />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
