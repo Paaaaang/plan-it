@@ -55,7 +55,6 @@ export function PlaceSheet({ place, onClose }: { place: ViewerPlace | null; onCl
           <div className="mt-4 flex flex-col gap-2" data-testid="sheet-actions">
             {/* 액션 셋 중 코랄은 이 하나뿐이다 (스펙 §5.1) */}
             <a
-              data-emphasis="brand"
               href={kakaoDirectionsUrl(place)}
               target="_blank"
               rel="noopener noreferrer"

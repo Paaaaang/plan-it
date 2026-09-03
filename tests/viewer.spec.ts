@@ -95,10 +95,28 @@ test.describe('장소 시트', () => {
   test('액션 셋 중 코랄은 길찾기 하나뿐이다', async ({ page }) => {
     await page.goto('/p/jeju-workshop-2026');
     await page.getByRole('button', { name: /성산일출봉 트레킹/ }).click();
-    const sheet = page.getByTestId('sheet-panel');
-    await expect(sheet.getByTestId('sheet-actions').getByRole('link').or(sheet.getByTestId('sheet-actions').getByRole('button'))).toHaveCount(3);
-    const brandCount = await sheet.getByTestId('sheet-actions').locator('[data-emphasis="brand"]').count();
-    expect(brandCount).toBe(1);
+    const actions = page.getByTestId('sheet-panel').getByTestId('sheet-actions');
+    await expect(actions.getByRole('link').or(actions.getByRole('button'))).toHaveCount(3);
+
+    // 마커 속성이 아니라 실제로 칠해진 배경색을 센다 — 마커만 세면 bg-brand를 회색으로
+    // 바꿔도 통과한다. --fill-brand는 테마마다 값이 다르므로 rgb를 박아 두지 않고
+    // 그 자리에서 토큰을 풀어(probe) 비교한다.
+    for (const theme of ['light', 'dark'] as const) {
+      await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
+      // Button은 transition-colors를 갖는다. 테마를 바꾼 직후에 읽으면 전환 중간값이 잡힌다.
+      await page.waitForTimeout(250);
+      const { brand, painted } = await actions.evaluate((el) => {
+        const probe = document.createElement('span');
+        probe.style.backgroundColor = 'var(--fill-brand)';
+        el.appendChild(probe);
+        const brand = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return { brand, painted: [...el.children].map((k) => getComputedStyle(k).backgroundColor) };
+      });
+      expect(painted, `${theme}: 액션 3개`).toHaveLength(3);
+      const hit = painted.filter((c) => c === brand).length;
+      expect(hit, `${theme}: --fill-brand(${brand})로 칠해진 액션 — 실제 ${painted.join(' / ')}`).toBe(1);
+    }
   });
 
   test('장소 미연결 항목은 시트를 열지 않는다', async ({ page }) => {
