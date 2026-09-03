@@ -46,9 +46,11 @@ export function TimelineItem({
         className={[
           "flex-1",
           // Card는 기본 테두리가 없다(components/ui/card.tsx 확인). current에서 1.5px 테두리를
-          // 더하면 height:auto 박스는 border-box여도 상하로 3px 자라난다 — -m-[1.5px]로 상쇄해
-          // 레일·다음 행 위치가 흔들리지 않게 한다.
-          current ? "border-[1.5px] border-accent-border -m-[1.5px]" : "",
+          // 더하면 height:auto 박스는 border-box여도 상하로 3px 자라난다 — -my-[1.5px]로 상쇄해
+          // 레일·다음 행 위치가 흔들리지 않게 한다. 가로는 flex-1이 바깥 폭을 고정하므로
+          // 테두리가 안쪽을 파고들 뿐이다 — 좌우 음수 마진을 주면 카드가 다른 행보다 1.5px
+          // 넓어져 오른쪽 화면 여백(20px)이 어긋난다.
+          current ? "border-[1.5px] border-accent-border -my-[1.5px]" : "",
         ].join(" ")}
       >
         <div className={["text-item-title font-bold tracking-tight", past ? "opacity-45" : ""].join(" ")}>
