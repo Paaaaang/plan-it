@@ -206,6 +206,32 @@ test.describe('장소 시트', () => {
     }
   });
 
+  test('교통 안내는 그 장소로 오는 구간만 보여준다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+    await page.getByRole('button', { name: /성산일출봉 트레킹/ }).click();
+    const transport = page.getByTestId('sheet-transport');
+    // 수단 · 출발→도착 · 소요 (스펙 §5.1)
+    await expect(transport).toContainText('버스 · 제주공항 → 성산 · 1시간 20분');
+    // 다른 장소의 구간이 섞이면 안 된다
+    await expect(transport).not.toContainText('김포');
+  });
+
+  test('교통 메모가 있으면 함께 보이고, 구간이 없는 장소에는 섹션이 없다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+    await page.getByRole('tab', { name: '장소' }).click();
+
+    await page.getByRole('button', { name: '제주국제공항 상세 보기' }).click();
+    await expect(page.getByTestId('sheet-transport')).toContainText('항공 · 김포 → 제주 · 1시간 10분');
+    await expect(page.getByTestId('sheet-transport')).toContainText('08:20 출발편이에요.');
+
+    // 스크림은 패널에 가려 클릭이 막힌다(시트에 보이는 닫기 버튼이 없다 — 별도 항목).
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('sheet-panel')).toHaveCount(0);
+    await page.getByRole('button', { name: '흑돼지 명가 상세 보기' }).click();
+    await expect(page.getByTestId('sheet-panel')).toBeVisible();
+    await expect(page.getByTestId('sheet-transport')).toHaveCount(0);
+  });
+
   test('장소 미연결 항목은 시트를 열지 않는다', async ({ page }) => {
     await page.goto('/p/jeju-workshop-2026');
     await page.getByRole('button', { name: '2일차', exact: true }).click();

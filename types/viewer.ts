@@ -36,6 +36,15 @@ export type ViewerNotice = { id: string; title: string; body: string };
 
 export type ViewerTransport = {
   id: string;
+  /**
+   * 이 구간이 붙는 장소(도착지). null이면 어느 장소 시트에도 뜨지 않는다.
+   *
+   * 스펙 §5.1은 교통 안내를 **장소 시트**에 넣으라고 하는데 교통은 원래 일정 단위
+   * 데이터다(fromLabel/toLabel). 라벨 문자열로 장소 이름을 추측하면 "제주공항"과
+   * "제주국제공항"처럼 사람이 보기엔 같은데 코드로는 다른 경우에 조용히 어긋난다.
+   * 그래서 연결을 데이터에 명시한다 — DB가 붙으면 transport.place_id 외래키가 된다.
+   */
+  placeId: string | null;
   mode: string;
   fromLabel: string;
   toLabel: string;

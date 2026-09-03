@@ -19,9 +19,17 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Icon } from "@/components/ui/icon";
 import { kakaoDirectionsUrl, naverMapUrl } from "@/lib/viewer/links";
-import type { ViewerPlace } from "@/types/viewer";
+import type { ViewerPlace, ViewerTransport } from "@/types/viewer";
 
-export function PlaceSheet({ place, onClose }: { place: ViewerPlace | null; onClose: () => void }) {
+export function PlaceSheet({
+  place,
+  transport = [],
+  onClose,
+}: {
+  place: ViewerPlace | null;
+  transport?: ViewerTransport[];
+  onClose: () => void;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copyAddress() {
@@ -34,6 +42,9 @@ export function PlaceSheet({ place, onClose }: { place: ViewerPlace | null; onCl
       // 클립보드가 막힌 브라우저도 있다. 조용히 넘어간다 — 주소는 화면에 이미 보인다.
     }
   }
+
+  // 이 장소로 오는 구간만 보여준다. 없는 장소에서는 섹션 자체를 그리지 않는다.
+  const legs = place ? transport.filter((t) => t.placeId === place.id) : [];
 
   return (
     <BottomSheet open={!!place} onClose={onClose} title={place?.name}>
@@ -51,6 +62,23 @@ export function PlaceSheet({ place, onClose }: { place: ViewerPlace | null; onCl
             <span>{place.address}</span>
           </p>
           {place.memo && <p className="mt-2.5 text-label text-secondary">{place.memo}</p>}
+
+          {/* 교통 안내 (스펙 §5.1). 수단 · 출발→도착 · 소요 · 메모 */}
+          {legs.length > 0 && (
+            <section className="mt-4" data-testid="sheet-transport">
+              <h3 className="text-caption font-bold text-tertiary">교통 안내</h3>
+              <ul className="mt-1.5 flex flex-col gap-2">
+                {legs.map((t) => (
+                  <li key={t.id}>
+                    <p className="text-label font-medium text-primary">
+                      {t.mode} · {t.fromLabel} → {t.toLabel} · {t.durationLabel}
+                    </p>
+                    {t.note && <p className="mt-0.5 text-caption text-tertiary">{t.note}</p>}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <div className="mt-4 flex flex-col gap-2" data-testid="sheet-actions">
             {/* 액션 셋 중 코랄은 이 하나뿐이다 (스펙 §5.1) */}

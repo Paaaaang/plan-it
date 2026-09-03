@@ -70,8 +70,8 @@ const jeju: ViewerPlan = {
   ],
   places: jejuPlaces,
   transport: [
-    { id: "t1", mode: "항공", fromLabel: "김포", toLabel: "제주", durationLabel: "1시간 10분", note: "08:20 출발편이에요." },
-    { id: "t2", mode: "버스", fromLabel: "제주공항", toLabel: "성산", durationLabel: "1시간 20분", note: null },
+    { id: "t1", placeId: "pl-air", mode: "항공", fromLabel: "김포", toLabel: "제주", durationLabel: "1시간 10분", note: "08:20 출발편이에요." },
+    { id: "t2", placeId: "pl-seong", mode: "버스", fromLabel: "제주공항", toLabel: "성산", durationLabel: "1시간 20분", note: null },
   ],
 };
 

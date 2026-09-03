@@ -92,7 +92,7 @@ export function ViewerShell({ plan }: { plan: ViewerPlan }) {
         </a>
       </div>
 
-      <PlaceSheet place={openPlace} onClose={() => setOpenPlace(null)} />
+      <PlaceSheet place={openPlace} transport={plan.transport} onClose={() => setOpenPlace(null)} />
     </div>
   );
 }
