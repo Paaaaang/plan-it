@@ -4,6 +4,10 @@ import { test, expect } from '@playwright/test';
 test.describe('모달 포커스 가둠', () => {
   test('시트를 열면 초점이 패널 안으로 들어온다', async ({ page }) => {
     await page.goto('/ui');
+    // SSR 마크업이 하이드레이션 전에 도달 가능하다 — 클라이언트 포커스 훅(useFocusTrap의
+    // focusin 리스너)이 붙기 전에 상호작용하면 트리거 초점이 훅에 기록되지 않는다.
+    // WebKit은 JS 파싱/하이드레이션이 느려 이 경합이 훨씬 잦게 드러난다.
+    await page.waitForLoadState('networkidle');
     await page.getByRole('button', { name: '시트 열기' }).click();
     const panel = page.getByTestId('sheet-panel');
     await expect(panel).toBeVisible();
@@ -13,6 +17,10 @@ test.describe('모달 포커스 가둠', () => {
 
   test('시트 안에서 Tab을 계속 눌러도 초점이 패널을 벗어나지 않는다', async ({ page }) => {
     await page.goto('/ui');
+    // SSR 마크업이 하이드레이션 전에 도달 가능하다 — 클라이언트 포커스 훅(useFocusTrap의
+    // focusin 리스너)이 붙기 전에 상호작용하면 트리거 초점이 훅에 기록되지 않는다.
+    // WebKit은 JS 파싱/하이드레이션이 느려 이 경합이 훨씬 잦게 드러난다.
+    await page.waitForLoadState('networkidle');
     await page.getByRole('button', { name: '시트 열기' }).click();
     const panel = page.getByTestId('sheet-panel');
     for (let i = 0; i < 12; i++) {
@@ -23,6 +31,10 @@ test.describe('모달 포커스 가둠', () => {
 
   test('Shift+Tab도 패널을 벗어나지 않는다', async ({ page }) => {
     await page.goto('/ui');
+    // SSR 마크업이 하이드레이션 전에 도달 가능하다 — 클라이언트 포커스 훅(useFocusTrap의
+    // focusin 리스너)이 붙기 전에 상호작용하면 트리거 초점이 훅에 기록되지 않는다.
+    // WebKit은 JS 파싱/하이드레이션이 느려 이 경합이 훨씬 잦게 드러난다.
+    await page.waitForLoadState('networkidle');
     await page.getByRole('button', { name: '시트 열기' }).click();
     const panel = page.getByTestId('sheet-panel');
     for (let i = 0; i < 12; i++) {
@@ -33,8 +45,15 @@ test.describe('모달 포커스 가둠', () => {
 
   test('닫으면 초점이 열었던 버튼으로 돌아온다', async ({ page }) => {
     await page.goto('/ui');
+    // SSR 마크업이 하이드레이션 전에 도달 가능하다 — 클라이언트 포커스 훅(useFocusTrap의
+    // focusin 리스너)이 붙기 전에 상호작용하면 트리거 초점이 훅에 기록되지 않는다.
+    // WebKit은 JS 파싱/하이드레이션이 느려 이 경합이 훨씬 잦게 드러난다.
+    await page.waitForLoadState('networkidle');
     const opener = page.getByRole('button', { name: '시트 열기' });
-    await opener.click();
+    // WebKit은 클릭으로 버튼에 초점을 주지 않는다(실제 Safari 동작). 초점 복원은
+    // 키보드 사용자를 위한 기능이므로 키보드로 열어 트리거에 초점이 실제로 있게 한다.
+    await opener.focus();
+    await opener.press('Enter');
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('sheet-panel')).toHaveCount(0);
     await expect(opener).toBeFocused();
@@ -42,8 +61,13 @@ test.describe('모달 포커스 가둠', () => {
 
   test('다이얼로그도 같은 규칙을 지킨다', async ({ page }) => {
     await page.goto('/ui');
+    // SSR 마크업이 하이드레이션 전에 도달 가능하다 — 클라이언트 포커스 훅(useFocusTrap의
+    // focusin 리스너)이 붙기 전에 상호작용하면 트리거 초점이 훅에 기록되지 않는다.
+    // WebKit은 JS 파싱/하이드레이션이 느려 이 경합이 훨씬 잦게 드러난다.
+    await page.waitForLoadState('networkidle');
     const opener = page.getByRole('button', { name: '삭제 확인' });
-    await opener.click();
+    await opener.focus();
+    await opener.press('Enter');
     const panel = page.getByTestId('dialog-panel');
     for (let i = 0; i < 8; i++) {
       await page.keyboard.press('Tab');
