@@ -80,3 +80,44 @@ test.describe('공개 뷰어', () => {
     expect(row!.y + row!.height).toBeLessThanOrEqual(bar!.y + 1);
   });
 });
+
+test.describe('장소 시트', () => {
+  test('타임라인 항목을 누르면 장소 시트가 열린다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+    await page.getByRole('button', { name: /성산일출봉 트레킹/ }).click();
+    const sheet = page.getByTestId('sheet-panel');
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByRole('heading', { name: '성산일출봉' })).toBeVisible();
+    await expect(sheet).toContainText('일출로 284-12');
+    await expect(sheet).toContainText('입장료 5,000원');
+  });
+
+  test('액션 셋 중 코랄은 길찾기 하나뿐이다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+    await page.getByRole('button', { name: /성산일출봉 트레킹/ }).click();
+    const sheet = page.getByTestId('sheet-panel');
+    await expect(sheet.getByTestId('sheet-actions').getByRole('link').or(sheet.getByTestId('sheet-actions').getByRole('button'))).toHaveCount(3);
+    const brandCount = await sheet.getByTestId('sheet-actions').locator('[data-emphasis="brand"]').count();
+    expect(brandCount).toBe(1);
+  });
+
+  test('장소 미연결 항목은 시트를 열지 않는다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+    await page.getByRole('button', { name: '2일차', exact: true }).click();
+    await page.getByText('팀 세션').click();
+    await expect(page.getByTestId('sheet-panel')).toHaveCount(0);
+  });
+
+  test('주소 복사를 누르면 토스트가 뜬다', async ({ page, context, browserName }) => {
+    // clipboard 권한은 Chromium에서만 grantPermissions로 붙는다. mobile 프로젝트(iPhone 14)는
+    // WebKit 엔진이라 권한 이름 자체를 모른다 — 그 엔진에서는 권한 요청 없이 진행하고
+    // 판정을 "토스트가 떴는가"로만 좁힌다(클립보드 내용은 읽지 않는다).
+    if (browserName === 'chromium') {
+      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    }
+    await page.goto('/p/jeju-workshop-2026');
+    await page.getByRole('button', { name: /성산일출봉 트레킹/ }).click();
+    await page.getByRole('button', { name: '주소 복사' }).click();
+    await expect(page.getByText('주소를 복사했어요')).toBeVisible();
+  });
+});

@@ -4,7 +4,7 @@
  *              탭/일차/시트 상태를 여기서만 갖는다.
  *
  * @connects
- *  - components/viewer/cover-header.tsx · notice-bar.tsx · timeline.tsx · place-list.tsx
+ *  - components/viewer/cover-header.tsx · notice-bar.tsx · timeline.tsx · place-list.tsx · place-sheet.tsx
  *  - components/ui/tabs.tsx · chip.tsx
  *  - lib/viewer/summary.ts → dateLine
  *  - lib/viewer/links.ts   → nextPlace, kakaoDirectionsUrl
@@ -16,6 +16,7 @@ import { useState } from "react";
 import { CoverHeader } from "@/components/viewer/cover-header";
 import { NoticeBar } from "@/components/viewer/notice-bar";
 import { PlaceList } from "@/components/viewer/place-list";
+import { PlaceSheet } from "@/components/viewer/place-sheet";
 import { Timeline } from "@/components/viewer/timeline";
 import { Chip } from "@/components/ui/chip";
 import { Tabs } from "@/components/ui/tabs";
@@ -98,8 +99,7 @@ export function ViewerShell({ plan }: { plan: ViewerPlan }) {
         </a>
       </div>
 
-      {/* Task 7에서 PlaceSheet를 여기에 붙인다. openPlace 상태는 이미 준비되어 있다. */}
-      {openPlace && null}
+      <PlaceSheet place={openPlace} onClose={() => setOpenPlace(null)} />
     </div>
   );
 }

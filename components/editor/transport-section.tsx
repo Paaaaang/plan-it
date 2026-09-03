@@ -9,5 +9,4 @@
  *  - components/editor/transport-item-form.tsx  → 교통 항목 추가/수정 폼
  *  - actions/transport-actions.ts               → CRUD + reorder
  *  - types/transport.ts                         → TransportInfo 타입
- *  - components/viewer/viewer-transport.tsx      → 뷰어에서 이 데이터를 렌더링
  */
