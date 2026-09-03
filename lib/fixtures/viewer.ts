@@ -1,10 +1,19 @@
 import type { ViewerPlan, ViewerPlace } from "@/types/viewer";
 
-/** 오늘로부터 offset일 뒤를 "YYYY-MM-DD"로. 픽스처가 시간이 지나도 살아 있게 한다. */
+// KST(Asia/Seoul)로 고정한다. rail.ts::isSameDay는 브라우저 로컬 TZ로 "오늘"을 비교하는데,
+// 이 함수가 서버 로컬 TZ(예: CI의 UTC)로 날짜를 만들면 두 기준이 어긋나 레일 상태가
+// 실행 시각·환경에 따라 흔들린다. 한국 서비스이므로 양쪽을 KST에 못박는다
+// (playwright.config.ts의 timezoneId: 'Asia/Seoul'과 짝을 이룬다).
+const KST_DATE_FORMAT = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" });
+
+/** 오늘(KST)로부터 offset일 뒤를 "YYYY-MM-DD"로. 픽스처가 시간이 지나도 살아 있게 한다. */
 function dayOffset(offset: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const todayKst = KST_DATE_FORMAT.format(new Date()); // "YYYY-MM-DD" (en-CA는 ISO 형식을 준다)
+  const [y, m, d] = todayKst.split("-").map(Number);
+  // KST 자정 기준으로 offset일을 더한 뒤, 그 결과를 다시 KST 날짜 문자열로 읽는다 —
+  // UTC 기준 Date 연산 자체는 TZ 무관이라 로컬 자정 경계 문제가 없다.
+  const shifted = new Date(Date.UTC(y, m - 1, d + offset));
+  return KST_DATE_FORMAT.format(shifted);
 }
 
 const jejuPlaces: ViewerPlace[] = [
