@@ -110,6 +110,7 @@ plan-it/
 │   │   ├── timeline-item.tsx               #    타임라인 항목 한 행 (past/current/future)
 │   │   ├── progress-rail.tsx               #    진행 레일 (3px 세로선)
 │   │   ├── place-list.tsx                  #    장소 탭 카드 목록 (레일 없음)
+│   │   ├── place-sheet.tsx                 #    장소 상세 바텀시트 (액션 3개, 코랄은 길찾기 하나)
 │   │   └── password-gate.tsx               #    비공개 비밀번호 입력 게이트
 │   │
 │   └── admin/                              # 🛡️ 관리자 콘솔 컴포넌트
@@ -130,7 +131,8 @@ plan-it/
 │   ├── viewer/                             # 👁️ 공개 뷰어 순수 로직
 │   │   ├── rail.ts                         #    레일 진행도·항목 상태 계산
 │   │   ├── summary.ts                      #    공지 요약·기간/날짜 문구
-│   │   └── links.ts                        #    카카오맵·네이버지도 딥링크
+│   │   ├── links.ts                        #    카카오맵·네이버지도 딥링크
+│   │   └── get-plan.ts                     #    getBySlug 요청 단위 캐시 (React cache)
 │   │
 │   └── utils/                              # 🔧 유틸리티 함수
 │       ├── slug.ts                         #    slug 생성·검증
@@ -239,7 +241,7 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
   - `notice/` — 공지 (CRUD, 드래그 순서 변경)
   - `timetable/` — 타임테이블 (Day 탭, 일정 항목, 장소 연결)
   - `place/` — 장소 (고정/유동, 지도 임베드)
-- **`viewer/`** — 공개 뷰어 전용. 헤더, 공지, 타임테이블, 오시는 길, 비밀번호 게이트.
+- **`viewer/`** — 공개 뷰어 전용. 셸, 커버, 공지 바, 타임라인(레일·항목), 장소 목록·상세 시트, 비밀번호 게이트.
 - **`admin/`** — 관리자 콘솔. KPI 위젯, 모더레이션, 공지 관리.
 
 ### 3. `lib/` (라이브러리)

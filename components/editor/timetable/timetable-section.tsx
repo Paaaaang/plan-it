@@ -12,5 +12,5 @@
  *  - components/editor/basic-info/basic-info-section.tsx → 기간 → Day 연동 (단일 소스)
  *  - actions/schedule-actions.ts                         → CRUD + reorder + linkPlace
  *  - types/schedule.ts                                   → Day, ScheduleItem 타입
- *  - components/viewer/viewer-timetable.tsx               → 뷰어에서 이 데이터를 렌더링
+ *  - components/viewer/timeline.tsx                       → 뷰어에서 이 데이터를 렌더링
  */

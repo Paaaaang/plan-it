@@ -5,5 +5,4 @@
  * @connects
  *  - components/ui/toast.tsx                  → 토스트 컴포넌트 렌더링
  *  - components/dashboard/share-link.tsx     → 링크 복사 완료 알림
- *  - components/viewer/action-buttons.tsx    → 주소 복사 완료 알림
  */
