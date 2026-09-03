@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
 test.describe('공개 뷰어', () => {
@@ -50,19 +51,78 @@ test.describe('공개 뷰어', () => {
     await expect(page.getByText('제주국제공항').first()).toBeVisible();
   });
 
-  test('레일은 오늘 날짜에서만 진행 상태를 그린다', async ({ page }) => {
+  test('장소 목록은 고정 장소를 먼저 보여준다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+    await page.getByRole('tab', { name: '장소' }).click();
+    const cards = page.getByTestId('place-list').getByRole('button');
+    await expect(cards).toHaveCount(4);
+
+    // 픽스처의 고정 장소는 제주국제공항·위미 게스트하우스다. 순서가 뒤집히거나
+    // 정렬이 사라지면 여기서 깨진다 — 목록에서 "보이는가"만 보면 정렬은 무방비다.
+    await expect(cards.nth(0)).toContainText('제주국제공항');
+    await expect(cards.nth(1)).toContainText('위미 게스트하우스');
+    await expect(cards.nth(2)).toContainText('흑돼지 명가');
+    await expect(cards.nth(3)).toContainText('성산일출봉');
+
+    // 카드 한 장의 구성: 태그 · 이름 · 주소
+    await expect(cards.nth(0)).toContainText('집결');
+    await expect(cards.nth(0)).toContainText('제주시 공항로 2');
+  });
+
+  /**
+   * 레일은 이 제품에서 가장 특징적인 요소다(스펙 §4.6). 그런데 색이 통째로 회색이 돼도
+   * `backgroundImage`에 'gradient'라는 글자만 확인하면 통과한다 — 실제로 그렇게 통과했다.
+   * 그래서 **정지점 색을 뽑아** 코랄(--rail-past)이 실제로 들어 있는지 잰다.
+   * rgb 문자열을 박지 않고 그 자리에서 토큰을 풀어 비교한다 — 값이 테마마다 다르다.
+   * 시각 회귀는 CI에서 skip되므로 이 판정은 여기(CI에서도 도는 곳)에 있어야 한다.
+   */
+  test('레일 그라데이션은 오늘에만 코랄 정지점을 갖는다', async ({ page }) => {
     await page.goto('/p/jeju-workshop-2026');
     const rail = page.getByTestId('progress-rail');
-    // 1일차는 오늘이다 — 코랄이 섞인 그라데이션.
-    // useNow가 마운트 후에야 시각을 주므로(첫 페인트는 null = 회색) poll로 기다린다.
-    // timeout은 dev 서버 콜드 컴파일까지 감안한 값이다 — 기본 5초는 첫 실행에서 모자란다.
-    await expect
-      .poll(() => rail.evaluate((el) => getComputedStyle(el).backgroundImage), { timeout: 15_000 })
-      .toContain('gradient');
-    // 3일차는 미래다 — 진행 없음
-    await page.getByRole('button', { name: '3일차', exact: true }).click();
-    const future = await page.getByTestId('progress-rail').evaluate((el) => getComputedStyle(el).backgroundImage);
-    expect(future).not.toContain('gradient');
+
+    const read = () =>
+      rail.evaluate((el) => {
+        const probe = document.createElement('span');
+        el.parentElement!.appendChild(probe);
+        const token = (name: string) => {
+          probe.style.color = `var(${name})`;
+          return getComputedStyle(probe).color;
+        };
+        const t = {
+          past: token('--rail-past'),
+          melt: token('--rail-melt'),
+          future: token('--rail-future'),
+        };
+        probe.remove();
+        const cs = getComputedStyle(el);
+        return { image: cs.backgroundImage, color: cs.backgroundColor, t };
+      });
+
+    for (const theme of ['light', 'dark'] as const) {
+      await page.evaluate((v) => document.documentElement.setAttribute('data-theme', v), theme);
+
+      // useNow가 마운트 후에야 시각을 주므로(첫 페인트는 null = 회색) poll로 기다린다.
+      // timeout은 dev 서버 콜드 컴파일까지 감안한 값이다 — 기본 5초는 첫 실행에서 모자란다.
+      await expect.poll(async () => (await read()).image, { timeout: 15_000 }).toContain('gradient');
+
+      // 1일차는 오늘이다 — 지나간 구간은 코랄, 녹는 구간은 중간색, 앞으로는 회색.
+      const today = await read();
+      expect(today.t.past, `${theme}: --rail-past와 --rail-future가 같은 색이면 레일이 죽는다`).not.toBe(
+        today.t.future,
+      );
+      expect(today.image, `${theme}: --rail-past(${today.t.past}) 정지점`).toContain(today.t.past);
+      expect(today.image, `${theme}: --rail-melt(${today.t.melt}) 정지점`).toContain(today.t.melt);
+      expect(today.image, `${theme}: --rail-future(${today.t.future}) 정지점`).toContain(today.t.future);
+
+      // 3일차는 미래다 — 그라데이션 자체가 없고 전부 --rail-future 한 색이다.
+      await page.getByRole('button', { name: '3일차', exact: true }).click();
+      const future = await read();
+      expect(future.image, `${theme}: 미래 날짜에는 그라데이션이 없다`).toBe('none');
+      expect(future.color, `${theme}: 미래 날짜는 --rail-future 단색`).toBe(future.t.future);
+      expect(future.image, `${theme}: 미래 날짜에 코랄이 남으면 안 된다`).not.toContain(today.t.past);
+
+      await page.getByRole('button', { name: '1일차', exact: true }).click();
+    }
   });
 
   test('없는 slug는 404다', async ({ page }) => {
@@ -73,11 +133,38 @@ test.describe('공개 뷰어', () => {
   test('하단 CTA가 마지막 항목을 가리지 않는다', async ({ page }) => {
     await page.goto('/p/jeju-workshop-2026');
     const cta = page.getByTestId('viewer-cta');
+    const lastRow = page.getByTestId('timeline-row').last();
     await expect(cta).toBeVisible();
-    await page.getByTestId('timeline-row').last().scrollIntoViewIfNeeded();
-    const row = await page.getByTestId('timeline-row').last().boundingBox();
-    const bar = await cta.boundingBox();
-    expect(row!.y + row!.height).toBeLessThanOrEqual(bar!.y + 1);
+
+    async function measure() {
+      const row = (await lastRow.boundingBox())!;
+      const bar = (await cta.boundingBox())!;
+      return { gap: bar.y - (row.y + row.height), ctaH: bar.height };
+    }
+
+    // 1) 브라우저가 마지막 항목을 화면에 올리는 경로(앵커·포커스·scrollIntoView).
+    //    스크롤포트에 하단 여백이 없으면 항목이 뷰포트 바닥에 딱 붙고, 그 자리를
+    //    sticky CTA가 덮는다. 실측: 여백을 0으로 만들면 간격이 -82px가 된다.
+    await lastRow.scrollIntoViewIfNeeded();
+    const onScrollIn = await measure();
+    expect(onScrollIn.gap, `scrollIntoView 후 간격 ${onScrollIn.gap}px`).toBeGreaterThanOrEqual(0);
+
+    // 2) 문서를 끝까지 밀어도 마지막 항목이 CTA 위에 남아야 한다.
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const atBottom = await measure();
+    expect(atBottom.gap, `문서 맨 아래에서 간격 ${atBottom.gap}px`).toBeGreaterThanOrEqual(0);
+
+    // 3) 스펙 §5.1 — "타임라인 하단에 CTA 높이만큼 패딩". (1)(2)만으로는 이 규칙이
+    //    지켜지는지 알 수 없다: CTA가 sticky이면서 일반 흐름 요소라 문서 끝에서는
+    //    제 자리로 돌아와 어차피 아무것도 가리지 않는다. 규칙 자체를 값으로 잰다 —
+    //    CTA가 커지거나 여백 선언이 사라지면 여기서 깨진다.
+    const scrollPad = await page.evaluate(
+      () => parseFloat(getComputedStyle(document.documentElement).scrollPaddingBottom) || 0,
+    );
+    expect(
+      scrollPad,
+      `스크롤포트 하단 여백 ${scrollPad}px ≥ CTA 높이 ${atBottom.ctaH}px`,
+    ).toBeGreaterThanOrEqual(atBottom.ctaH);
   });
 });
 
@@ -174,6 +261,35 @@ test.describe('비밀번호 게이트 · 오류', () => {
     await page.getByLabel('비밀번호').fill('1234');
     await page.getByRole('button', { name: '확인' }).click();
     await expect(page.getByTestId('timeline')).toBeVisible();
+  });
+
+  test('잠금 해제 쿠키는 httpOnly이고 그 일정 경로 밖으로 나가지 않는다', async ({ page, context }) => {
+    await page.goto('/p/secret-party');
+    await page.getByLabel('비밀번호').fill('1234');
+    await page.getByRole('button', { name: '확인' }).click();
+    await expect(page.getByTestId('timeline')).toBeVisible();
+
+    const jar = await context.cookies();
+    const cookie = jar.find((c) => c.name === 'planit_unlock_secret-party');
+    expect(cookie, `발급된 쿠키 — 실제 ${jar.map((c) => c.name).join(' / ') || '없음'}`).toBeTruthy();
+
+    // 잠금 토큰은 스크립트가 읽으면 안 된다. 읽히면 한 사람이 푼 잠금이 복사돼 퍼진다.
+    expect(cookie!.httpOnly, 'httpOnly').toBe(true);
+    // 다른 일정으로 새지 않는다 — 경로가 곧 범위다.
+    expect(cookie!.path, 'path 스코프').toBe('/p/secret-party');
+    expect(cookie!.sameSite, 'sameSite').toBe('Lax');
+    // 브라우저가 실제로 document.cookie에서 못 보는지도 확인한다(httpOnly의 결과).
+    const visible = await page.evaluate(() => document.cookie);
+    expect(visible, `document.cookie: ${visible}`).not.toContain('planit_unlock');
+
+    // secure는 프로덕션 전용이다. 테스트 서버는 http라 켜면 쿠키가 아예 저장되지 않으므로
+    // 런타임으로는 "꺼져 있음"까지만 잴 수 있다. 켜지는 조건은 코드 경로로 확인한다.
+    expect(cookie!.secure, '개발(http)에서는 secure가 꺼져 있다').toBe(false);
+    // Playwright는 프로젝트 루트에서 실행된다(playwright.config.ts 위치).
+    const source = readFileSync('actions/viewer-actions.ts', 'utf8');
+    expect(source, 'secure가 프로덕션에서 켜지는 코드 경로').toMatch(
+      /secure:\s*process\.env\.NODE_ENV\s*===\s*["']production["']/,
+    );
   });
 
   test('만료된 링크는 빨강을 쓰지 않고 나갈 길을 하나 준다', async ({ page }) => {
