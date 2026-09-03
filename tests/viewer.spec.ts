@@ -208,3 +208,49 @@ test.describe('긴 일정', () => {
     expect(overflow).toBe(false);
   });
 });
+
+/**
+ * 공개 경로 하드닝.
+ * slug는 URL 조각 그대로 픽스처 조회 키가 된다. 평범한 객체 리터럴을 그렇게 쓰면
+ * `constructor`·`toString` 같은 프로토타입 키가 조회를 뚫고 나와 500이 된다.
+ */
+test.describe('공개 경로 하드닝', () => {
+  for (const slug of ['constructor', '__proto__', 'toString']) {
+    test(`프로토타입 키(${slug})는 500이 아니라 404다`, async ({ page }) => {
+      const res = await page.goto(`/p/${slug}`);
+      expect(res?.status(), `/p/${slug} 상태 코드`).toBe(404);
+    });
+  }
+});
+
+test.describe('메모가 긴 장소', () => {
+  // 시트는 모바일 화면(390×844)이 기본이다. 데스크톱에서는 패널이 1280px 폭으로 펼쳐져
+  // 같은 메모가 몇 줄에 다 들어가므로 이 회귀가 재현되지 않는다.
+  test.skip(({ isMobile }) => !isMobile, '시트 넘침은 모바일 폭에서만 재현돼요.');
+
+  test('시트가 뷰포트를 넘지 않고 제목과 액션에 모두 닿는다', async ({ page }) => {
+    // 시트 등장 애니메이션은 아래에서 위로 올라온다. 중간 프레임에서는 제목이 잠깐
+    // 화면 안을 지나가므로, 모션을 끄고 최종 위치에서만 판정한다.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/p/team-offsite');
+    await page.getByRole('tab', { name: '장소' }).click();
+    await page.getByRole('button', { name: '성수 커피 로스터리 상세 보기' }).click();
+
+    const panel = page.getByTestId('sheet-panel');
+    await expect(panel).toBeVisible();
+
+    // 1) 제목이 화면 밖으로 밀려 나가면 안 된다. lockBodyScroll 때문에 스크롤로 되돌릴 수 없다.
+    const title = panel.getByRole('heading', { name: '성수 커피 로스터리' });
+    await expect(title).toBeInViewport({ ratio: 1 });
+
+    // 2) 시트 자체가 스크롤되어 마지막 액션까지 도달할 수 있어야 한다.
+    const last = panel.getByRole('link', { name: '네이버 지도에서 보기' });
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toBeInViewport({ ratio: 1 });
+
+    // 3) 패널이 뷰포트보다 높으면 안 된다.
+    const box = await panel.boundingBox();
+    const vh = page.viewportSize()!.height;
+    expect(box!.height, `패널 높이 ${box!.height} ≤ 뷰포트 ${vh}`).toBeLessThanOrEqual(vh);
+  });
+});

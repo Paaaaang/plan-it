@@ -70,7 +70,12 @@ export function BottomSheet({
         aria-labelledby={title ? titleId : undefined}
         aria-label={title ? undefined : "상세"}
         data-testid="sheet-panel"
-        className="absolute inset-x-0 bottom-0 rounded-t-sheet bg-raised px-5 pb-5 pt-2.5 shadow-sheet"
+        // 열 때 초점을 패널 자신이 받는다(useFocusTrap). 첫 액션 버튼으로 뛰면
+        // 긴 내용에서 패널이 그만큼 스크롤돼 제목이 위로 밀려 나간다.
+        tabIndex={-1}
+        // 내용이 길어도 패널이 화면 위로 자라면 안 된다. lockBodyScroll이 걸려 있어
+        // 밀려 나간 제목을 스크롤로 되돌릴 수 없다 — 넘치는 만큼은 패널 안에서 스크롤한다.
+        className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-sheet bg-raised px-5 pb-5 pt-2.5 shadow-sheet"
         style={{ animation: "planit-sheet-in var(--dur-base) var(--ease-out)" }}
       >
         <div aria-hidden="true" className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-strong" />

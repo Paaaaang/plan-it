@@ -55,7 +55,10 @@ export function useFocusTrap(open: boolean, panelRef: React.RefObject<HTMLElemen
 
     // autoFocus가 이미 패널 안으로 초점을 넣었으면 건드리지 않는다.
     if (!panel.contains(document.activeElement)) {
-      const first = focusables(panel)[0];
+      // 패널이 스스로 tabindex를 선언했으면 거기서 시작한다. 첫 컨트롤로 뛰면
+      // **스크롤되는 패널이 그 컨트롤까지 스크롤돼 제목이 화면 밖으로 밀린다**
+      // (BottomSheet: 액션이 맨 아래에 있다). 컨테이너 포커스는 APG의 기본 권고이기도 하다.
+      const first = panel.hasAttribute("tabindex") ? panel : focusables(panel)[0];
       if (first) first.focus();
       else {
         panel.tabIndex = -1;

@@ -103,6 +103,23 @@ export async function getBySlug(slug: string): Promise<ViewerResult> {
 const attempts = new Map<string, { count: number; at: number }>();
 const WINDOW_MS = 10 * 60_000;
 
+/**
+ * 창(window)이 지난 항목을 걷어낸다.
+ *
+ * 없으면 아무도 다시 오지 않는 slug의 항목이 프로세스가 죽을 때까지 남는다 —
+ * `'use server'` export는 누구나 POST할 수 있으므로 그 상태는 바운드가 없다.
+ * 카운터를 올릴 때만 부른다: Map에는 비공개 slug만 들어오고(아래 verifyPassword의
+ * isLockedSlug 가드), 항목은 10분 뒤 전부 청소 대상이 되므로 크기가 곧 상한이다.
+ *
+ * ponytail: 매 실패마다 O(n) 전수 스윕 — n이 "최근 10분 안에 틀린 비공개 slug 수"라
+ *           작다. Redis로 옮기면 TTL이 이 일을 대신한다.
+ */
+function sweepAttempts(now: number): void {
+  for (const [k, v] of attempts) {
+    if (now - v.at > WINDOW_MS) attempts.delete(k);
+  }
+}
+
 function remainingFor(slug: string): number {
   return Math.max(0, MAX_ATTEMPTS - (attempts.get(slug)?.count ?? 0));
 }
@@ -116,6 +133,10 @@ export async function verifyPassword(
   password: string,
 ): Promise<{ ok: true } | { ok: false; remaining: number }> {
   if (typeof slug !== "string" || !SLUG_RE.test(slug)) return { ok: false, remaining: 0 };
+  // 비공개 일정이 아니면 검증할 것이 없다. 이 가드가 없으면 존재하지도 않는 slug마다
+  // attempts에 항목이 생겨 공격자 입력만으로 Map이 무한히 자란다.
+  // (열람 가능 여부는 이미 GET /p/[slug]가 드러내므로 새로 새는 정보는 없다.)
+  if (!isLockedSlug(slug)) return { ok: false, remaining: 0 };
   if (typeof password !== "string" || password.length === 0 || password.length > 64) {
     return { ok: false, remaining: remainingFor(slug) };
   }
@@ -124,13 +145,15 @@ export async function verifyPassword(
   if (rec && Date.now() - rec.at > WINDOW_MS) attempts.delete(slug);
   if (remainingFor(slug) <= 0) return { ok: false, remaining: 0 };
 
-  const want = FIXTURE_PASSWORD_HASH[slug];
+  const want = FIXTURE_PASSWORD_HASH.get(slug);
   const got = createHash("sha256").update(password).digest("hex");
   const match = !!want && timingSafeEqual(Buffer.from(got, "hex"), Buffer.from(want, "hex"));
 
   if (!match) {
-    const cur = attempts.get(slug) ?? { count: 0, at: Date.now() };
-    attempts.set(slug, { count: cur.count + 1, at: Date.now() });
+    const now = Date.now();
+    sweepAttempts(now);
+    const cur = attempts.get(slug) ?? { count: 0, at: now };
+    attempts.set(slug, { count: cur.count + 1, at: now });
     return { ok: false, remaining: remainingFor(slug) };
   }
 

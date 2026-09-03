@@ -78,6 +78,42 @@ const jeju: ViewerPlan = {
 const offsitePlaces: ViewerPlace[] = [
   { id: "op-1", name: "성수 언더스탠드에비뉴", address: "서울특별시 성동구 왕십리로 63", lat: 37.5445, lng: 127.0557, memo: null, tags: ["집결"], isPinned: true },
   { id: "op-2", name: "뚝섬 한식당", address: "서울특별시 성동구 뚝섬로 3길 10", lat: 37.5470, lng: 127.0470, memo: null, tags: ["식사"], isPinned: false },
+  // 메모가 긴 장소. 기획자가 자유 텍스트를 길게 쓰면 시트가 뷰포트를 넘긴다 —
+  // BottomSheet의 max-height/overflow 회귀를 잡는 픽스처다(tests/viewer.spec.ts).
+  {
+    id: "op-3",
+    name: "성수 커피 로스터리",
+    address: "서울특별시 성동구 연무장길 45",
+    lat: 37.5432,
+    lng: 127.0562,
+    memo:
+      "실습이 끝나면 이곳에서 자유롭게 쉬어요. 1층은 로스팅 공간이라 소음이 조금 있어요. " +
+      "조용히 이야기하고 싶다면 2층 창가 자리를 추천해요. 콘센트는 2층 벽면에만 있어요. " +
+      "단체 주문은 카운터에서 한 번에 받아요. 인원이 많으면 미리 말해 주세요. " +
+      "디카페인은 재고가 자주 떨어지니 필요하면 일찍 주문하는 편이 좋아요. " +
+      "화장실은 건물 공용이고 3층에 있어요. 비밀번호는 영수증 하단에 찍혀 나와요. " +
+      "주차는 건물 뒤편 공영주차장을 쓰면 되고, 영수증을 보여주면 한 시간 무료예요. " +
+      "근처에 편의점이 두 곳 있어요. 상비약이 필요하면 큰길 건너 약국이 가장 가까워요. " +
+      "마감은 저녁 아홉 시예요. 그 전에 정리하고 다음 장소로 이동할 예정이에요. " +
+      "원두는 세 종류를 상시로 두고, 주에 한 번 새 로트로 바꿔요. 산미가 약한 쪽을 원하면 " +
+      "브라질 싱글을 달라고 하면 돼요. 우유는 일반과 오트 두 가지가 있고 오트는 오백 원을 더 받아요. " +
+      "얼음이 필요한 음료는 만드는 데 시간이 조금 더 걸려요. 급하면 따뜻한 쪽을 추천해요. " +
+      "테이블은 여덟 개뿐이라 인원이 흩어져 앉을 수 있어요. 짐은 한곳에 모아 두는 편이 편해요. " +
+      "와이파이 이름은 매장 이름과 같고 비밀번호는 카운터 옆에 붙어 있어요. " +
+      "사진 촬영은 자유지만 다른 손님이 나오지 않게만 신경 써 주세요. " +
+      "반려동물은 야외 테라스에서만 가능해요. 테라스는 네 자리가 있어요. " +
+      "결제는 카드와 간편결제 모두 되고 현금은 받지 않아요. 영수증은 요청해야 나와요. " +
+      "포장 컵은 개당 삼백 원이 붙어요. 텀블러를 가져오면 오백 원을 깎아 줘요. " +
+      "케이크는 오후 두 시쯤 나오고 종류는 그날그날 달라요. 미리 예약은 받지 않아요. " +
+      "가는 길은 성수역 삼번 출구에서 걸어서 칠 분이에요. 골목으로 한 번 꺾어야 해요. " +
+      "간판이 작아서 지나치기 쉬우니 파란 차양을 보고 찾으면 돼요. " +
+      "비가 오면 테라스를 접어서 실내가 붐빌 수 있어요. 그럴 땐 옆 건물 이층 서점도 괜찮아요. " +
+      "단체석은 미리 말하면 창가 두 테이블을 붙여 줘요. 최대 여덟 명까지예요. " +
+      "짐을 맡아 주지는 않지만 캐리어를 둘 공간은 계단 아래에 있어요. " +
+      "다음 일정까지 시간이 남으면 근처 공원을 한 바퀴 도는 것도 추천해요.",
+    tags: ["카페"],
+    isPinned: false,
+  },
 ];
 
 /** 사진 없음 · 하루 일정 · 공지 1개 — 크롬이 가장 얇은 경우 */
@@ -140,11 +176,19 @@ const longDay: ViewerPlan = {
   transport: [],
 };
 
-const PLANS: Record<string, ViewerPlan> = {
-  [jeju.slug]: jeju,
-  [offsite.slug]: offsite,
-  [longDay.slug]: longDay,
-};
+/**
+ * slug → 일정. **Map이다. 객체 리터럴이 아니다.**
+ *
+ * slug는 URL 조각이 그대로 들어오는 값이라 `PLANS[slug]` 형태의 객체 조회는
+ * `constructor`·`toString` 같은 프로토타입 키에 뚫린다 — `/p/constructor`가
+ * `Object` 함수를 일정으로 받아 500을 던졌다. Map은 프로토타입 체인을 보지 않으므로
+ * 새 조회부가 생겨도 같은 사고가 되살아나지 않는다(가드를 잊을 자리가 없다).
+ */
+const PLANS = new Map<string, ViewerPlan>([
+  [jeju.slug, jeju],
+  [offsite.slug, offsite],
+  [longDay.slug, longDay],
+]);
 
 /**
  * 비공개(비밀번호) 일정 판정. `secret-`로 시작하는 slug는 전부 잠긴 것으로 본다.
@@ -166,20 +210,22 @@ export const EXPIRED_SLUGS = new Set(["gone"]);
 /**
  * 픽스처 단계의 비밀번호 해시. DB가 붙으면 plans.password_hash로 옮긴다.
  *
+ * PLANS와 같은 이유로 Map이다 — slug를 키로 쓰는 조회는 전부 프로토타입 키에 뚫린다.
+ *
  * ponytail: sha256(솔트 없음) — **픽스처이기 때문이다.** 실제 DB 컬럼이 붙는 순간
  *           salt + scrypt(node:crypto.scrypt)로 바꾼다. 지금 값은 소스에 평문이 없는
  *           고정 다이제스트일 뿐, 오프라인 크래킹 저항이 없다.
  */
-export const FIXTURE_PASSWORD_HASH: Record<string, string> = {
+export const FIXTURE_PASSWORD_HASH = new Map<string, string>([
   // sha256("1234")
-  "secret-party": createHash("sha256").update("1234").digest("hex"),
-};
+  ["secret-party", createHash("sha256").update("1234").digest("hex")],
+]);
 
 /** 비밀번호 시도 상한. 막다른 길에 닿기 전에 남은 횟수를 미리 알려준다(스펙 §5.1). */
 export const MAX_ATTEMPTS = 5;
 
 export function findFixturePlan(slug: string): ViewerPlan | undefined {
-  return PLANS[slug];
+  return PLANS.get(slug);
 }
 
 /** 비밀번호를 통과했을 때 보여줄 일정. */
