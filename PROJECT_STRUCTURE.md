@@ -218,6 +218,8 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
 - **`(console)/`** — 기획자 콘솔. 인증된 사용자만 접근. 좌측 사이드바 + 메인 레이아웃. ✅ 보일러플레이트 완료.
 - **`(admin)/`** — 관리자 콘솔. `role='admin'`만 접근. 다크 사이드바 + KPI/모더레이션/공지. ✅ 보일러플레이트 완료.
 - **`p/[slug]/`** — 공개 뷰어. 모바일 퍼스트 480px. generateMetadata로 OG 태그 지원. ✅ 보일러플레이트 완료.
+- **`p/layout.tsx`** — 뷰어 라우트 레이아웃. 화면 높이(`min-h-dvh`)와 `html { scroll-padding-bottom }`을
+  여기서 준다. 셸이 문서 전역을 건드리면 3단계 편집기 미리보기가 호스트 화면을 바꾼다. ✅ 구현 완료.
 - **`page.tsx`** — 랜딩페이지. 서비스 소개·가치 제안·CTA.
 - **`layout.tsx`** — 루트 레이아웃. `<html lang="ko">`, Pretendard 폰트 (CSS `@font-face`), 플랜잇 SEO 메타데이터. ✅ 구현 완료.
 - **`globals.css`** — **planit-design-system 토큰 통합**: 색상(Brand Blue + Grey + Semantic), 타이포(Pretendard ramp), 스페이싱(4px ladder), 라디우스(xs~full), 엘리베이션(shadow 1~3), 모션(ease/dur). Tailwind v4 `@theme inline` 연동. ✅ 구현 완료.

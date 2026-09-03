@@ -88,7 +88,14 @@ test.describe('공개 뷰어', () => {
     return new Date(`${today}T13:20:00+09:00`);
   };
 
-  async function openViewer(page: Page, path: string, opts: { dark?: boolean } = {}) {
+  /** 타임라인이 하이드레이션까지 끝난 순간 — 레일과 항목 상태가 최종값이 된 뒤다. */
+  const RAIL_SETTLED = '[data-testid="timeline-row"][data-state="current"]';
+
+  async function openViewer(
+    page: Page,
+    path: string,
+    opts: { dark?: boolean; settledSelector?: string } = {},
+  ) {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     // 뷰어 기준 뷰포트는 390×844다. iPhone 14 디바이스 기술자의 기본 높이(664)는
     // 브라우저 크롬을 뺀 값이라 기준보다 180px 짧다 — 여기서 못박는다.
@@ -101,7 +108,8 @@ test.describe('공개 뷰어', () => {
     }
     await page.goto(path);
     // useNow는 마운트 뒤에야 시각을 준다. current 상태가 나타난 뒤가 최종 화면이다.
-    await page.locator('[data-testid="timeline-row"][data-state="current"]').first().waitFor();
+    // 타임라인이 없는 화면(게이트·만료)은 자기 기준을 넘긴다.
+    await page.locator(opts.settledSelector ?? RAIL_SETTLED).first().waitFor();
     await settle(page);
     await page.evaluate(() => {
       const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -133,5 +141,39 @@ test.describe('공개 뷰어', () => {
   test('사진 없음 · 하루 일정', async ({ page }) => {
     await openViewer(page, '/p/team-offsite');
     await expect(page).toHaveScreenshot('viewer-nophoto.png', SHOT);
+  });
+
+  /*
+   * 아래 네 화면은 기준 이미지가 한 장도 없던 곳이다. 하필 이번 단계의 다크 시트
+   * 블로커(--fill-neutral == --surface-raised)가 났던 화면이 그 안에 있었다 —
+   * 그래서 **시트는 라이트·다크 둘 다** 찍는다.
+   */
+
+  test('장소 탭', async ({ page }) => {
+    await openViewer(page, '/p/jeju-workshop-2026');
+    await page.getByRole('tab', { name: '장소' }).click();
+    await expect(page.getByTestId('place-list')).toBeVisible();
+    await expect(page).toHaveScreenshot('viewer-places.png', SHOT);
+  });
+
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`장소 시트 — ${scheme}`, async ({ page }) => {
+      await openViewer(page, '/p/jeju-workshop-2026', { dark: scheme === 'dark' });
+      await page.getByRole('button', { name: /성산일출봉 트레킹/ }).click();
+      // 시트에는 교통 안내가 함께 뜬다(스펙 §5.1).
+      await expect(page.getByTestId('sheet-transport')).toBeVisible();
+      await expect(page).toHaveScreenshot(`viewer-sheet-${scheme}.png`, SHOT);
+    });
+  }
+
+  test('비밀번호 게이트', async ({ page }) => {
+    // 하이드레이션 전에는 제출 버튼이 잠겨 있다(네이티브 GET 제출 차단). 풀린 뒤가 최종 화면이다.
+    await openViewer(page, '/p/secret-party', { settledSelector: 'form button:not([disabled])' });
+    await expect(page).toHaveScreenshot('viewer-gate.png', SHOT);
+  });
+
+  test('만료된 링크', async ({ page }) => {
+    await openViewer(page, '/p/gone', { settledSelector: '[data-testid="status-glyph"]' });
+    await expect(page).toHaveScreenshot('viewer-expired.png', SHOT);
   });
 });
