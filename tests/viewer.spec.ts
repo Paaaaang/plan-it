@@ -186,3 +186,25 @@ test.describe('비밀번호 게이트 · 오류', () => {
     expect(color).not.toMatch(/rgb\(217, 45, 78\)/);
   });
 });
+
+/** 스펙 §9-6 — 하루 22개 항목에서 레일과 스크롤이 견디는지 */
+test.describe('긴 일정', () => {
+  test('하루 22개 항목에서도 레일이 첫 점부터 마지막 점까지 이어진다', async ({ page }) => {
+    await page.goto('/p/long-day');
+    await expect(page.getByTestId('timeline-row')).toHaveCount(22);
+
+    const rail = await page.getByTestId('progress-rail').boundingBox();
+    const first = await page.getByTestId('timeline-dot').first().boundingBox();
+    const last = await page.getByTestId('timeline-dot').last().boundingBox();
+
+    // 레일이 첫 점 위에서 시작해 마지막 점 아래에서 끝나야 한다 — 도중에 끊기면 안 된다.
+    expect(rail!.y).toBeLessThanOrEqual(first!.y + first!.height);
+    expect(rail!.y + rail!.height).toBeGreaterThanOrEqual(last!.y);
+
+    // 가로 스크롤이 생기면 안 된다.
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    );
+    expect(overflow).toBe(false);
+  });
+});
