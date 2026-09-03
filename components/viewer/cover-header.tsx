@@ -53,14 +53,14 @@ export function CoverHeader({ plan }: { plan: ViewerPlan }) {
       {/* 흰 글자·반투명 흰 배경은 커버 전용 예외다. 스크림 위에서만 쓰고
           다른 화면으로 복사하지 않는다 — 뷰어 테마(라이트/다크)와 무관하게
           커버는 항상 어둡기 때문. */}
-      <span className="absolute left-5 top-3.5 rounded-full bg-white/20 px-2.5 py-[5px] text-micro font-bold text-white">
+      <span className="absolute left-5 top-3.5 rounded-full bg-black/40 px-2.5 py-[5px] text-micro font-bold text-white">
         플랜잇으로 공유된 일정
       </span>
 
       <div className="absolute inset-x-0 bottom-0 px-5 pb-4 text-white">
         <div className="mb-[7px] flex gap-1.5">
-          <span className="rounded-full bg-white/25 px-2.5 py-[3px] text-micro font-bold">{plan.planType}</span>
-          <span className="rounded-full bg-white/25 px-2.5 py-[3px] text-micro font-bold">
+          <span className="rounded-full bg-black/40 px-2.5 py-[3px] text-micro font-bold">{plan.planType}</span>
+          <span className="rounded-full bg-black/40 px-2.5 py-[3px] text-micro font-bold">
             {periodLabel(plan.startDate, plan.endDate)}
           </span>
         </div>
