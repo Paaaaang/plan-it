@@ -4,18 +4,20 @@
  * @auth 불필요 (public) / 비밀번호 (private) / 없음 (draft·만료)
  *
  * 서버에서 뷰어 DTO만 받아 클라이언트 셸에 넘긴다.
+ * 조회는 lib/viewer/get-plan.ts를 거친다 — generateMetadata와 페이지가 한 요청에서
+ * 같은 slug를 두 번 부르므로 React cache()로 실제 조회를 1회로 접는다.
  * 기획자 전용 필드는 DTO에 아예 없다 — 타입이 유출을 막는다.
  */
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getBySlug } from "@/actions/viewer-actions";
+import { getPlan } from "@/lib/viewer/get-plan";
 import { ViewerShell } from "@/components/viewer/viewer-shell";
 import { coverSubline } from "@/lib/viewer/summary";
 
 export async function generateMetadata(props: PageProps<"/p/[slug]">): Promise<Metadata> {
   const { slug } = await props.params;
-  const result = await getBySlug(slug);
+  const result = await getPlan(slug);
 
   if (result.status !== "ok") {
     return {
@@ -43,7 +45,7 @@ export async function generateMetadata(props: PageProps<"/p/[slug]">): Promise<M
 
 export default async function ViewerPage(props: PageProps<"/p/[slug]">) {
   const { slug } = await props.params;
-  const result = await getBySlug(slug);
+  const result = await getPlan(slug);
 
   if (result.status === "notFound") notFound();
   // 임시: locked·expired는 Task 8에서 각자의 화면(비밀번호 게이트·만료 안내)을 붙인다.
