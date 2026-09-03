@@ -58,3 +58,6 @@ node_modules/
 
 # superpowers brainstorm mockups
 .superpowers/
+
+# .env.example은 더미 값만 담는다 — 커밋한다
+!.env.example
