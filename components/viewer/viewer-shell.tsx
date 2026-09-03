@@ -42,7 +42,9 @@ export function ViewerShell({ plan }: { plan: ViewerPlan }) {
   }
 
   return (
-    <div className="relative mx-auto min-h-dvh max-w-[480px] bg-bg pb-[74px]">
+    // 높이는 부모가 준다(app/p/layout.tsx). 셸이 `min-h-dvh`로 브라우저 뷰포트를
+    // 재면 3단계의 344px 폰 프레임 미리보기에서 프레임을 뚫는다.
+    <div className="relative mx-auto w-full grow max-w-[480px] bg-bg pb-[74px]">
       <CoverHeader plan={plan} />
       <NoticeBar notices={plan.notices} />
 
@@ -73,15 +75,6 @@ export function ViewerShell({ plan }: { plan: ViewerPlan }) {
           <PlaceList places={plan.places} onOpenPlace={handleOpenPlace} />
         </div>
       )}
-
-      {/*
-        스크롤 컨테이너(문서)에 CTA 높이(82px)만큼 하단 여백을 준다. 앵커·포커스·
-        scrollIntoView로 항목이 화면에 들어올 때 뷰포트 맨 아래에 붙어 CTA 뒤로 숨는 것을 막는다.
-        항목 쪽 scroll-margin이 아니라 컨테이너 쪽 scroll-padding이어야 브라우저의 스크롤 경로가
-        전부 이 여백을 본다(scroll-margin은 일부 프로그래밍 스크롤 경로에서 무시된다).
-        뷰어가 마운트된 동안에만 걸린다 — 다른 서페이스에는 영향이 없다.
-      */}
-      <style>{`html { scroll-padding-bottom: 96px; }`}</style>
 
       {/* 하단 고정 CTA. 위에 배경색 페이드를 깔아 스크롤 내용과 분리한다 (스펙 §5.1). */}
       <div

@@ -24,7 +24,8 @@ export function StatusScreen({
   children?: ReactNode;
 }) {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-[480px] flex-col items-center justify-center gap-3 bg-bg px-8 text-center">
+    // 높이는 부모가 준다(app/p/layout.tsx) — 뷰어 셸과 같은 이유다.
+    <main className="mx-auto flex w-full grow max-w-[480px] flex-col items-center justify-center gap-3 bg-bg px-8 text-center">
       {/*
         Icon은 data-testid를 통과시키지 않는다(프리미티브는 건드리지 않는다).
         span으로 감싸되 **색을 span에** 둔다 — 글리프는 currentColor로 그려지므로
