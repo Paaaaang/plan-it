@@ -15,3 +15,13 @@
  *
  * @usage import { Plan, Notice, Day, ScheduleItem, Place } from '@/types';
  */
+
+export type {
+  ViewerPlace,
+  ViewerItem,
+  ViewerDay,
+  ViewerNotice,
+  ViewerTransport,
+  ViewerPlan,
+  ViewerResult,
+} from "./viewer";
