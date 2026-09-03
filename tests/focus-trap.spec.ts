@@ -76,4 +76,26 @@ test.describe('모달 포커스 가둠', () => {
     await page.keyboard.press('Escape');
     await expect(opener).toBeFocused();
   });
+
+  // 회귀: 하이드레이션 전에 트리거에 초점이 있고 하이드레이션 후에 열면, 닫을 때 초점이 돌아와야 한다.
+  // useFocusTrap의 focusin 리스너는 하이드레이션 후에야 붙으므로, 그 전에 생긴 초점을 놓치면
+  // restoreRef가 비어 닫을 때 초점이 body로 떨어진다(실제 사용자 시나리오: 로딩 중 Tab → Enter).
+  for (const [opener, panel] of [['sheet-open', 'sheet-panel'], ['dialog-open', 'dialog-panel']]) {
+    test(`하이드레이션 전에 잡은 초점도 복원된다 — ${opener}`, async ({ page }) => {
+      await page.route('**/*.js**', async (route) => {
+        await new Promise((r) => setTimeout(r, 800));
+        await route.continue();
+      });
+      await page.goto('/ui', { waitUntil: 'commit' });
+      const trigger = page.locator(`[data-testid="${opener}"]`);
+      await trigger.waitFor({ state: 'attached' });
+      await trigger.evaluate((el: HTMLElement) => el.focus());
+      await page.waitForLoadState('networkidle');
+      await trigger.press('Enter');
+      await expect(page.getByTestId(panel)).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.getByTestId(panel)).toHaveCount(0);
+      await expect(trigger).toBeFocused();
+    });
+  }
 });

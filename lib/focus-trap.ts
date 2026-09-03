@@ -32,10 +32,17 @@ export function useFocusTrap(open: boolean, panelRef: React.RefObject<HTMLElemen
   // 대상이 패널 안인지는 panelRef가 아니라 실제 DOM 조상(role)으로 판단한다 — panelRef.current는
   // 커밋 중 ref가 붙는 타이밍이라, autoFocus의 focusin이 그보다 먼저 도착하면 아직 null일 수 있다.
   useEffect(() => {
-    function onFocusIn(e: FocusEvent) {
-      const target = e.target as HTMLElement | null;
-      if (target?.closest('[role="dialog"], [role="alertdialog"]')) return;
+    function record(target: HTMLElement | null) {
+      if (!target || target === document.body) return;
+      if (target.closest('[role="dialog"], [role="alertdialog"]')) return;
       restoreRef.current = target;
+    }
+    // 리스너가 붙기 전(하이드레이션 전)에 이미 초점을 가진 요소를 놓치지 않도록 한 번 씨앗을 심는다.
+    // 이게 없으면 하이드레이션 전에 Tab으로 트리거에 초점을 두고 하이드레이션 후 여는 흐름에서
+    // restoreRef가 비어 닫을 때 초점이 body로 떨어진다.
+    record(document.activeElement as HTMLElement | null);
+    function onFocusIn(e: FocusEvent) {
+      record(e.target as HTMLElement | null);
     }
     document.addEventListener("focusin", onFocusIn);
     return () => document.removeEventListener("focusin", onFocusIn);
