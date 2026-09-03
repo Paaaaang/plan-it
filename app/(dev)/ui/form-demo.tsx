@@ -28,8 +28,12 @@ export function FormDemo() {
       <div className="col-span-2">
         <TextField label="메모" multiline hint="참가자에게 보여요" />
       </div>
-      <DateField label="시작일" />
-      <DateField label="종료일" />
+      {/*
+        값을 못박는다. 비워두면 WebKit이 빈 date 입력에 **오늘 날짜**를 그려
+        시각 회귀 기준 이미지가 매일 밀린다. 프리미티브는 그대로 두고 여기서만 고정한다.
+      */}
+      <DateField label="시작일" defaultValue="2026-10-24" />
+      <DateField label="종료일" defaultValue="2026-10-26" />
     </div>
   );
 }
