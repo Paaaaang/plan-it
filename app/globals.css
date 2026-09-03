@@ -90,7 +90,14 @@
   --dark-fill-brand:       #FF8163;
   --dark-fill-brand-hover: #FF9C83;
   --dark-fill-brand-weak:  #2A1712;
-  --dark-fill-neutral:     #232833;
+  /* --surface-raised(#232833)와 같은 값이면 시트·다이얼로그 안의 secondary 버튼과
+     미선택 칩이 통째로 사라진다(대비 1.00). bg·surface·raised 세 바닥 전부에서
+     보여야 하므로 가장 밝은 바닥인 raised보다 한 단 위에 둔다.
+     사다리: raised #232833 < border #2A303D < rail-future #2E3541 <
+             fill-neutral #333A48 < border-strong #3A4250 — 단조 증가를 지킨다.
+     대비: vs raised 1.29 · vs surface 1.44 · vs bg 1.64 (셋 다 눈으로 구분되는
+     raised-vs-bg 1.27보다 크다). 그 위의 --text-primary는 9.92:1. */
+  --dark-fill-neutral:     #333A48;
   --dark-text-on-brand-weak: #FFA890;
 
   --dark-accent-ring:   #3D2018;
