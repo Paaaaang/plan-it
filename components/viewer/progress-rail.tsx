@@ -9,7 +9,10 @@ export function ProgressRail({ progress }: { progress: number | null }) {
     <div
       aria-hidden="true"
       data-testid="progress-rail"
-      className="pointer-events-none absolute left-[55px] top-[18px] bottom-[18px] w-[3px] rounded-full"
+      // left는 점의 중심에 맞춘다: 시각 열 38px + 행 gap 10px = 48px에서 점(11px)이 시작하니
+      // 중심은 53.5px, 레일(3px)의 left는 52px이다. 시안의 55px은 행 gap이 11px일 때의 값이라
+      // 그대로 옮기면 오른쪽으로 3px 어긋난다 (스크린샷으로 실측).
+      className="pointer-events-none absolute bottom-[18px] left-[52px] top-[18px] w-[3px] rounded-full"
       style={{ background: railGradient(progress) }}
     />
   );

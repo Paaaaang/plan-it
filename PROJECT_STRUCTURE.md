@@ -103,14 +103,14 @@ plan-it/
 │   │       └── map-embed.tsx               #       지도 임베드
 │   │
 │   ├── viewer/                             # 👁️ 공개 뷰어 컴포넌트
-│   │   ├── viewer-header.tsx               #    헤더: 제목·기간·기간요약
-│   │   ├── viewer-notice.tsx               #    공지 카드 렌더링
-│   │   ├── viewer-timetable.tsx            #    타임테이블 타임라인 렌더링
-│   │   ├── viewer-directions.tsx           #    오시는 길: 지도·주소복사·외부 앱
-│   │   ├── viewer-transport.tsx            #    대중교통 안내 렌더링
-│   │   ├── password-gate.tsx               #    비공개 비밀번호 입력 게이트
-│   │   ├── day-switcher.tsx                #    Day 전환 UI
-│   │   └── action-buttons.tsx              #    실용 액션 (주소복사·지도앱 연결)
+│   │   ├── viewer-shell.tsx                #    셸: 탭·일차·시트 상태 (유일한 클라이언트 경계)
+│   │   ├── cover-header.tsx                #    커버: 사진/코랄 그라데이션 + 제목·기간
+│   │   ├── notice-bar.tsx                  #    공지 한 줄 바 ↔ 목록 disclosure
+│   │   ├── timeline.tsx                    #    타임테이블: 레일 + 항목 목록
+│   │   ├── timeline-item.tsx               #    타임라인 항목 한 행 (past/current/future)
+│   │   ├── progress-rail.tsx               #    진행 레일 (3px 세로선)
+│   │   ├── place-list.tsx                  #    장소 탭 카드 목록 (레일 없음)
+│   │   └── password-gate.tsx               #    비공개 비밀번호 입력 게이트
 │   │
 │   └── admin/                              # 🛡️ 관리자 콘솔 컴포넌트
 │       ├── admin-sidebar.tsx               #    관리자 사이드바 내비게이션
@@ -126,6 +126,11 @@ plan-it/
 │   │   ├── server.ts                       #    서버 클라이언트 (Server Component/Action)
 │   │   ├── session.ts                      #    Proxy용 세션 갱신 클라이언트
 │   │   └── admin.ts                        #    관리자/서비스 롤 클라이언트
+│   │
+│   ├── viewer/                             # 👁️ 공개 뷰어 순수 로직
+│   │   ├── rail.ts                         #    레일 진행도·항목 상태 계산
+│   │   ├── summary.ts                      #    공지 요약·기간/날짜 문구
+│   │   └── links.ts                        #    카카오맵·네이버지도 딥링크
 │   │
 │   └── utils/                              # 🔧 유틸리티 함수
 │       ├── slug.ts                         #    slug 생성·검증

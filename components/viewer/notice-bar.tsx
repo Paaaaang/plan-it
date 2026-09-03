@@ -27,6 +27,10 @@ export function NoticeBar({ notices }: { notices: ViewerNotice[] }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        // 접근 가능한 이름을 고정한다. 안 그러면 펼치는 순간 이름이 요약 문구에서
+        // "꼭 확인해요"로 통째로 바뀌어, 스크린리더에는 방금 누른 버튼이 다른
+        // 버튼으로 바뀐 것처럼 들린다. 시각 표시는 아래 span이 그대로 담당한다.
+        aria-label={`공지 ${notices.length}개`}
         className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left"
       >
         <Icon name={CircleAlert} size={16} strokeWidth={2.2} className="flex-none text-on-brand-weak" />
