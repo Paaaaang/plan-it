@@ -1,3 +1,6 @@
+// node:crypto를 쓴다 — 이 파일은 서버에서만 import한다.
+// 클라이언트 컴포넌트는 데이터를 props로 받는다.
+import { createHash } from "node:crypto";
 import type { ViewerPlan, ViewerPlace } from "@/types/viewer";
 
 // KST(Asia/Seoul)로 고정한다. rail.ts::isSameDay는 브라우저 로컬 TZ로 "오늘"을 비교하는데,
@@ -143,16 +146,43 @@ const PLANS: Record<string, ViewerPlan> = {
   [longDay.slug]: longDay,
 };
 
-/** 비밀번호가 걸린 일정. 값은 Task 8에서 쓴다. */
-export const LOCKED_SLUGS = new Set(["secret-party"]);
+/**
+ * 비공개(비밀번호) 일정 판정. `secret-`로 시작하는 slug는 전부 잠긴 것으로 본다.
+ *
+ * 왜 집합이 아니라 접두사인가: 시도 카운터가 프로세스 메모리다
+ * (actions/viewer-actions.ts). E2E가 고정 slug를 나눠 쓰면 프로젝트 병렬·재시도에
+ * 따라 남은 횟수가 흔들린다. 접두사로 열어 두면 틀리는 테스트가 매번 새 slug를 쓸 수 있다.
+ * 비밀번호 해시가 없는 slug는 어떤 입력도 통과하지 못한다(fail-closed).
+ *
+ * DB가 붙으면 plans.visibility = 'private' 조회로 대체된다.
+ */
+export function isLockedSlug(slug: string): boolean {
+  return slug.startsWith("secret-");
+}
+
 /** 만료된 링크 */
 export const EXPIRED_SLUGS = new Set(["gone"]);
+
+/**
+ * 픽스처 단계의 비밀번호 해시. DB가 붙으면 plans.password_hash로 옮긴다.
+ *
+ * ponytail: sha256(솔트 없음) — **픽스처이기 때문이다.** 실제 DB 컬럼이 붙는 순간
+ *           salt + scrypt(node:crypto.scrypt)로 바꾼다. 지금 값은 소스에 평문이 없는
+ *           고정 다이제스트일 뿐, 오프라인 크래킹 저항이 없다.
+ */
+export const FIXTURE_PASSWORD_HASH: Record<string, string> = {
+  // sha256("1234")
+  "secret-party": createHash("sha256").update("1234").digest("hex"),
+};
+
+/** 비밀번호 시도 상한. 막다른 길에 닿기 전에 남은 횟수를 미리 알려준다(스펙 §5.1). */
+export const MAX_ATTEMPTS = 5;
 
 export function findFixturePlan(slug: string): ViewerPlan | undefined {
   return PLANS[slug];
 }
 
-/** 비밀번호를 통과했을 때 보여줄 일정. Task 8에서 쓴다. */
+/** 비밀번호를 통과했을 때 보여줄 일정. */
 export function lockedFixturePlan(slug: string): ViewerPlan | undefined {
-  return slug === "secret-party" ? { ...jeju, slug, title: "비공개 모임" } : undefined;
+  return isLockedSlug(slug) ? { ...jeju, slug, title: "비공개 모임" } : undefined;
 }

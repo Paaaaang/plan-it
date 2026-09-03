@@ -139,3 +139,50 @@ test.describe('장소 시트', () => {
     await expect(page.getByText('주소를 복사했어요')).toBeVisible();
   });
 });
+
+/**
+ * 비밀번호 게이트 · 오류/만료 화면.
+ *
+ * 테스트 격리 — 시도 카운터는 프로세스 메모리다(actions/viewer-actions.ts).
+ * desktop·mobile 두 프로젝트가 같은 dev 서버를 병렬로 때리고 CI는 재시도까지 한다.
+ * 카운터를 건드리는 테스트가 고정 slug를 쓰면 "4번"이 실행 순서에 따라 3번·2번이 된다.
+ * → **틀리는 테스트만 매 실행마다 새 slug를 쓴다.** `secret-`로 시작하는 slug는 전부
+ *   비공개이고(lib/fixtures/viewer.ts::isLockedSlug), 비밀번호 해시가 없는 slug는
+ *   어떤 입력도 틀린 것으로 처리된다(fail-closed). 나머지 테스트는 secret-party를 쓴다 —
+ *   읽기만 하거나(게이트 노출) 성공해서 카운터를 지운다. 둘 다 카운터를 올리지 않는다.
+ */
+const freshLockedSlug = () => `secret-${crypto.randomUUID()}`;
+
+test.describe('비밀번호 게이트 · 오류', () => {
+  test('비공개 일정은 게이트를 먼저 보여준다', async ({ page }) => {
+    await page.goto('/p/secret-party');
+    await expect(page.getByRole('heading', { name: /비밀번호/ })).toBeVisible();
+    // 막다른 길에 닿기 전에 남은 시도를 미리 알려준다
+    await expect(page.getByText(/5번/)).toBeVisible();
+    await expect(page.getByTestId('timeline')).toHaveCount(0);
+  });
+
+  test('틀리면 남은 시도가 줄어든다', async ({ page }) => {
+    await page.goto(`/p/${freshLockedSlug()}`);
+    await page.getByLabel('비밀번호').fill('0000');
+    await page.getByRole('button', { name: '확인' }).click();
+    await expect(page.getByText(/4번/)).toBeVisible();
+  });
+
+  test('맞으면 일정이 열린다', async ({ page }) => {
+    await page.goto('/p/secret-party');
+    await page.getByLabel('비밀번호').fill('1234');
+    await page.getByRole('button', { name: '확인' }).click();
+    await expect(page.getByTestId('timeline')).toBeVisible();
+  });
+
+  test('만료된 링크는 빨강을 쓰지 않고 나갈 길을 하나 준다', async ({ page }) => {
+    await page.goto('/p/gone');
+    await expect(page.getByText(/만료/)).toBeVisible();
+    await expect(page.getByRole('link', { name: '플랜잇 둘러보기' })).toBeVisible();
+    // 링크 만료는 사용자 잘못이 아니다 — 빨강을 쓰지 않는다 (스펙 §5.1)
+    const glyph = page.getByTestId('status-glyph');
+    const color = await glyph.evaluate((el) => getComputedStyle(el).color);
+    expect(color).not.toMatch(/rgb\(217, 45, 78\)/);
+  });
+});

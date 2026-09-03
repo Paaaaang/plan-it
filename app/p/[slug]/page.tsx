@@ -10,10 +10,15 @@
  */
 
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Link as LinkIcon } from "lucide-react";
 import { getPlan } from "@/lib/viewer/get-plan";
 import { ViewerShell } from "@/components/viewer/viewer-shell";
+import { PasswordGate } from "@/components/viewer/password-gate";
+import { StatusScreen } from "@/components/viewer/status-screen";
 import { coverSubline } from "@/lib/viewer/summary";
+import { MAX_ATTEMPTS } from "@/lib/fixtures/viewer";
 
 export async function generateMetadata(props: PageProps<"/p/[slug]">): Promise<Metadata> {
   const { slug } = await props.params;
@@ -48,9 +53,29 @@ export default async function ViewerPage(props: PageProps<"/p/[slug]">) {
   const result = await getPlan(slug);
 
   if (result.status === "notFound") notFound();
-  // 임시: locked·expired는 Task 8에서 각자의 화면(비밀번호 게이트·만료 안내)을 붙인다.
-  // 그때까지는 404와 같게 둔다 — 공개 경로라 존재 자체를 드러내지 않는 쪽이 안전하다.
-  if (result.status !== "ok") notFound();
+
+  // 잠금 해제 판정은 getBySlug 안에 있다. 여기가 status를 보고 화면만 고른다 —
+  // 페이지가 인가를 계산하지 않으므로 분기를 잊어도 게이트가 새지 않는다.
+  if (result.status === "locked") {
+    return <PasswordGate slug={result.slug} maxAttempts={MAX_ATTEMPTS} />;
+  }
+
+  if (result.status === "expired") {
+    return (
+      <StatusScreen
+        glyph={LinkIcon}
+        title="만료된 링크예요"
+        description="이 일정은 더 이상 열리지 않아요. 공유해준 분에게 새 링크를 받아보세요."
+      >
+        <Link
+          href="/"
+          className="mt-2 rounded-btn bg-neutral-fill px-4 py-2.5 text-label font-bold text-primary"
+        >
+          플랜잇 둘러보기
+        </Link>
+      </StatusScreen>
+    );
+  }
 
   return <ViewerShell plan={result.plan} />;
 }

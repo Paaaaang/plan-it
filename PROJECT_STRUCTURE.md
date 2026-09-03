@@ -111,7 +111,8 @@ plan-it/
 │   │   ├── progress-rail.tsx               #    진행 레일 (3px 세로선)
 │   │   ├── place-list.tsx                  #    장소 탭 카드 목록 (레일 없음)
 │   │   ├── place-sheet.tsx                 #    장소 상세 바텀시트 (액션 3개, 코랄은 길찾기 하나)
-│   │   └── password-gate.tsx               #    비공개 비밀번호 입력 게이트
+│   │   ├── password-gate.tsx               #    비공개 비밀번호 입력 게이트 (서버 검증 · httpOnly 쿠키)
+│   │   └── status-screen.tsx               #    막다른 길 껍데기 (게이트·만료·오류 공용, 빨강 금지)
 │   │
 │   └── admin/                              # 🛡️ 관리자 콘솔 컴포넌트
 │       ├── admin-sidebar.tsx               #    관리자 사이드바 내비게이션
