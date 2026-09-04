@@ -218,6 +218,36 @@ test.describe('Tabs · SegmentedControl', () => {
     await expect(page.getByTestId('segment-demo').getByRole('radio', { name: '비공개' }))
       .toHaveAttribute('aria-checked', 'true');
   });
+
+  test('로빙 탭인덱스 — 체크된 라디오만 Tab 순서에 있어요', async ({ page }) => {
+    await page.goto('/ui');
+    const group = page.getByTestId('segment-demo');
+    await expect(group.getByRole('radio', { name: '공개', exact: true })).toHaveAttribute('tabindex', '0');
+    await expect(group.getByRole('radio', { name: '임시저장' })).toHaveAttribute('tabindex', '-1');
+    await expect(group.getByRole('radio', { name: '비공개' })).toHaveAttribute('tabindex', '-1');
+  });
+
+  test('화살표로 세그먼트를 옮기면 선택도 함께 이동해요', async ({ page }) => {
+    await page.goto('/ui');
+    const group = page.getByTestId('segment-demo');
+    await group.getByRole('radio', { name: '공개', exact: true }).focus();
+    await page.keyboard.press('ArrowRight');
+    const next = group.getByRole('radio', { name: '비공개' });
+    await expect(next).toHaveAttribute('aria-checked', 'true');
+    await expect(next).toBeFocused();
+    await expect(next).toHaveAttribute('tabindex', '0');
+  });
+
+  test('세그먼트 화살표는 양 끝에서 순환해요', async ({ page }) => {
+    await page.goto('/ui');
+    const group = page.getByTestId('segment-demo');
+    await group.getByRole('radio', { name: '공개', exact: true }).focus();
+    await page.keyboard.press('ArrowRight'); // 공개 → 비공개(마지막)
+    await page.keyboard.press('ArrowRight'); // 순환 → 임시저장(처음)
+    const first = group.getByRole('radio', { name: '임시저장' });
+    await expect(first).toHaveAttribute('aria-checked', 'true');
+    await expect(first).toBeFocused();
+  });
 });
 
 test.describe('Toast · Loader', () => {
