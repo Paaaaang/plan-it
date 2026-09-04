@@ -24,5 +24,10 @@ import type { ViewerResult } from "@/types/viewer";
  *
  * `unlocked`를 일부러 받지 않는다 — 비밀번호 해제 판정은 Task 8이 서버에서 스스로 한다.
  * 여기서 파라미터로 받으면 캐시 키가 갈라지고 인가가 호출자 손에 남는다.
+ *
+ * 편집이 스토어를 바꾼 뒤 **같은 요청에서** 다시 읽으면 여기 캐시된 옛 값이 나온다.
+ * 지금은 문제가 아니다: 이 래퍼의 호출자는 /p/[slug] 하나뿐이고, 편집기는 다른 라우트라
+ * 쓰기와 뷰어 렌더가 한 요청에 겹치지 않는다(revalidatePath로 다음 방문에 갱신된다).
+ * 뷰어 화면 자체에 쓰기 액션이 생기면 그때는 이 래퍼를 거치지 말고 스토어를 직접 읽어야 한다.
  */
 export const getPlan = cache((slug: string): Promise<ViewerResult> => getBySlug(slug));

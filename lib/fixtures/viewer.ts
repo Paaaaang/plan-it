@@ -228,6 +228,11 @@ export function findFixturePlan(slug: string): ViewerPlan | undefined {
   return PLANS.get(slug);
 }
 
+/** 메모리 스토어(lib/store/plans.ts)의 씨앗. PLANS는 Map이라 values()를 편다. */
+export function allFixturePlans(): ViewerPlan[] {
+  return [...PLANS.values()];
+}
+
 /** 비밀번호를 통과했을 때 보여줄 일정. */
 export function lockedFixturePlan(slug: string): ViewerPlan | undefined {
   return isLockedSlug(slug) ? { ...jeju, slug, title: "비공개 모임" } : undefined;

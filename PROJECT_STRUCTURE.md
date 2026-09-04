@@ -135,6 +135,15 @@ plan-it/
 │   │   ├── links.ts                        #    카카오맵·네이버지도 딥링크
 │   │   └── get-plan.ts                     #    getBySlug 요청 단위 캐시 (React cache)
 │   │
+│   ├── store/                              # 🗃️ 메모리 스토어 (Supabase 이전 단계)
+│   │   └── plans.ts                        #    slug→ViewerPlan · 상태 맵. 뷰어와 편집기의 공통 저장소
+│   │
+│   ├── editor/                             # ✏️ 편집기 순수 로직
+│   │   └── validate.ts                     #    입력 검증 (제목·날짜·시간·태그·순서)
+│   │
+│   ├── fixtures/                           # 🌱 픽스처
+│   │   └── viewer.ts                       #    뷰어 씨앗 데이터 · 잠금/만료 규칙
+│   │
 │   └── utils/                              # 🔧 유틸리티 함수
 │       ├── slug.ts                         #    slug 생성·검증
 │       ├── date.ts                         #    날짜 포맷·Day 계산
@@ -151,6 +160,8 @@ plan-it/
 │
 ├── types/                                  # 📦 TypeScript 타입 정의
 │   ├── index.ts                            #    통합 export
+│   ├── viewer.ts                           #    공개 뷰어 DTO (기획자 전용 필드 없음)
+│   ├── editor.ts                           #    ActionResult · 편집기 입력 타입 · PlanStatus
 │   ├── plan.ts                             #    Plan (일정) 타입
 │   ├── notice.ts                           #    Notice (공지) 타입
 │   ├── schedule.ts                         #    Day, ScheduleItem 타입
@@ -162,10 +173,10 @@ plan-it/
 │   └── announcement.ts                     #    Announcement 타입
 │
 ├── actions/                                # 🚀 Server Actions (서버 액션)
-│   ├── plan-actions.ts                     #    일정 CRUD (list/create/update/delete)
-│   ├── notice-actions.ts                   #    공지 CRUD + reorder
-│   ├── schedule-actions.ts                 #    Day/ScheduleItem CRUD + linkPlace
-│   ├── place-actions.ts                    #    장소 CRUD + togglePin
+│   ├── plan-actions.ts                     #    기본 정보 저장 · 상태 전환 · 커버
+│   ├── notice-actions.ts                   #    공지 CRUD + reorderNotices(ids)
+│   ├── schedule-actions.ts                 #    항목 CRUD + reorderItems(ids) + linkPlace
+│   ├── place-actions.ts                    #    장소 CRUD + togglePin (참조 사본 동기화)
 │   ├── transport-actions.ts                #    교통 안내 CRUD + reorder
 │   ├── auth-actions.ts                     #    로그인/로그아웃
 │   ├── viewer-actions.ts                   #    뷰어 getBySlug / verifyPassword

@@ -1,7 +1,8 @@
 /**
  * @file 뷰어 데이터 조회 · 비밀번호 검증 서버 액션
  * @description 공개 뷰어용 일정 데이터 조회와 비공개 일정 잠금 해제.
- *              현재는 픽스처(lib/fixtures/viewer.ts) 기반 구현이다.
+ *              조회는 메모리 스토어(lib/store/plans.ts)를 거친다 — 픽스처로 씨앗을 뿌리고
+ *              편집기가 같은 곳에 쓴다. 잠금·만료 판정은 아직 픽스처 규칙이다.
  *
  * 'use server'
  *
@@ -12,7 +13,8 @@
  *  - verifyPassword(slug, pw)     → 비공개 일정 비밀번호 검증 + 통과 시 httpOnly 쿠키 발급
  *
  * @connects
- *  - lib/fixtures/viewer.ts       → 픽스처 데이터 (findFixturePlan, lockedFixturePlan, isLockedSlug, EXPIRED_SLUGS, FIXTURE_PASSWORD_HASH, MAX_ATTEMPTS)
+ *  - lib/store/plans.ts           → 공개 일정 조회 (getPlan) — 편집기가 쓰는 그 스토어다
+ *  - lib/fixtures/viewer.ts       → 잠금·만료 판정과 씨앗 (lockedFixturePlan, isLockedSlug, EXPIRED_SLUGS, FIXTURE_PASSWORD_HASH, MAX_ATTEMPTS)
  *  - types/viewer.ts              → 반환 타입 (ViewerResult, ViewerPlan)
  *
  * @security
@@ -28,8 +30,8 @@
 
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { getPlan as getStoredPlan } from "@/lib/store/plans";
 import {
-  findFixturePlan,
   lockedFixturePlan,
   isLockedSlug,
   EXPIRED_SLUGS,
@@ -90,7 +92,8 @@ export async function getBySlug(slug: string): Promise<ViewerResult> {
     const plan = lockedFixturePlan(slug);
     return plan ? { status: "ok", plan } : { status: "notFound" };
   }
-  const plan = findFixturePlan(slug);
+  // 스토어를 읽는다 — 편집기가 쓰는 곳과 같은 곳이다. 씨앗이 같은 픽스처라 화면은 그대로다.
+  const plan = getStoredPlan(slug);
   return plan ? { status: "ok", plan } : { status: "notFound" };
 }
 
