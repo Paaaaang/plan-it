@@ -177,6 +177,35 @@ const longDay: ViewerPlan = {
 };
 
 /**
+ * 비공개(비밀번호) 일정. 스토어의 씨앗 상태가 `private`이 된다 — `isLockedSlug`가
+ * 그 번역을 한다(lib/store/plans.ts::ensure). 잠금 판정의 진실은 스토어 하나다.
+ */
+const secretParty: ViewerPlan = { ...jeju, slug: "secret-party", title: "비공개 모임" };
+
+/** 편집기 E2E 전용. 상태·제목을 쓰는 테스트가 뷰어 픽스처를 오염시키지 않게 따로 둔다. */
+const editorDemo: ViewerPlan = {
+  slug: "editor-demo",
+  title: "편집 데모",
+  planType: "모임",
+  partyLabel: "3명",
+  startDate: dayOffset(0),
+  endDate: dayOffset(0),
+  coverImageUrl: null,
+  notices: [{ id: "ed-n1", title: "장소가 바뀔 수 있어요", body: "확정되면 다시 알려드릴게요." }],
+  days: [
+    {
+      dayNumber: 1,
+      date: dayOffset(0),
+      items: [
+        { id: "ed-i1", startTime: "19:00", durationMin: 120, activityName: "저녁 식사", memo: null, place: null },
+      ],
+    },
+  ],
+  places: [],
+  transport: [],
+};
+
+/**
  * slug → 일정. **Map이다. 객체 리터럴이 아니다.**
  *
  * slug는 URL 조각이 그대로 들어오는 값이라 `PLANS[slug]` 형태의 객체 조회는
@@ -188,10 +217,16 @@ const PLANS = new Map<string, ViewerPlan>([
   [jeju.slug, jeju],
   [offsite.slug, offsite],
   [longDay.slug, longDay],
+  [secretParty.slug, secretParty],
+  [editorDemo.slug, editorDemo],
 ]);
 
 /**
- * 비공개(비밀번호) 일정 판정. `secret-`로 시작하는 slug는 전부 잠긴 것으로 본다.
+ * 비공개(비밀번호) 일정의 **씨앗** 판정. `secret-`로 시작하는 slug는 전부 잠긴 것으로 본다.
+ *
+ * 이 함수는 스토어 상태로 번역되는 자리에서만 쓴다(lib/store/plans.ts). 뷰어(getBySlug)는
+ * 스토어 상태만 본다 — 그래야 편집기가 `setStatus`로 바꾼 것이 즉시 반영되고,
+ * 잠금 판정이 두 갈래로 갈라지지 않는다.
  *
  * 왜 집합이 아니라 접두사인가: 시도 카운터가 프로세스 메모리다
  * (actions/viewer-actions.ts). E2E가 고정 slug를 나눠 쓰면 프로젝트 병렬·재시도에
@@ -231,9 +266,4 @@ export function findFixturePlan(slug: string): ViewerPlan | undefined {
 /** 메모리 스토어(lib/store/plans.ts)의 씨앗. PLANS는 Map이라 values()를 편다. */
 export function allFixturePlans(): ViewerPlan[] {
   return [...PLANS.values()];
-}
-
-/** 비밀번호를 통과했을 때 보여줄 일정. */
-export function lockedFixturePlan(slug: string): ViewerPlan | undefined {
-  return isLockedSlug(slug) ? { ...jeju, slug, title: "비공개 모임" } : undefined;
 }

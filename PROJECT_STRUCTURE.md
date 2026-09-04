@@ -73,9 +73,9 @@ plan-it/
 │   │   └── create-plan-button.tsx          #    새 일정 생성 버튼
 │   │
 │   ├── editor/                             # ✏️ 편집기 컴포넌트
-│   │   ├── editor-layout.tsx               #    편집 페이지 전체 레이아웃
-│   │   ├── section-header.tsx              #    섹션 공통 헤더
-│   │   ├── status-control.tsx              #    상태 설정 (draft/public/private)
+│   │   ├── editor-shell.tsx                #    편집기 셸 — 상단 바 + 좌우 2단
+│   │   ├── top-bar.tsx                     #    상단 바 — 제목·저장 상태·공개 상태·공유
+│   │   ├── section-shell.tsx               #    섹션 껍데기 (번호 뱃지 + 제목 + 카운트)
 │   │   ├── transport-section.tsx           #    대중교통/이동 안내 섹션
 │   │   ├── transport-item-form.tsx         #    교통 항목 폼
 │   │   │
@@ -153,6 +153,7 @@ plan-it/
 │
 ├── hooks/                                  # ⚡ React 커스텀 훅
 │   ├── use-plan.ts                         #    일정 데이터 관리 훅
+│   ├── use-editor-plan.ts                  #    편집기 저장 상태(idle/saving/saved/error)
 │   ├── use-auth.ts                         #    인증 상태 관리 훅
 │   ├── use-media-query.ts                  #    반응형 미디어 쿼리 훅
 │   ├── use-bottom-sheet.ts                 #    BottomSheet 제어 훅

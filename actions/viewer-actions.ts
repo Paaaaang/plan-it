@@ -2,7 +2,8 @@
  * @file 뷰어 데이터 조회 · 비밀번호 검증 서버 액션
  * @description 공개 뷰어용 일정 데이터 조회와 비공개 일정 잠금 해제.
  *              조회는 메모리 스토어(lib/store/plans.ts)를 거친다 — 픽스처로 씨앗을 뿌리고
- *              편집기가 같은 곳에 쓴다. 잠금·만료 판정은 아직 픽스처 규칙이다.
+ *              편집기가 같은 곳에 쓴다. **공개 상태(draft/public/private)도 스토어가 진실이다.**
+ *              만료만 아직 픽스처 규칙이다.
  *
  * 'use server'
  *
@@ -13,8 +14,8 @@
  *  - verifyPassword(slug, pw)     → 비공개 일정 비밀번호 검증 + 통과 시 httpOnly 쿠키 발급
  *
  * @connects
- *  - lib/store/plans.ts           → 공개 일정 조회 (getPlan) — 편집기가 쓰는 그 스토어다
- *  - lib/fixtures/viewer.ts       → 잠금·만료 판정과 씨앗 (lockedFixturePlan, isLockedSlug, EXPIRED_SLUGS, FIXTURE_PASSWORD_HASH, MAX_ATTEMPTS)
+ *  - lib/store/plans.ts           → 일정·상태 조회 (getPlan, getPlanStatus) — 편집기가 쓰는 그 스토어다
+ *  - lib/fixtures/viewer.ts       → 만료 판정과 비밀번호 (isLockedSlug, EXPIRED_SLUGS, FIXTURE_PASSWORD_HASH, MAX_ATTEMPTS)
  *  - types/viewer.ts              → 반환 타입 (ViewerResult, ViewerPlan)
  *
  * @security
@@ -30,9 +31,8 @@
 
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { getPlan as getStoredPlan } from "@/lib/store/plans";
+import { getPlan as getStoredPlan, getPlanStatus } from "@/lib/store/plans";
 import {
-  lockedFixturePlan,
   isLockedSlug,
   EXPIRED_SLUGS,
   FIXTURE_PASSWORD_HASH,
@@ -87,12 +87,16 @@ export async function getBySlug(slug: string): Promise<ViewerResult> {
 
   // TODO(supabase): 이 블록만 Postgres 조회로 교체한다. 아래 분기 구조는 그대로 쓴다.
   if (EXPIRED_SLUGS.has(slug)) return { status: "expired" };
-  if (isLockedSlug(slug)) {
-    if (!(await isUnlocked(slug))) return { status: "locked", slug };
-    const plan = lockedFixturePlan(slug);
-    return plan ? { status: "ok", plan } : { status: "notFound" };
-  }
-  // 스토어를 읽는다 — 편집기가 쓰는 곳과 같은 곳이다. 씨앗이 같은 픽스처라 화면은 그대로다.
+
+  // 공개 상태는 스토어가 진실이다 — 편집기의 setStatus가 쓰는 그 맵이다.
+  // 세그먼트를 옮기면 이 경로가 즉시 따라야 상태가 장식이 아니게 된다.
+  const status = getPlanStatus(slug);
+
+  // 임시저장은 기획자만 보는 상태다. "있지만 못 본다"가 아니라 없는 것으로 답한다 —
+  // 404와 403이 갈리면 링크를 받은 사람이 일정의 존재를 알아낼 수 있다.
+  if (status === "draft") return { status: "notFound" };
+  if (status === "private" && !(await isUnlocked(slug))) return { status: "locked", slug };
+
   const plan = getStoredPlan(slug);
   return plan ? { status: "ok", plan } : { status: "notFound" };
 }

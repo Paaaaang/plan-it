@@ -7,7 +7,7 @@
  * 부르는 쪽(Server Action)은 그대로다.
  */
 
-import { allFixturePlans } from "@/lib/fixtures/viewer";
+import { allFixturePlans, isLockedSlug } from "@/lib/fixtures/viewer";
 import type { PlanStatus } from "@/types/editor";
 import type { ViewerPlan } from "@/types/viewer";
 
@@ -29,8 +29,12 @@ function ensure(): State {
     // 한 장소 객체를 places[]와 items[].place가 같이 참조하는데, structuredClone은
     // 클론 안에서 그 동일성을 그대로 지킨다.
     const plans = new Map(allFixturePlans().map((p) => [p.slug, structuredClone(p)]));
-    // 씨앗 픽스처는 지금 뷰어가 로그인 없이 보고 있는 것들이다 = public.
-    const status = new Map<string, PlanStatus>([...plans.keys()].map((s) => [s, "public"]));
+    // 씨앗 상태. 픽스처의 잠금 규칙(isLockedSlug)을 여기서 한 번 상태로 번역한다 —
+    // 그 뒤로 잠금·공개의 진실은 이 맵 하나다. 나머지는 지금 뷰어가 로그인 없이
+    // 보고 있는 것들이다 = public.
+    const status = new Map<string, PlanStatus>(
+      [...plans.keys()].map((s) => [s, isLockedSlug(s) ? "private" : "public"]),
+    );
     state = { plans, status };
   }
   return state;
@@ -50,7 +54,11 @@ export function updatePlan(slug: string, patch: Partial<ViewerPlan>): ViewerPlan
 }
 
 export function getPlanStatus(slug: string): PlanStatus | undefined {
-  return ensure().status.get(slug);
+  // 스토어에 일정이 없어도 `secret-*` slug는 비공개로 본다. E2E가 시도 카운터를
+  // 나눠 쓰지 않으려고 매 실행 새 slug(`secret-<uuid>`)를 쓰기 때문이다
+  // (tests/viewer.spec.ts의 freshLockedSlug). 비밀번호 해시가 없으므로 fail-closed다 —
+  // 잠긴 채로 남고 그 뒤에 보여줄 일정도 없다.
+  return ensure().status.get(slug) ?? (isLockedSlug(slug) ? "private" : undefined);
 }
 
 export function setPlanStatus(slug: string, status: PlanStatus): void {

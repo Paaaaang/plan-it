@@ -1,69 +1,13 @@
 /**
  * @file 기획자 콘솔 공통 레이아웃
- * @description 대시보드·편집 페이지의 공통 레이아웃. 좌측 내비 + 상단 헤더.
+ * @description 통과용 껍데기다. 편집기(`ed-light.png`)에는 사이드바가 없고 자체 상단 바가
+ *              전폭을 쓴다 — 사이드바는 대시보드(4단계)의 것이라 그때 대시보드 라우트에 붙인다.
+ *              여기 있던 사이드바는 1단계에서 사라진 토큰(--surface-card·--border-secondary·
+ *              --surface-page·--title-1-fw)을 참조하고 있었다. 죽은 이름과 함께 걷어냈다.
  * @auth 인증 필요 — proxy.ts에서 비인증 사용자 리다이렉트
  * @spec F-AUTH-2
  */
 
-import Image from "next/image";
-import Link from "next/link";
-
-export default function ConsoleLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={{ display: "flex", minHeight: "100dvh" }}>
-      {/* Sidebar — 데스크톱 전용 */}
-      <aside
-        style={{
-          width: 240,
-          flexShrink: 0,
-          background: "var(--surface-card)",
-          borderRight: "1px solid var(--border-secondary)",
-          padding: "var(--space-6) var(--space-4)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--space-4)",
-        }}
-      >
-        <Link
-          href="/dashboard"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--space-2)",
-            textDecoration: "none",
-            marginBottom: "var(--space-4)",
-          }}
-        >
-          <Image src="/logos/Logo_Black.png" alt="플랜잇" width={32} height={32} />
-          <span
-            style={{
-              font: "var(--title-1-fw) var(--title-1-size)/1 var(--font-sans)",
-              color: "var(--text-primary)",
-              letterSpacing: "var(--title-1-ls)",
-            }}
-          >
-            플랜잇
-          </span>
-        </Link>
-        {/* TODO: 내비게이션 메뉴 항목 (대시보드, 설정 등) */}
-        {/* TODO: 하단 사용자 정보 + 로그아웃 */}
-      </aside>
-
-      {/* Main content */}
-      <main
-        style={{
-          flex: 1,
-          minWidth: 0,
-          background: "var(--surface-page)",
-          overflow: "auto",
-        }}
-      >
-        {children}
-      </main>
-    </div>
-  );
+export default function ConsoleLayout({ children }: { children: React.ReactNode }) {
+  return <div className="min-h-dvh bg-bg">{children}</div>;
 }
