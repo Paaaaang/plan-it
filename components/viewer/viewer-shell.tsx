@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { CoverHeader } from "@/components/viewer/cover-header";
 import { NoticeBar } from "@/components/viewer/notice-bar";
 import { PlaceList } from "@/components/viewer/place-list";
@@ -34,6 +34,17 @@ export function ViewerShell({ plan }: { plan: ViewerPlan }) {
   const [dayIndex, setDayIndex] = useState(0);
   const [openPlace, setOpenPlace] = useState<ViewerPlace | null>(null);
 
+  // tab↔tabpanel 연결(APG tabs 패턴)에 쓰는 id. 인스턴스마다 고유해야 해서 useId.
+  const idBase = useId();
+  const timetableTabId = `${idBase}-tab-timetable`;
+  const placesTabId = `${idBase}-tab-places`;
+  const timetablePanelId = `${idBase}-panel-timetable`;
+  const placesPanelId = `${idBase}-panel-places`;
+  const tabItems = [
+    { ...TABS[0]!, id: timetableTabId, panelId: timetablePanelId },
+    { ...TABS[1]!, id: placesTabId, panelId: placesPanelId },
+  ];
+
   const day = plan.days[dayIndex] ?? plan.days[0];
   const multiDay = plan.days.length > 1;
 
@@ -49,11 +60,11 @@ export function ViewerShell({ plan }: { plan: ViewerPlan }) {
       <NoticeBar notices={plan.notices} />
 
       <div className="px-5 pt-4">
-        <Tabs items={TABS} value={tab} onChange={setTab} />
+        <Tabs items={tabItems} value={tab} onChange={setTab} />
       </div>
 
       {tab === "timetable" ? (
-        <>
+        <div id={timetablePanelId} role="tabpanel" aria-labelledby={timetableTabId} tabIndex={0}>
           {multiDay && (
             <div className="flex gap-[7px] px-5 pb-3 pt-3" data-testid="day-chips">
               {plan.days.map((d, i) => (
@@ -69,9 +80,9 @@ export function ViewerShell({ plan }: { plan: ViewerPlan }) {
             </p>
           )}
           {day && <Timeline day={day} onOpenPlace={handleOpenPlace} />}
-        </>
+        </div>
       ) : (
-        <div className="pt-4">
+        <div id={placesPanelId} role="tabpanel" aria-labelledby={placesTabId} tabIndex={0} className="pt-4">
           <PlaceList places={plan.places} onOpenPlace={handleOpenPlace} />
         </div>
       )}

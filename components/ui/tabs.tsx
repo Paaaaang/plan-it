@@ -7,7 +7,9 @@ import { useRef } from "react";
  * 채운 세그먼트보다 가벼워서 커버 아래 크롬을 덜 무겁게 한다.
  * 좌우 화살표로 이동하는 ARIA 탭 패턴을 따른다.
  */
-export type TabItem = { value: string; label: string };
+// id/panelId는 선택 사항이다 — 안 주면 지금처럼 id 없는 탭 버튼만 그린다.
+// 주면 WAI-ARIA APG tabs 패턴대로 tab↔tabpanel을 잇는다(id/aria-controls).
+export type TabItem = { value: string; label: string; id?: string; panelId?: string };
 
 export function Tabs({
   items,
@@ -54,9 +56,11 @@ export function Tabs({
           <button
             key={t.value}
             ref={(el) => { refs.current[i] = el; }}
+            id={t.id}
             type="button"
             role="tab"
             aria-selected={active}
+            aria-controls={t.panelId}
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(t.value)}
             className={[

@@ -44,6 +44,34 @@ test.describe('공개 뷰어', () => {
     await expect(page.getByTestId('cover')).toHaveAttribute('data-cover', 'fallback');
   });
 
+  test('탭이 자신의 tabpanel과 연결된다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+
+    const timetableTab = page.getByRole('tab', { name: '타임테이블' });
+    const timetableTabId = await timetableTab.getAttribute('id');
+    const timetableControls = await timetableTab.getAttribute('aria-controls');
+    expect(timetableTabId, '탭에 id가 있어야 패널이 aria-labelledby로 되가리킬 수 있다').toBeTruthy();
+    expect(timetableControls, '선택된 탭엔 aria-controls가 있어야 한다').toBeTruthy();
+
+    // aria-controls가 가리키는 요소가 실제로 존재하고 tabpanel이며, 그 탭을 되가리킨다.
+    const timetablePanel = page.locator(`[id="${timetableControls}"]`);
+    await expect(timetablePanel).toHaveAttribute('role', 'tabpanel');
+    await expect(timetablePanel).toHaveAttribute('aria-labelledby', timetableTabId!);
+
+    // 탭을 바꾸면 연결도 따라간다.
+    const placesTab = page.getByRole('tab', { name: '장소' });
+    await placesTab.click();
+    const placesTabId = await placesTab.getAttribute('id');
+    const placesControls = await placesTab.getAttribute('aria-controls');
+    expect(placesTabId).toBeTruthy();
+    expect(placesControls).toBeTruthy();
+    expect(placesControls, '장소 탭은 타임테이블 패널을 가리키면 안 된다').not.toBe(timetableControls);
+
+    const placesPanel = page.locator(`[id="${placesControls}"]`);
+    await expect(placesPanel).toHaveAttribute('role', 'tabpanel');
+    await expect(placesPanel).toHaveAttribute('aria-labelledby', placesTabId!);
+  });
+
   test('장소 탭으로 넘어가면 레일이 사라진다', async ({ page }) => {
     await page.goto('/p/jeju-workshop-2026');
     await page.getByRole('tab', { name: '장소' }).click();
