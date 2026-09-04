@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Dialog } from "@/components/ui/dialog";
@@ -12,6 +12,12 @@ export function OverlayDemo() {
   // 중첩 모달: 시트 안에서 연 다이얼로그. 닫을 때 초점이 배경이 아니라
   // 시트 안 이 트리거로 돌아오는지 검증한다(스펙 §9-7).
   const [nestedDialog, setNestedDialog] = useState(false);
+
+  // 안정된 참조로 둔다 — 매 렌더 새 클로저를 주면 그 클로저를 deps로 삼는 escape
+  // 리스너 effect가 열림 상태와 무관하게 재등록돼, 등록 순서(따라서 모달 스택 검증)가
+  // 이 렌더링 디테일에 좌우돼 버린다. 실제 소비자(예: 편집기)도 보통 안정된 핸들러를 쓴다.
+  const closeSheet = useCallback(() => setSheet(false), []);
+  const closeNestedDialog = useCallback(() => setNestedDialog(false), []);
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -25,7 +31,7 @@ export function OverlayDemo() {
         <b data-testid="delete-result">{deleted ? "지웠어요" : "안 지웠어요"}</b>
       </span>
 
-      <BottomSheet open={sheet} onClose={() => setSheet(false)} title="흑돼지 명가">
+      <BottomSheet open={sheet} onClose={closeSheet} title="흑돼지 명가">
         <p className="mt-1 text-label text-secondary">제주 서귀포시 중앙로 45</p>
         <div className="mt-4 flex gap-2">
           <Button variant="secondary" block>주소 복사</Button>
@@ -46,8 +52,8 @@ export function OverlayDemo() {
             useFocusTrap이 "내 패널 안에서 연 자식 모달"로 인식한다. */}
         <Dialog
           open={nestedDialog}
-          onClose={() => setNestedDialog(false)}
-          onConfirm={() => setNestedDialog(false)}
+          onClose={closeNestedDialog}
+          onConfirm={closeNestedDialog}
           tone="danger"
           title="이 장소를 지울까요?"
           description="시트 안에서 연 다이얼로그예요. 닫으면 초점이 시트 안 트리거로 돌아와야 해요."

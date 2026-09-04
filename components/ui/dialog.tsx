@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { lockBodyScroll, unlockBodyScroll } from "@/components/ui/bottom-sheet";
+import { lockBodyScroll, unlockBodyScroll, pushModal, popModal, isTopModal } from "@/components/ui/bottom-sheet";
 import { useFocusTrap } from "@/lib/focus-trap";
 
 /**
@@ -34,13 +34,20 @@ export function Dialog({
 }) {
   const titleId = useId();
   const descId = useId();
+  const modalId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const focusScopeProps = useFocusTrap(open, panelRef);
 
   useEffect(() => {
     if (!open) return;
+    pushModal(modalId);
+    return () => popModal(modalId);
+  }, [open, modalId]);
+
+  useEffect(() => {
+    if (!open) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && isTopModal(modalId)) onClose();
     }
     document.addEventListener("keydown", onKey);
     lockBodyScroll();
@@ -48,7 +55,7 @@ export function Dialog({
       document.removeEventListener("keydown", onKey);
       unlockBodyScroll();
     };
-  }, [open, onClose]);
+  }, [open, onClose, modalId]);
 
   if (!open) return null;
 

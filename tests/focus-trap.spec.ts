@@ -94,15 +94,14 @@ test.describe('모달 포커스 가둠', () => {
     const nestedPanel = page.getByTestId('nested-dialog-panel');
     await expect(nestedPanel).toBeVisible();
 
-    // 두 모달이 동시에 열려 있을 때 Escape는 각 모달이 독립적으로 구독해 순서가
-    // 보장되지 않는다(모달 스택 우선순위는 §9-7 범위 밖) — 다이얼로그 자신의
-    // 취소 버튼으로 닫아 초점 복원만 결정적으로 검증한다.
-    await nestedPanel.getByRole('button', { name: '그대로 둘게요' }).click();
+    // 모달 스택이 최상단(가장 나중에 연 = 안쪽 다이얼로그)만 Escape에 반응해야 한다.
+    // 한 번 누르면 다이얼로그만 닫히고 시트는 남는다.
+    await page.keyboard.press('Escape');
     await expect(nestedPanel).toHaveCount(0);
+    await expect(page.getByTestId('sheet-panel')).toBeVisible();
     await expect(nestedOpener).toBeFocused();
 
-    // 시트까지 마저 닫으면 원래 트리거로 돌아온다. 이 시점엔 시트 하나만 열려
-    // 있으므로 Escape가 결정적이다.
+    // 한 번 더 누르면 이제 최상단인 시트가 닫히고 원래 트리거로 돌아온다.
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('sheet-panel')).toHaveCount(0);
     await expect(sheetOpener).toBeFocused();
