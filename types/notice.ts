@@ -8,5 +8,5 @@
  * @used-by
  *  - actions/notice-actions.ts                    → CRUD + reorder
  *  - components/editor/notice/*                   → 공지 편집
- *  - components/viewer/viewer-notice.tsx          → 공지 렌더링
+ *  - components/viewer/notice-bar.tsx             → 뷰어 렌더링 (types/viewer.ts::ViewerNotice 경유)
  */

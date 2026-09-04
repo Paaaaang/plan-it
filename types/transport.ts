@@ -8,5 +8,5 @@
  * @used-by
  *  - actions/transport-actions.ts                  → CRUD + reorder
  *  - components/editor/transport-section.tsx       → 교통 편집
- *  - components/viewer/viewer-transport.tsx        → 교통 렌더링
+ *  - types/viewer.ts::ViewerTransport              → 뷰어 DTO. 렌더링 컴포넌트는 아직 없다
  */

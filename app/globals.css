@@ -90,7 +90,14 @@
   --dark-fill-brand:       #FF8163;
   --dark-fill-brand-hover: #FF9C83;
   --dark-fill-brand-weak:  #2A1712;
-  --dark-fill-neutral:     #232833;
+  /* --surface-raised(#232833)와 같은 값이면 시트·다이얼로그 안의 secondary 버튼과
+     미선택 칩이 통째로 사라진다(대비 1.00). bg·surface·raised 세 바닥 전부에서
+     보여야 하므로 가장 밝은 바닥인 raised보다 한 단 위에 둔다.
+     사다리: raised #232833 < border #2A303D < rail-future #2E3541 <
+             fill-neutral #333A48 < border-strong #3A4250 — 단조 증가를 지킨다.
+     대비: vs raised 1.29 · vs surface 1.44 · vs bg 1.64 (셋 다 눈으로 구분되는
+     raised-vs-bg 1.27보다 크다). 그 위의 --text-primary는 9.92:1. */
+  --dark-fill-neutral:     #333A48;
   --dark-text-on-brand-weak: #FFA890;
 
   --dark-accent-ring:   #3D2018;
@@ -101,6 +108,10 @@
   --dark-shadow-1: 0 4px 14px rgba(0, 0, 0, 0.34), 0 1px 2px rgba(0, 0, 0, 0.30);
   --dark-shadow-2: 0 8px 22px rgba(0, 0, 0, 0.42);
   --dark-shadow-3: 0 -8px 34px rgba(0, 0, 0, 0.52);
+
+  --dark-rail-past:   #FF8163;
+  --dark-rail-melt:   #8C5A48;
+  --dark-rail-future: #2E3541;
 }
 
 /* ============================================================
@@ -132,6 +143,11 @@
 
   --accent-ring:   var(--coral-100);
   --accent-border: var(--coral-200);
+
+  /* 진행 레일 — 지나온 구간은 코랄, 남은 구간은 회색, 그 사이가 현재 시각이다 (스펙 §4.6) */
+  --rail-past:   var(--coral-500);
+  --rail-melt:   var(--coral-200);
+  --rail-future: var(--neutral-200);
 
   --success:      var(--green-500);
   --success-weak: var(--green-50);
@@ -179,6 +195,10 @@
     --accent-ring:   var(--dark-accent-ring);
     --accent-border: var(--dark-accent-border);
 
+    --rail-past:   var(--dark-rail-past);
+    --rail-melt:   var(--dark-rail-melt);
+    --rail-future: var(--dark-rail-future);
+
     --success:      var(--green-300);
     --success-weak: var(--green-950);
     --text-on-success-weak: var(--green-300);
@@ -223,6 +243,10 @@
 
   --accent-ring:   var(--dark-accent-ring);
   --accent-border: var(--dark-accent-border);
+
+  --rail-past:   var(--dark-rail-past);
+  --rail-melt:   var(--dark-rail-melt);
+  --rail-future: var(--dark-rail-future);
 
   --success:      var(--green-300);
   --success-weak: var(--green-950);

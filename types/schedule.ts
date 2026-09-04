@@ -13,7 +13,7 @@
  *  - actions/schedule-actions.ts                       → Day/ScheduleItem CRUD
  *  - components/editor/timetable/*                     → 타임테이블 편집
  *  - components/editor/basic-info/basic-info-section.tsx → 기간 → Day 연동
- *  - components/viewer/viewer-timetable.tsx             → 타임테이블 렌더링
+ *  - components/viewer/timeline.tsx · timeline-item.tsx → 뷰어 렌더링 (types/viewer.ts::ViewerItem 경유)
  *
  * @relations
  *  - ScheduleItem.place_id → Place (선택적 연결, 유동 장소)

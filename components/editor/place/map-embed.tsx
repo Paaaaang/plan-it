@@ -8,7 +8,6 @@
  *
  * @connects
  *  - components/editor/place/place-form.tsx       → 편집 시 좌표 미리보기
- *  - components/viewer/viewer-directions.tsx       → 뷰어 오시는 길에서 재사용
  *  - types/place.ts                                → Place.lat, Place.lng
  *
  * @notes 지도 provider: 네이버 지도 API 또는 카카오맵 API 사용 예정

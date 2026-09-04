@@ -103,14 +103,16 @@ plan-it/
 │   │       └── map-embed.tsx               #       지도 임베드
 │   │
 │   ├── viewer/                             # 👁️ 공개 뷰어 컴포넌트
-│   │   ├── viewer-header.tsx               #    헤더: 제목·기간·기간요약
-│   │   ├── viewer-notice.tsx               #    공지 카드 렌더링
-│   │   ├── viewer-timetable.tsx            #    타임테이블 타임라인 렌더링
-│   │   ├── viewer-directions.tsx           #    오시는 길: 지도·주소복사·외부 앱
-│   │   ├── viewer-transport.tsx            #    대중교통 안내 렌더링
-│   │   ├── password-gate.tsx               #    비공개 비밀번호 입력 게이트
-│   │   ├── day-switcher.tsx                #    Day 전환 UI
-│   │   └── action-buttons.tsx              #    실용 액션 (주소복사·지도앱 연결)
+│   │   ├── viewer-shell.tsx                #    셸: 탭·일차·시트 상태 (유일한 클라이언트 경계)
+│   │   ├── cover-header.tsx                #    커버: 사진/코랄 그라데이션 + 제목·기간
+│   │   ├── notice-bar.tsx                  #    공지 한 줄 바 ↔ 목록 disclosure
+│   │   ├── timeline.tsx                    #    타임테이블: 레일 + 항목 목록
+│   │   ├── timeline-item.tsx               #    타임라인 항목 한 행 (past/current/future)
+│   │   ├── progress-rail.tsx               #    진행 레일 (3px 세로선)
+│   │   ├── place-list.tsx                  #    장소 탭 카드 목록 (레일 없음)
+│   │   ├── place-sheet.tsx                 #    장소 상세 바텀시트 (액션 3개, 코랄은 길찾기 하나)
+│   │   ├── password-gate.tsx               #    비공개 비밀번호 입력 게이트 (서버 검증 · httpOnly 쿠키)
+│   │   └── status-screen.tsx               #    막다른 길 껍데기 (게이트·만료·오류 공용, 빨강 금지)
 │   │
 │   └── admin/                              # 🛡️ 관리자 콘솔 컴포넌트
 │       ├── admin-sidebar.tsx               #    관리자 사이드바 내비게이션
@@ -126,6 +128,12 @@ plan-it/
 │   │   ├── server.ts                       #    서버 클라이언트 (Server Component/Action)
 │   │   ├── session.ts                      #    Proxy용 세션 갱신 클라이언트
 │   │   └── admin.ts                        #    관리자/서비스 롤 클라이언트
+│   │
+│   ├── viewer/                             # 👁️ 공개 뷰어 순수 로직
+│   │   ├── rail.ts                         #    레일 진행도·항목 상태 계산
+│   │   ├── summary.ts                      #    공지 요약·기간/날짜 문구
+│   │   ├── links.ts                        #    카카오맵·네이버지도 딥링크
+│   │   └── get-plan.ts                     #    getBySlug 요청 단위 캐시 (React cache)
 │   │
 │   └── utils/                              # 🔧 유틸리티 함수
 │       ├── slug.ts                         #    slug 생성·검증
@@ -210,6 +218,8 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
 - **`(console)/`** — 기획자 콘솔. 인증된 사용자만 접근. 좌측 사이드바 + 메인 레이아웃. ✅ 보일러플레이트 완료.
 - **`(admin)/`** — 관리자 콘솔. `role='admin'`만 접근. 다크 사이드바 + KPI/모더레이션/공지. ✅ 보일러플레이트 완료.
 - **`p/[slug]/`** — 공개 뷰어. 모바일 퍼스트 480px. generateMetadata로 OG 태그 지원. ✅ 보일러플레이트 완료.
+- **`p/layout.tsx`** — 뷰어 라우트 레이아웃. 화면 높이(`min-h-dvh`)와 `html { scroll-padding-bottom }`을
+  여기서 준다. 셸이 문서 전역을 건드리면 3단계 편집기 미리보기가 호스트 화면을 바꾼다. ✅ 구현 완료.
 - **`page.tsx`** — 랜딩페이지. 서비스 소개·가치 제안·CTA.
 - **`layout.tsx`** — 루트 레이아웃. `<html lang="ko">`, Pretendard 폰트 (CSS `@font-face`), 플랜잇 SEO 메타데이터. ✅ 구현 완료.
 - **`globals.css`** — **planit-design-system 토큰 통합**: 색상(Brand Blue + Grey + Semantic), 타이포(Pretendard ramp), 스페이싱(4px ladder), 라디우스(xs~full), 엘리베이션(shadow 1~3), 모션(ease/dur). Tailwind v4 `@theme inline` 연동. ✅ 구현 완료.
@@ -234,7 +244,7 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
   - `notice/` — 공지 (CRUD, 드래그 순서 변경)
   - `timetable/` — 타임테이블 (Day 탭, 일정 항목, 장소 연결)
   - `place/` — 장소 (고정/유동, 지도 임베드)
-- **`viewer/`** — 공개 뷰어 전용. 헤더, 공지, 타임테이블, 오시는 길, 비밀번호 게이트.
+- **`viewer/`** — 공개 뷰어 전용. 셸, 커버, 공지 바, 타임라인(레일·항목), 장소 목록·상세 시트, 비밀번호 게이트.
 - **`admin/`** — 관리자 콘솔. KPI 위젯, 모더레이션, 공지 관리.
 
 ### 3. `lib/` (라이브러리)

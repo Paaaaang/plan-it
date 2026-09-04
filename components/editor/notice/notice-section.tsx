@@ -10,5 +10,5 @@
  *  - components/editor/notice/notice-form.tsx          → 공지 추가/수정 폼
  *  - actions/notice-actions.ts                         → CRUD + reorder
  *  - types/notice.ts                                   → Notice 타입
- *  - components/viewer/viewer-notice.tsx                → 뷰어에서 이 데이터를 렌더링
+ *  - components/viewer/notice-bar.tsx                   → 뷰어에서 이 데이터를 렌더링
  */

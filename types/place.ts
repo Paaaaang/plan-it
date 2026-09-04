@@ -9,8 +9,7 @@
  *  - actions/place-actions.ts                       → CRUD + togglePin
  *  - components/editor/place/*                      → 장소 편집
  *  - components/editor/timetable/place-linker.tsx  → 타임테이블 장소 연결
- *  - components/viewer/viewer-directions.tsx        → 오시는 길 렌더링
- *  - components/viewer/action-buttons.tsx           → 주소 복사
+ *  - components/viewer/place-list.tsx · place-sheet.tsx → 뷰어 렌더링 (types/viewer.ts::ViewerPlace 경유)
  *
  * @important
  *  - is_pinned=true: 고정(대표) 장소 → 뷰어 "오시는 길" 상시 노출

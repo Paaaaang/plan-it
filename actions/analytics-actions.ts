@@ -14,7 +14,6 @@
  *  - lib/supabase/admin.ts                   → 서비스 롤 클라이언트
  *  - types/analytics.ts                       → AnalyticsEvent 타입
  *  - app/p/[slug]/page.tsx                    → plan_viewed 이벤트
- *  - components/viewer/action-buttons.tsx     → action_click 이벤트
  *  - actions/plan-actions.ts                  → plan_created, plan_published 이벤트
  *
  * @important Phase 1(MVP)에 선행 구축 필요 → 관리자 KPI에서 집계 데이터 필요
