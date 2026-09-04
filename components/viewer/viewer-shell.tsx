@@ -44,7 +44,7 @@ export function ViewerShell({ plan }: { plan: ViewerPlan }) {
   return (
     // 높이는 부모가 준다(app/p/layout.tsx). 셸이 `min-h-dvh`로 브라우저 뷰포트를
     // 재면 3단계의 344px 폰 프레임 미리보기에서 프레임을 뚫는다.
-    <div className="relative mx-auto w-full grow max-w-[480px] bg-bg pb-[74px]">
+    <div className="relative mx-auto w-full grow max-w-[480px] bg-bg">
       <CoverHeader plan={plan} />
       <NoticeBar notices={plan.notices} />
 
