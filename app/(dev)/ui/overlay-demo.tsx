@@ -9,6 +9,9 @@ export function OverlayDemo() {
   const [sheet, setSheet] = useState(false);
   const [dialog, setDialog] = useState(false);
   const [deleted, setDeleted] = useState(false);
+  // 중첩 모달: 시트 안에서 연 다이얼로그. 닫을 때 초점이 배경이 아니라
+  // 시트 안 이 트리거로 돌아오는지 검증한다(스펙 §9-7).
+  const [nestedDialog, setNestedDialog] = useState(false);
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -28,6 +31,30 @@ export function OverlayDemo() {
           <Button variant="secondary" block>주소 복사</Button>
           <Button block>카카오맵으로 길찾기</Button>
         </div>
+        <div className="mt-4">
+          <Button
+            data-testid="nested-dialog-open"
+            variant="secondary"
+            block
+            onClick={() => setNestedDialog(true)}
+          >
+            이 장소 지우기
+          </Button>
+        </div>
+
+        {/* 시트의 children 안에 둔다 — DOM상으로도 시트 패널의 자손이어야
+            useFocusTrap이 "내 패널 안에서 연 자식 모달"로 인식한다. */}
+        <Dialog
+          open={nestedDialog}
+          onClose={() => setNestedDialog(false)}
+          onConfirm={() => setNestedDialog(false)}
+          tone="danger"
+          title="이 장소를 지울까요?"
+          description="시트 안에서 연 다이얼로그예요. 닫으면 초점이 시트 안 트리거로 돌아와야 해요."
+          confirmLabel="지울게요"
+          cancelLabel="그대로 둘게요"
+          testId="nested-dialog-panel"
+        />
       </BottomSheet>
 
       <Dialog

@@ -38,7 +38,7 @@ export function BottomSheet({
 }) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(open, panelRef);
+  const focusScopeProps = useFocusTrap(open, panelRef);
 
   useEffect(() => {
     if (!open) return;
@@ -77,6 +77,7 @@ export function BottomSheet({
         // 밀려 나간 제목을 스크롤로 되돌릴 수 없다 — 넘치는 만큼은 패널 안에서 스크롤한다.
         className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-sheet bg-raised px-5 pb-5 pt-2.5 shadow-sheet"
         style={{ animation: "planit-sheet-in var(--dur-base) var(--ease-out)" }}
+        {...focusScopeProps}
       >
         <div aria-hidden="true" className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-strong" />
         {title && (

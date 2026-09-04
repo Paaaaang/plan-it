@@ -19,6 +19,7 @@ export function Dialog({
   confirmLabel = "확인",
   cancelLabel = "취소",
   tone = "brand",
+  testId = "dialog-panel",
 }: {
   open: boolean;
   onClose: () => void;
@@ -28,11 +29,13 @@ export function Dialog({
   confirmLabel?: string;
   cancelLabel?: string;
   tone?: "brand" | "danger";
+  // 갤러리에 같은 Dialog가 여러 인스턴스 있을 때(중첩 데모 등) 구분용.
+  testId?: string;
 }) {
   const titleId = useId();
   const descId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(open, panelRef);
+  const focusScopeProps = useFocusTrap(open, panelRef);
 
   useEffect(() => {
     if (!open) return;
@@ -60,9 +63,10 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
-        data-testid="dialog-panel"
+        data-testid={testId}
         className="relative w-full max-w-sm rounded-dialog bg-raised p-5 shadow-pop"
         style={{ animation: "planit-dialog-in var(--dur-base) var(--ease-out)" }}
+        {...focusScopeProps}
       >
         <h2 id={titleId} className="text-title-3 font-extrabold tracking-tight">{title}</h2>
         {description && (

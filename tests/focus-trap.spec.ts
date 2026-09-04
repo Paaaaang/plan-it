@@ -77,6 +77,37 @@ test.describe('모달 포커스 가둠', () => {
     await expect(opener).toBeFocused();
   });
 
+  // 중첩: 시트 안에서 다이얼로그를 열면, 다이얼로그를 닫을 때 초점이 배경이 아니라
+  // 시트 안 그 트리거로 돌아와야 한다. 전역 role 조회로 "패널 안"을 판정하면
+  // 바깥 시트 안의 트리거도 걸려서 안쪽 다이얼로그가 돌아갈 곳을 잃는다.
+  test('중첩 모달 — 시트 안에서 연 다이얼로그를 닫으면 초점이 시트 안 트리거로 돌아온다', async ({ page }) => {
+    await page.goto('/ui');
+    await page.waitForLoadState('networkidle');
+    const sheetOpener = page.getByRole('button', { name: '시트 열기' });
+    await sheetOpener.focus();
+    await sheetOpener.press('Enter');
+    await expect(page.getByTestId('sheet-panel')).toBeVisible();
+
+    const nestedOpener = page.getByTestId('nested-dialog-open');
+    await nestedOpener.focus();
+    await nestedOpener.press('Enter');
+    const nestedPanel = page.getByTestId('nested-dialog-panel');
+    await expect(nestedPanel).toBeVisible();
+
+    // 두 모달이 동시에 열려 있을 때 Escape는 각 모달이 독립적으로 구독해 순서가
+    // 보장되지 않는다(모달 스택 우선순위는 §9-7 범위 밖) — 다이얼로그 자신의
+    // 취소 버튼으로 닫아 초점 복원만 결정적으로 검증한다.
+    await nestedPanel.getByRole('button', { name: '그대로 둘게요' }).click();
+    await expect(nestedPanel).toHaveCount(0);
+    await expect(nestedOpener).toBeFocused();
+
+    // 시트까지 마저 닫으면 원래 트리거로 돌아온다. 이 시점엔 시트 하나만 열려
+    // 있으므로 Escape가 결정적이다.
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('sheet-panel')).toHaveCount(0);
+    await expect(sheetOpener).toBeFocused();
+  });
+
   // 회귀: 하이드레이션 전에 트리거에 초점이 있고 하이드레이션 후에 열면, 닫을 때 초점이 돌아와야 한다.
   // useFocusTrap의 focusin 리스너는 하이드레이션 후에야 붙으므로, 그 전에 생긴 초점을 놓치면
   // restoreRef가 비어 닫을 때 초점이 body로 떨어진다(실제 사용자 시나리오: 로딩 중 Tab → Enter).
