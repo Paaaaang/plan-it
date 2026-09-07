@@ -17,15 +17,15 @@ export function SectionShell({
   children?: React.ReactNode;
 }) {
   return (
-    <section className="rounded-card bg-surface p-5 shadow-card">
-      <header className="flex items-center gap-2.5">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-weak text-caption font-extrabold text-on-brand-weak">
+    <section className="rounded-card bg-surface shadow-card">
+      <header className="flex items-center gap-2.5 px-4 py-3.5">
+        <span className="flex h-6 w-6 items-center justify-center rounded-xs bg-brand-weak text-caption font-extrabold text-on-brand-weak">
           {number}
         </span>
-        <h2 className="text-title-3 font-extrabold tracking-tight">{title}</h2>
+        <h2 className="text-item-title font-bold tracking-tight">{title}</h2>
         {count && <span className="ml-auto text-caption font-semibold text-tertiary">{count}</span>}
       </header>
-      {children && <div className="mt-4">{children}</div>}
+      {children && <div className="px-4 pb-4">{children}</div>}
     </section>
   );
 }
