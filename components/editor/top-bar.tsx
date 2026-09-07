@@ -69,8 +69,11 @@ export function TopBar({ plan, status: initialStatus }: { plan: ViewerPlan; stat
         partyLabel: plan.partyLabel ?? "",
       }),
     );
-    // 서버가 거부하면 화면에 이유가 남고, 다음 blur에서 다시 시도된다.
+    // 서버가 거부하면 input을 마지막 저장 값으로 되돌린다. save 슬롯 하나를 모든
+    // 액션이 공유해서 이 오류 문구는 다음 액션(예: 세그먼트 이동)이 곧 덮어쓸 수
+    // 있다 — 그래도 입력값만은 화면과 서버가 어긋난 채로 남으면 안 된다.
     if (ok) setSavedTitle(title);
+    else setTitle(savedTitle);
   }, [title, savedTitle, plan, run]);
 
   const changeStatus = useCallback(

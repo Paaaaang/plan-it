@@ -66,6 +66,28 @@ test.describe('편집기 상단 바', () => {
     await title.blur();
     await expect(page.getByText('제목을 입력해 주세요.')).toBeVisible();
   });
+
+  test('제목 저장 실패 뒤 세그먼트를 옮겨도 입력값이 거짓말하지 않는다', async ({ page }) => {
+    // save 슬롯 하나를 모든 액션이 공유한다 — 세그먼트 이동이 "저장됨"으로
+    // 덮어써도 제목 입력엔 저장 안 된 공백이 아니라 마지막 저장 값이 남아야 한다.
+    await page.goto(DEMO);
+    const title = page.getByRole('textbox', { name: '일정 제목' });
+    const savedValue = await title.inputValue();
+
+    await title.fill('   ');
+    await title.blur();
+    await expect(page.getByText('제목을 입력해 주세요.')).toBeVisible();
+
+    const group = page.getByRole('radiogroup', { name: '공개 상태' });
+    await group.getByRole('radio', { name: '비공개' }).click();
+    await expect(page.getByTestId('save-status')).toContainText('저장됨');
+
+    await expect(title).toHaveValue(savedValue);
+
+    // 되돌린다.
+    await group.getByRole('radio', { name: '공개', exact: true }).click();
+    await expect(page.getByTestId('save-status')).toContainText('저장됨');
+  });
 });
 
 /**
