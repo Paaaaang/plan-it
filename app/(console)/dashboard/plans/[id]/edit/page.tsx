@@ -14,6 +14,7 @@ import { notFound } from "next/navigation";
 import { getPlan, getPlanStatus } from "@/lib/store/plans";
 import { EditorShell } from "@/components/editor/editor-shell";
 import { SectionShell } from "@/components/editor/section-shell";
+import { BasicInfoSection } from "@/components/editor/basic-info-section";
 
 export const metadata: Metadata = {
   title: "일정 편집 — 플랜잇",
@@ -32,7 +33,9 @@ export default async function EditPlanPage(props: PageProps<"/dashboard/plans/[i
   return (
     <EditorShell plan={plan} status={status}>
       {/* 각 섹션의 알맹이는 뒤 태스크가 채운다. 지금은 셸과 상단 바까지다. */}
-      <SectionShell number={1} title="기본 정보" />
+      <SectionShell number={1} title="기본 정보">
+        <BasicInfoSection plan={plan} />
+      </SectionShell>
       <SectionShell number={2} title="공지" count={`${plan.notices.length}개`} />
       <SectionShell
         number={3}

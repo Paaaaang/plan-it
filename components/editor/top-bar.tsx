@@ -8,10 +8,10 @@ import { Icon } from "@/components/ui/icon";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useToast } from "@/components/ui/toast";
 import { useNow } from "@/hooks/use-now";
-import { useEditorPlan, type SaveState } from "@/hooks/use-editor-plan";
-import { saveBasicInfo, setStatus } from "@/actions/plan-actions";
+import { type SaveState } from "@/hooks/use-editor-plan";
+import { useEditor } from "@/components/editor/editor-shell";
+import { setStatus } from "@/actions/plan-actions";
 import type { PlanStatus } from "@/types/editor";
-import type { ViewerPlan } from "@/types/viewer";
 
 const STATUS_ITEMS = [
   { value: "draft", label: "임시저장" },
@@ -45,45 +45,25 @@ function saveLabel(save: SaveState, now: Date | null): { dot: string; text: stri
   }
 }
 
-export function TopBar({ plan, status: initialStatus }: { plan: ViewerPlan; status: PlanStatus }) {
-  const { save, run } = useEditorPlan();
+export function TopBar({ slug, status: initialStatus }: { slug: string; status: PlanStatus }) {
+  // 제목은 1번 섹션의 제목 필드와 **같은 상태**를 본다. 각자 스냅샷을 들면 나중에
+  // 저장한 쪽이 먼저 저장한 값을 되돌린다 — 근거는 editor-shell.tsx에 적어 뒀다.
+  const { basics, edit, commit, save, run } = useEditor();
   const { show } = useToast();
   const now = useNow();
   // 낙관적 상태. 세그먼트는 컨트롤드라 여기서 바로 옮기지 않으면 키 조작이 서버 왕복만큼 밀린다.
   const [status, setLocalStatus] = useState<PlanStatus>(initialStatus);
-  const [title, setTitle] = useState(plan.title);
-  const [savedTitle, setSavedTitle] = useState(plan.title);
 
-  const path = `/p/${plan.slug}`;
-
-  const commitTitle = useCallback(async () => {
-    if (title === savedTitle) return;
-    // 제목만 바꿔도 액션은 기본 정보 한 벌을 받는다. 나머지는 지금 값 그대로 되돌려 보낸다.
-    // partyLabel은 비어 있을 수 있다(ViewerPlan에서 null) — 빈 문자열로 보내면 다시 null이 된다.
-    const ok = await run(() =>
-      saveBasicInfo(plan.slug, {
-        title,
-        startDate: plan.startDate,
-        endDate: plan.endDate,
-        planType: plan.planType,
-        partyLabel: plan.partyLabel ?? "",
-      }),
-    );
-    // 서버가 거부하면 input을 마지막 저장 값으로 되돌린다. save 슬롯 하나를 모든
-    // 액션이 공유해서 이 오류 문구는 다음 액션(예: 세그먼트 이동)이 곧 덮어쓸 수
-    // 있다 — 그래도 입력값만은 화면과 서버가 어긋난 채로 남으면 안 된다.
-    if (ok) setSavedTitle(title);
-    else setTitle(savedTitle);
-  }, [title, savedTitle, plan, run]);
+  const path = `/p/${slug}`;
 
   const changeStatus = useCallback(
     async (next: string) => {
       const prev = status;
       setLocalStatus(next as PlanStatus);
-      const ok = await run(() => setStatus(plan.slug, next));
+      const ok = await run(() => setStatus(slug, next));
       if (!ok) setLocalStatus(prev);
     },
-    [status, plan.slug, run],
+    [status, slug, run],
   );
 
   const copyLink = useCallback(async () => {
@@ -117,9 +97,9 @@ export function TopBar({ plan, status: initialStatus }: { plan: ViewerPlan; stat
       <span className="flex min-w-0 items-center gap-1.5">
         <input
           aria-label="일정 제목"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={commitTitle}
+          value={basics.title}
+          onChange={(e) => edit({ title: e.target.value })}
+          onBlur={commit}
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur();
           }}

@@ -19,6 +19,12 @@ type State = {
    * 있는데, 타입에 없으면 서버가 담을 수 없다 — 유출을 타입이 막게 둔다.
    */
   status: Map<string, PlanStatus>;
+  /**
+   * 커버 이미지 바이트. Supabase Storage가 붙기 전의 임시 자리다 —
+   * `app/api/cover/[slug]/route.ts`가 여기서 읽어 내보낸다.
+   * contentType은 **서버 허용 목록에서 고른 값**이지 업로더가 보낸 문자열이 아니다.
+   */
+  covers: Map<string, { bytes: Uint8Array; contentType: string }>;
 };
 
 let state: State | null = null;
@@ -35,7 +41,7 @@ function ensure(): State {
     const status = new Map<string, PlanStatus>(
       [...plans.keys()].map((s) => [s, isLockedSlug(s) ? "private" : "public"]),
     );
-    state = { plans, status };
+    state = { plans, status, covers: new Map() };
   }
   return state;
 }
@@ -63,6 +69,14 @@ export function getPlanStatus(slug: string): PlanStatus | undefined {
 
 export function setPlanStatus(slug: string, status: PlanStatus): void {
   ensure().status.set(slug, status);
+}
+
+export function setCoverBlob(slug: string, bytes: Uint8Array, contentType: string): void {
+  ensure().covers.set(slug, { bytes, contentType });
+}
+
+export function getCoverBlob(slug: string): { bytes: Uint8Array; contentType: string } | undefined {
+  return ensure().covers.get(slug);
 }
 
 /** 테스트 격리용. 프로덕션 코드에서 부르지 않는다. */

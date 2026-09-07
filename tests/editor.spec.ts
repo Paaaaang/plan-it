@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 /**
  * 편집기는 데스크톱 서페이스다(스펙 §5.2 — 1024px 미만은 1단으로 접히고 미리보기가
@@ -64,7 +65,9 @@ test.describe('편집기 상단 바', () => {
     const title = page.getByRole('textbox', { name: '일정 제목' });
     await title.fill('   ');
     await title.blur();
-    await expect(page.getByText('제목을 입력해 주세요.')).toBeVisible();
+    // 같은 문구가 두 곳에 뜬다 — 상단 바 저장 상태와 1번 섹션의 제목 필드.
+    // 필드 쪽 배선은 '기본 정보' 스펙이 본다. 여기서는 상단 바만 본다.
+    await expect(page.getByTestId('save-status')).toContainText('제목을 입력해 주세요.');
   });
 
   test('제목 저장 실패 뒤 세그먼트를 옮겨도 입력값이 거짓말하지 않는다', async ({ page }) => {
@@ -76,7 +79,7 @@ test.describe('편집기 상단 바', () => {
 
     await title.fill('   ');
     await title.blur();
-    await expect(page.getByText('제목을 입력해 주세요.')).toBeVisible();
+    await expect(page.getByTestId('save-status')).toContainText('제목을 입력해 주세요.');
 
     const group = page.getByRole('radiogroup', { name: '공개 상태' });
     await group.getByRole('radio', { name: '비공개' }).click();
@@ -107,5 +110,172 @@ test.describe('상태가 뷰어를 막는다', () => {
     await group.getByRole('radio', { name: '공개', exact: true }).click();
     await expect(page.getByTestId('save-status')).toContainText('저장됨');
     expect((await page.goto('/p/editor-demo'))?.status(), '공개로 되돌리면 다시 열린다').toBe(200);
+  });
+});
+
+/**
+ * 기본 정보 섹션. 쓰기 테스트는 **전용 slug(`editor-basic`)** 에만 한다 —
+ * `editor-demo`는 상단 바 테스트가 쓰고 있고, 한 slug에 계속 얹으면 serial 체인이 길어진다.
+ * 거부되는 입력은 스토어를 바꾸지 않으므로 읽기 전용 slug(jeju)에 그대로 써도 안전하다.
+ */
+const BASIC = '/dashboard/plans/editor-basic/edit';
+
+/** "YYYY-MM-DD"에 n일을 더한다. UTC 산술이라 타임존이 끼어들지 않는다. */
+function addDays(date: string, n: number): string {
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+/** 뷰어 날짜 줄이 쓰는 "M.DD" 조각. */
+function shortDate(date: string): string {
+  const [, m, d] = date.split('-');
+  return `${Number(m)}.${d}`;
+}
+
+/**
+ * 값을 고치고 blur한 뒤 **Server Action 응답이 닿을 때까지** 기다린다.
+ *
+ * 저장 상태 문구로 기다리면 안 된다: 직전 저장의 "저장됨"이 그대로 남아 있어 조건이
+ * 이미 참이고, 다음 단계가 아직 떠나지도 않은 저장을 앞질러 간다. 응답을 기다리면
+ * dev 서버가 라우트를 처음 컴파일하느라 느린 순간에도 흔들리지 않는다.
+ */
+async function saveField(page: Page, field: Locator, value: string): Promise<void> {
+  await field.fill(value);
+  const landed = page.waitForResponse((r) => r.request().method() === 'POST');
+  await field.blur();
+  await landed;
+}
+
+test.describe('기본 정보', () => {
+  test('필드 다섯 개가 현재 값으로 채워져 있다', async ({ page }) => {
+    await page.goto(JEJU);
+    const section = page.getByTestId('basic-info');
+    await expect(section.getByRole('textbox', { name: '제목', exact: true })).toHaveValue('제주 워크샵 2026');
+    await expect(page.getByLabel('시작일')).not.toHaveValue('');
+    await expect(page.getByLabel('종료일')).not.toHaveValue('');
+    await expect(page.getByLabel('유형')).toHaveValue('여행');
+    await expect(page.getByLabel('인원')).toHaveValue('디자인팀 12명');
+  });
+
+  test('종료일이 시작일보다 빠르면 서버가 거부한다', async ({ page }) => {
+    await page.goto(JEJU);
+    await page.getByLabel('종료일').fill('2020-01-01');
+    await page.getByLabel('종료일').blur();
+    // 오류는 그 필드에 붙는다 — 다섯 필드 중 어느 것이 틀렸는지 보여야 한다.
+    await expect(page.getByLabel('종료일')).toHaveAttribute('aria-invalid', 'true');
+    await expect(
+      page.getByTestId('basic-info').getByText('종료일이 시작일보다 빠를 수 없어요.'),
+    ).toBeVisible();
+  });
+
+  // Task 7(미리보기)이 붙어야 통과한다. 표시만 하고 지우지 않는다.
+  test.fixme('유형을 바꾸면 미리보기 커버 뱃지가 따라 바뀐다', async ({ page }) => {
+    await page.goto(BASIC);
+    await page.getByLabel('유형').fill('워크샵');
+    await page.getByLabel('유형').blur();
+    await expect(page.getByTestId('editor-preview').getByText('워크샵')).toBeVisible();
+  });
+
+  /**
+   * 상단 바와 폼이 같은 액션을 **서로 다른 스냅샷**으로 부르면, 나중에 저장한 쪽이
+   * 먼저 저장한 값을 되돌린다. 두 화면이 하나의 편집 상태를 봐야 한다는 판정이다.
+   */
+  test('폼에서 날짜를 저장한 뒤 제목을 저장해도 날짜가 되돌아가지 않는다', async ({ page }) => {
+    await page.goto(BASIC);
+    const start = await page.getByLabel('시작일').inputValue();
+    const grown = addDays(start, 2);
+
+    await page.getByLabel('종료일').fill(grown);
+    await page.getByLabel('종료일').blur();
+    // 일부러 기다리지 않는다. 첫 저장이 돌아오기 전에 두 번째가 떠나는 순간이
+    // 정확히 덮어쓰기가 나던 자리다 — RSC가 새 props를 내려주는 것으로는 못 막는다.
+    const title = page.getByRole('textbox', { name: '일정 제목' });
+    await title.fill('기본 정보 데모 2');
+    await title.blur();
+    await expect(page.getByTestId('save-status')).toContainText('저장됨');
+
+    await page.reload();
+    await expect(page.getByLabel('종료일'), '제목 저장이 날짜를 덮으면 안 된다').toHaveValue(grown);
+    await expect(page.getByRole('textbox', { name: '일정 제목' })).toHaveValue('기본 정보 데모 2');
+
+    // 되돌린다.
+    await saveField(page, page.getByLabel('종료일'), addDays(start, 1));
+    await saveField(page, page.getByRole('textbox', { name: '일정 제목' }), '기본 정보 데모');
+  });
+
+  /**
+   * 기간과 일차는 한 몸이다. 늘리면 빈 날이 생기고, 시작일을 옮기면 모든 날짜가 밀린다.
+   * 빈 날만 사라지는 축소는 허용한다.
+   */
+  test('기간을 늘리면 일차가 따라 늘고 날짜도 다시 계산된다', async ({ page }) => {
+    await page.goto(BASIC);
+    const start = await page.getByLabel('시작일').inputValue();
+
+    await saveField(page, page.getByLabel('종료일'), addDays(start, 2));
+    await expect(page.getByTestId('save-status')).toContainText('저장됨');
+
+    await page.goto('/p/editor-basic');
+    await expect(page.getByRole('button', { name: '3일차', exact: true })).toBeVisible();
+
+    // 시작일을 하루 밀면 (3일 → 2일 축소, 3일차는 비어 있어 허용) 남은 날의 날짜가 밀린다.
+    await page.goto(BASIC);
+    await saveField(page, page.getByLabel('시작일'), addDays(start, 1));
+
+    await page.goto('/p/editor-basic');
+    await expect(page.getByRole('button', { name: '3일차', exact: true })).toHaveCount(0);
+    await expect(page.getByText(shortDate(addDays(start, 1)), { exact: false }).first()).toBeVisible();
+
+    // 되돌린다. 시작일을 먼저 당겨 기간을 늘린 뒤 종료일을 줄인다 —
+    // 반대 순서면 중간에 일정이 든 날이 잘려 서버가 거부한다.
+    await page.goto(BASIC);
+    await saveField(page, page.getByLabel('시작일'), start);
+    await saveField(page, page.getByLabel('종료일'), addDays(start, 1));
+  });
+
+  test('일정이 든 날이 사라지는 축소는 서버가 거부한다', async ({ page }) => {
+    await page.goto(BASIC);
+    const start = await page.getByLabel('시작일').inputValue();
+
+    await saveField(page, page.getByLabel('종료일'), start);
+    await expect(page.getByTestId('basic-info')).toContainText('2일차에 일정이 있어요');
+
+    // 조용히 지우지 않는다 — 스토어는 그대로다.
+    await page.goto('/p/editor-basic');
+    await expect(page.getByRole('button', { name: '2일차', exact: true })).toBeVisible();
+  });
+});
+
+test.describe('커버 업로더', () => {
+  /** 1×1 PNG. 파일을 저장소에 남기지 않으려고 바이트를 여기서 만든다. */
+  const PNG = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64',
+  );
+
+  test('허용 목록 밖 형식은 서버가 거부한다', async ({ page }) => {
+    // 클라이언트는 `image/*`까지만 거른다(accept 속성과 같은 기준). GIF는 그 문을
+    // 통과하지만 서버 허용 목록(JPG·PNG·WebP)에 없다 — 서버 거부가 화면에 떠야 한다.
+    await page.goto(BASIC);
+    await page.getByTestId('cover-input').setInputFiles({
+      name: 'x.gif',
+      mimeType: 'image/gif',
+      buffer: Buffer.from('GIF89a'),
+    });
+    await expect(page.getByTestId('basic-info')).toContainText('JPG·PNG·WebP만 올릴 수 있어요.');
+  });
+
+  test('고른 사진이 바로 뜨고 새로고침해도 남는다', async ({ page }) => {
+    await page.goto(BASIC);
+    await page.getByTestId('cover-input').setInputFiles({
+      name: 'cover.png',
+      mimeType: 'image/png',
+      buffer: PNG,
+    });
+    // 고르는 즉시 로컬 미리보기(objectURL) — 서버 왕복을 기다리지 않는다.
+    await expect(page.getByTestId('cover-image')).toHaveAttribute('src', /^blob:/);
+    await expect(page.getByTestId('save-status')).toContainText('저장됨');
+
+    await page.reload();
+    await expect(page.getByTestId('cover-image')).toHaveAttribute('src', /\/api\/cover\/editor-basic/);
   });
 });

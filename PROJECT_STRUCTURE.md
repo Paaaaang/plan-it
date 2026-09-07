@@ -40,6 +40,9 @@ plan-it/
 │   │   └── [slug]/
 │   │       └── page.tsx                    #    일정 뷰어 — /p/{slug} 공유 링크
 │   │
+│   ├── api/                                # 🌐 라우트 핸들러
+│   │   └── cover/[slug]/route.ts           #    업로드된 커버 바이트 (Storage 붙기 전 임시)
+│   │
 │   ├── globals.css                         # 전역 스타일 — DS 토큰 통합 (색상/타이포/스페이싱/라디우스/모션)
 │   ├── icon.png                            # 파비콘 이미지
 │   ├── layout.tsx                          # 루트 레이아웃 (ko lang, Pretendard, SEO 메타)
@@ -78,10 +81,8 @@ plan-it/
 │   │   ├── section-shell.tsx               #    섹션 껍데기 (번호 뱃지 + 제목 + 카운트)
 │   │   ├── transport-section.tsx           #    대중교통/이동 안내 섹션
 │   │   ├── transport-item-form.tsx         #    교통 항목 폼
-│   │   │
-│   │   ├── basic-info/                     #    📝 기본 정보 섹션
-│   │   │   ├── basic-info-section.tsx      #       제목/기간/설명 편집
-│   │   │   └── date-range-picker.tsx       #       날짜 범위 선택기
+│   │   ├── basic-info-section.tsx          #    📝 1번 섹션 — 제목·기간·유형·인원
+│   │   ├── cover-uploader.tsx              #    커버 사진 업로더 (서버가 MIME·크기·확장자 검증)
 │   │   │
 │   │   ├── notice/                         #    📢 공지 섹션
 │   │   │   ├── notice-section.tsx          #       공지 섹션 컨테이너
@@ -252,7 +253,7 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
 - **`landing/`** — 랜딩페이지 전용. 히어로, 기능 소개, 샘플 뷰어, CTA.
 - **`dashboard/`** — 대시보드 전용. 일정 목록, 스플릿뷰, 미리보기, 상태 배지, 공유 링크.
 - **`editor/`** — 편집기. PRD의 4개 섹션 컴포넌트로 세분화:
-  - `basic-info/` — 기본 정보 (제목/기간/설명, 날짜 범위 선택)
+  - `basic-info-section.tsx` + `cover-uploader.tsx` — 기본 정보 (제목·기간·유형·인원, 커버 사진)
   - `notice/` — 공지 (CRUD, 드래그 순서 변경)
   - `timetable/` — 타임테이블 (Day 탭, 일정 항목, 장소 연결)
   - `place/` — 장소 (고정/유동, 지도 임베드)

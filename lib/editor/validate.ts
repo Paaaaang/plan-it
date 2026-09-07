@@ -5,10 +5,14 @@
  *              신뢰 경계는 Server Action 안이므로, 화면이 무엇을 하든 여기서 다시 본다.
  */
 
+import { diffDays } from "@/lib/utils/date";
+
 export type Checked<T> = { ok: true; value: T } | { ok: false; message: string };
 
 const TITLE_MAX = 60;
 const TEXT_MAX = 500;
+/** 일차 배열이 이만큼까지 커질 수 있다는 뜻이다. 늘리기 전에 그 비용을 본다. */
+const MAX_RANGE_DAYS = 365;
 
 export function validateTitle(raw: unknown): Checked<string> {
   if (typeof raw !== "string") return { ok: false, message: "제목을 입력해 주세요." };
@@ -55,6 +59,12 @@ export function validateTime(raw: unknown): Checked<string> {
  */
 export function validateRange(start: string, end: string): Checked<[string, string]> {
   if (start > end) return { ok: false, message: "종료일이 시작일보다 빠를 수 없어요." };
+  // 상한이 필요한 이유는 UX가 아니라 자원이다: 기간이 늘면 일차 배열이 그만큼 커진다
+  // (actions/plan-actions.ts::syncDays). 상한이 없으면 "9999-12-31" 한 번으로
+  // 서버가 300만 개짜리 배열을 만든다.
+  if (diffDays(start, end) >= MAX_RANGE_DAYS) {
+    return { ok: false, message: `기간은 ${MAX_RANGE_DAYS}일까지 잡을 수 있어요.` };
+  }
   return { ok: true, value: [start, end] };
 }
 

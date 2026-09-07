@@ -206,6 +206,42 @@ const editorDemo: ViewerPlan = {
 };
 
 /**
+ * 기본 정보 섹션 E2E 전용. 기간을 바꾸는 테스트가 상단 바 테스트(editor-demo)의
+ * serial 체인에 얹히지 않게 slug를 따로 둔다.
+ *
+ * **이틀 다 일정이 있다** — 기간을 줄여 일차가 사라지는 경로를 그대로 재현하려고
+ * 그렇게 뒀다. 하루로 줄이면 2일차가 사라지므로 서버가 거부해야 한다.
+ */
+const editorBasic: ViewerPlan = {
+  slug: "editor-basic",
+  title: "기본 정보 데모",
+  planType: "여행",
+  partyLabel: "기획팀 4명",
+  startDate: dayOffset(0),
+  endDate: dayOffset(1),
+  coverImageUrl: null,
+  notices: [],
+  days: [
+    {
+      dayNumber: 1,
+      date: dayOffset(0),
+      items: [
+        { id: "eb-i1", startTime: "10:00", durationMin: 60, activityName: "출발", memo: null, place: null },
+      ],
+    },
+    {
+      dayNumber: 2,
+      date: dayOffset(1),
+      items: [
+        { id: "eb-i2", startTime: "09:00", durationMin: 60, activityName: "조식", memo: null, place: null },
+      ],
+    },
+  ],
+  places: [],
+  transport: [],
+};
+
+/**
  * slug → 일정. **Map이다. 객체 리터럴이 아니다.**
  *
  * slug는 URL 조각이 그대로 들어오는 값이라 `PLANS[slug]` 형태의 객체 조회는
@@ -219,6 +255,7 @@ const PLANS = new Map<string, ViewerPlan>([
   [longDay.slug, longDay],
   [secretParty.slug, secretParty],
   [editorDemo.slug, editorDemo],
+  [editorBasic.slug, editorBasic],
 ]);
 
 /**
