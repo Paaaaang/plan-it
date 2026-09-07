@@ -129,9 +129,9 @@ export function TopBar({ plan, status: initialStatus }: { plan: ViewerPlan; stat
       </span>
 
       <span
-        role="status"
+        role={save.kind === "error" ? "alert" : "status"}
         data-testid="save-status"
-        className="flex shrink-0 items-center gap-1.5 text-caption font-medium text-tertiary"
+        className={`flex shrink-0 items-center gap-1.5 text-caption font-medium ${save.kind === "error" ? "text-danger" : "text-tertiary"}`}
       >
         <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${dot}`} />
         {text}
@@ -149,10 +149,10 @@ export function TopBar({ plan, status: initialStatus }: { plan: ViewerPlan; stat
       <button
         type="button"
         onClick={copyLink}
-        aria-label="공유 링크 복사"
         className="flex items-center gap-1.5 rounded-control bg-neutral-fill px-3 py-2 text-caption font-semibold text-secondary tabular-nums transition-colors duration-fast ease-planit hover:text-primary"
       >
         <Icon name={LinkIcon} size={14} />
+        <span className="sr-only">공유 링크 복사 </span>
         {path}
       </button>
 
