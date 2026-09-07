@@ -279,3 +279,138 @@ test.describe('커버 업로더', () => {
     await expect(page.getByTestId('cover-image')).toHaveAttribute('src', /\/api\/cover\/editor-basic/);
   });
 });
+
+/**
+ * 정렬. 쓰기 테스트는 **전용 slug(`editor-sort`)** 에만 한다 — 순서를 바꾸는 테스트가
+ * 다른 편집기 slug의 serial 체인에 얹히면 앞 테스트의 되돌리기와 뒤엉킨다.
+ *
+ * 키보드가 기준선이다: 정렬을 마우스로만 할 수 있으면 접근성 위반이고, 포인터 드래그는
+ * Playwright에서 다루기 까다롭다. 그래서 판정은 전부 키보드 경로로 한다.
+ */
+const SORT = '/dashboard/plans/editor-sort/edit';
+
+/** 그립 버튼. 접근 가능한 이름에 **무엇을** 옮기는지가 들어간다. */
+function grip(row: Locator): Locator {
+  return row.getByRole('button', { name: /순서 바꾸기/ });
+}
+
+test.describe('정렬', () => {
+  test('그립에 초점을 두고 화살표로 순서를 바꾼다', async ({ page }) => {
+    await page.goto(SORT);
+    const rows = page.getByTestId('notice-row');
+    await expect(rows.first()).toContainText('집결 시간을 꼭 지켜주세요');
+
+    const landed = page.waitForResponse((r) => r.request().method() === 'POST');
+    await grip(rows.first()).focus();
+    await page.keyboard.press('ArrowDown');
+
+    // 응답을 **일부러 기다리지 않는다** — 낙관적 갱신이 실제로 먼저 도는지 보는 자리다.
+    await expect(page.getByTestId('notice-row').first()).toContainText('준비물');
+    // 옮긴 뒤에도 초점이 그 행의 그립에 남아야 한다 — 연속으로 여러 칸 옮길 수 있어야 하므로.
+    await expect(grip(page.getByTestId('notice-row').nth(1))).toBeFocused();
+    // 목록마다 알림 영역이 하나씩 있다(타임테이블·장소도 같은 컴포넌트를 쓴다) — 섹션 안에서 본다.
+    await expect(page.getByTestId('notice-section').getByTestId('sort-status')).toContainText(
+      '집결 시간을 꼭 지켜주세요, 2번째로 옮겼어요',
+    );
+    await landed;
+
+    // 새로고침해도 남는다 = 화면만 바뀐 게 아니라 서버에도 갔다.
+    await page.reload();
+    await expect(page.getByTestId('notice-row').first()).toContainText('준비물');
+
+    // 되돌린다.
+    const back = page.waitForResponse((r) => r.request().method() === 'POST');
+    await grip(page.getByTestId('notice-row').nth(1)).focus();
+    await page.keyboard.press('ArrowUp');
+    await back;
+    await expect(page.getByTestId('notice-row').first()).toContainText('집결 시간을 꼭 지켜주세요');
+  });
+
+  test('맨 위에서 위로는 움직이지 않는다', async ({ page }) => {
+    await page.goto(SORT);
+    const first = page.getByTestId('notice-row').first();
+    const text = await first.textContent();
+    await grip(first).focus();
+    await page.keyboard.press('ArrowUp');
+    // 순환하지 않는다 — 정렬은 탭 이동과 달라서 끝에서 감기면 실수하기 쉽다.
+    await expect(page.getByTestId('notice-row').first()).toHaveText(text!);
+    await expect(grip(page.getByTestId('notice-row').first())).toBeFocused();
+  });
+
+  /**
+   * 서버 거부. 낡은 목록을 들고 있는 클라이언트를 흉내낸다 — 보내는 id 하나를 없는 id로
+   * 바꾸면 `reorderByIds`가 집합 불일치로 거부한다(lib/editor/validate.ts).
+   * 화면은 낙관적으로 이미 바뀌어 있으므로 **되돌리고 이유를 보여줘야** 한다.
+   */
+  test('서버가 거부하면 순서를 되돌리고 이유를 보여준다', async ({ page }) => {
+    await page.goto(SORT);
+    await expect(page.getByTestId('notice-row').first()).toContainText('집결 시간을 꼭 지켜주세요');
+
+    await page.route('**/dashboard/plans/editor-sort/edit', async (route) => {
+      const request = route.request();
+      const body = request.method() === 'POST' ? request.postData() : null;
+      if (!body?.includes('s-n3')) return route.continue();
+      // 길이를 맞춰 바꾼다 — 본문 길이가 달라지면 요청 자체가 깨져 판정이 흐려진다.
+      await route.continue({ postData: body.replace('s-n3', 's-n9') });
+    });
+
+    const landed = page.waitForResponse((r) => r.request().method() === 'POST');
+    await grip(page.getByTestId('notice-row').first()).focus();
+    await page.keyboard.press('ArrowDown');
+    await landed;
+
+    await expect(page.getByTestId('toast')).toContainText('목록이 바뀌었어요');
+    await expect(page.getByTestId('notice-row').first()).toContainText('집결 시간을 꼭 지켜주세요');
+
+    // 스토어는 그대로다 — 거부는 아무것도 쓰지 않는다.
+    await page.unroute('**/dashboard/plans/editor-sort/edit');
+    await page.reload();
+    await expect(page.getByTestId('notice-row').first()).toContainText('집결 시간을 꼭 지켜주세요');
+  });
+
+  /**
+   * 포인터 경로. 키보드 경로가 기준선이고 이건 그 위에 얹은 편의지만, 배선이 죽어도
+   * 아무도 모르는 채로 두지 않으려고 한 번은 실제로 끌어 본다.
+   */
+  test('그립을 끌어 첫 행을 맨 아래로 옮긴다', async ({ page }) => {
+    await page.goto(SORT);
+    const rows = page.getByTestId('notice-row');
+    await expect(rows.first()).toContainText('집결 시간을 꼭 지켜주세요');
+
+    const handle = (await grip(rows.first()).boundingBox())!;
+    const last = (await rows.nth(2).boundingBox())!;
+    const x = handle.x + handle.width / 2;
+
+    await page.mouse.move(x, handle.y + handle.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(x, handle.y + 20, { steps: 5 });
+    // 끌리는 행은 코랄 배경 + 들린 그림자다 (스펙 §5.2).
+    await expect(rows.first()).toHaveClass(/bg-brand-weak/);
+
+    await page.mouse.move(x, last.y + last.height, { steps: 8 });
+    const landed = page.waitForResponse((r) => r.request().method() === 'POST');
+    await page.mouse.up();
+    await landed;
+
+    await page.reload();
+    await expect(rows.nth(2)).toContainText('집결 시간을 꼭 지켜주세요');
+
+    // 되돌린다 — 두 칸을 키보드로 올린다.
+    for (const at of [2, 1]) {
+      const back = page.waitForResponse((r) => r.request().method() === 'POST');
+      await grip(rows.nth(at)).focus();
+      await page.keyboard.press('ArrowUp');
+      await back;
+    }
+    await expect(rows.first()).toContainText('집결 시간을 꼭 지켜주세요');
+  });
+
+  // Task 7(미리보기)이 붙어야 통과한다. 표시만 하고 지우지 않는다.
+  test.fixme('순서 변경이 미리보기에 반영된다', async ({ page }) => {
+    await page.goto(SORT);
+    await grip(page.getByTestId('notice-row').first()).focus();
+    await page.keyboard.press('ArrowDown');
+    // 공지 요약은 각 공지의 첫 구절을 · 로 이은 것이다 (스펙 §7.6)
+    await expect(page.getByTestId('editor-preview')).toContainText('준비물 · 집결 시간을 꼭 지켜주세요');
+  });
+});

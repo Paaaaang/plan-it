@@ -15,6 +15,7 @@ import { getPlan, getPlanStatus } from "@/lib/store/plans";
 import { EditorShell } from "@/components/editor/editor-shell";
 import { SectionShell } from "@/components/editor/section-shell";
 import { BasicInfoSection } from "@/components/editor/basic-info-section";
+import { NoticeSection } from "@/components/editor/notice-section";
 
 export const metadata: Metadata = {
   title: "일정 편집 — 플랜잇",
@@ -36,7 +37,9 @@ export default async function EditPlanPage(props: PageProps<"/dashboard/plans/[i
       <SectionShell number={1} title="기본 정보">
         <BasicInfoSection plan={plan} />
       </SectionShell>
-      <SectionShell number={2} title="공지" count={`${plan.notices.length}개`} />
+      <SectionShell number={2} title="공지" count={`${plan.notices.length}개`}>
+        <NoticeSection notices={plan.notices} />
+      </SectionShell>
       <SectionShell
         number={3}
         title="타임테이블"

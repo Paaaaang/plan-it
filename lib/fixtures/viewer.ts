@@ -242,6 +242,36 @@ const editorBasic: ViewerPlan = {
 };
 
 /**
+ * 정렬 E2E 전용. 순서를 바꾸는 테스트가 다른 편집기 slug의 serial 체인에 얹히지 않게 따로 둔다.
+ * 공지 셋이 있어야 "가운데로 옮기기"와 "맨 위에서 위로는 안 움직인다"를 둘 다 볼 수 있다.
+ */
+const editorSort: ViewerPlan = {
+  slug: "editor-sort",
+  title: "정렬 데모",
+  planType: "여행",
+  partyLabel: "5명",
+  startDate: dayOffset(0),
+  endDate: dayOffset(0),
+  coverImageUrl: null,
+  notices: [
+    { id: "s-n1", title: "집결 시간을 꼭 지켜주세요", body: "10시 30분에 셔틀이 먼저 출발해요." },
+    { id: "s-n2", title: "준비물", body: "편한 신발, 얇은 패딩, 상비약, 보조배터리" },
+    { id: "s-n3", title: "회비", body: "1인 12만원이에요. 총무에게 현장 정산해요." },
+  ],
+  days: [
+    {
+      dayNumber: 1,
+      date: dayOffset(0),
+      items: [
+        { id: "es-i1", startTime: "10:30", durationMin: 60, activityName: "집결", memo: null, place: null },
+      ],
+    },
+  ],
+  places: [],
+  transport: [],
+};
+
+/**
  * slug → 일정. **Map이다. 객체 리터럴이 아니다.**
  *
  * slug는 URL 조각이 그대로 들어오는 값이라 `PLANS[slug]` 형태의 객체 조회는
@@ -256,6 +286,7 @@ const PLANS = new Map<string, ViewerPlan>([
   [secretParty.slug, secretParty],
   [editorDemo.slug, editorDemo],
   [editorBasic.slug, editorBasic],
+  [editorSort.slug, editorSort],
 ]);
 
 /**
