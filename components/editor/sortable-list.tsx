@@ -162,7 +162,12 @@ export function SortableList<T extends { id: string }>({
               <button
                 type="button"
                 aria-label={`순서 바꾸기 — ${labelOf(item)}`}
-                className="flex flex-none cursor-grab touch-none text-tertiary"
+                /*
+                  아이콘은 14px이지만 잡는 자리는 26px이다(WCAG 2.2 AA 2.5.8은 24×24).
+                  패딩 대신 ::before를 깔아 넓힌다 — 패딩은 행 높이·간격을 밀어
+                  확정 시안을 흔든다. 히트 영역만 커지고 그려지는 것은 그대로다.
+                */
+                className="relative flex flex-none cursor-grab touch-none text-tertiary before:absolute before:-inset-1.5"
                 onKeyDown={(e) => {
                   if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
                   e.preventDefault();

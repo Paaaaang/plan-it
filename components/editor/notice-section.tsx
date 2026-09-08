@@ -43,8 +43,12 @@ export function NoticeSection({ notices }: { notices: ViewerNotice[] }) {
         rowTestId="notice-row"
         renderItem={(notice) => (
           <div className="min-w-0 flex-1">
-            <h5 className="text-caption font-bold">{notice.title}</h5>
-            <p className="truncate text-micro text-tertiary">{notice.body}</p>
+            {/*
+              시안(`.nrow h5`/`p`)은 13px·12px이다. `text-micro`(11px)는 대문자 라벨용이라
+              트래킹 .06em이 붙어 있어 한글 본문에 쓰면 자간이 벌어진다 — 본문에는 안 쓴다.
+            */}
+            <h5 className="text-label font-bold">{notice.title}</h5>
+            <p className="truncate text-caption text-tertiary">{notice.body}</p>
           </div>
         )}
       />
