@@ -20,7 +20,8 @@ import { GripVertical } from "lucide-react";
  * ## 낙관적 갱신
  *
  * 먼저 화면을 바꾸고 서버에 보낸다. 거부되면 직전 순서로 되돌린다 — 이유는 부르는 쪽이
- * 토스트로 낸다(`onReorder`가 false를 준다).
+ * 토스트로 낸다(`onReorder`가 false를 준다). **되돌리기는 조건부다**: 저장이 날아가는
+ * 동안 사용자가 또 옮겼다면 그건 성공한 이동이므로 건드리지 않는다(아래 `move` 참고).
  *
  * 로컬 순서(`order`)는 id 배열이고, 렌더할 때마다 현재 items에 다시 맞춘다. 서버가 따라오면
  * 같은 배열이 되어 자연히 무의미해지고, 다른 탭이 항목을 더하거나 지워 **집합이 달라지면**
@@ -62,6 +63,16 @@ export function SortableList<T extends { id: string }>({
     return out.length === items.length ? out : items;
   }, [items, order]);
 
+  /**
+   * 화면에 지금 걸린 순서. 저장이 날아가는 동안 다른 이동이 끼어들었는지 보는 데 쓴다 —
+   * `order`를 클로저로 읽으면 이 호출이 시작할 때의 값이라 그 사이의 변화를 못 본다.
+   */
+  const current = useRef<string[] | null>(null);
+  const apply = useCallback((next: string[] | null) => {
+    current.current = next;
+    setOrder(next);
+  }, []);
+
   const move = useCallback(
     async (index: number, to: number) => {
       if (to < 0 || to >= ordered.length || to === index) return;
@@ -71,12 +82,21 @@ export function SortableList<T extends { id: string }>({
       const [moved] = next.splice(index, 1);
       next.splice(to, 0, moved);
 
-      setOrder(next);
-      setAnnounce(`${labelOf(ordered[index])}, ${to + 1}번째로 옮겼어요`);
+      const label = labelOf(ordered[index]);
+      apply(next);
+      setAnnounce(`${label}, ${to + 1}번째로 옮겼어요`);
 
-      if (!(await onReorder(next))) setOrder(before);
+      if (await onReorder(next)) return;
+
+      // 되돌리되, **내가 만든 순서가 아직 화면에 있을 때만** 되돌린다. 이 저장이
+      // 날아가는 동안 사용자가 또 옮겼다면 그건 성공한 이동이고, `before`로 덮으면
+      // 그 이동이 화면에서 조용히 사라진다(화면과 서버가 다른 순서를 든 채로 남는다).
+      if (current.current?.join() !== next.join()) return;
+      apply(before);
+      // 알림도 같이 정정한다 — 화면을 못 보는 사람에게 토스트는 없는 것이나 같다.
+      setAnnounce(`${label}, 순서를 되돌렸어요`);
     },
-    [ordered, labelOf, onReorder],
+    [ordered, labelOf, onReorder, apply],
   );
 
   const onPointerDown = (index: number) => (e: React.PointerEvent<HTMLButtonElement>) => {

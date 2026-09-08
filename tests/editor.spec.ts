@@ -369,11 +369,66 @@ test.describe('정렬', () => {
 
     await expect(page.getByTestId('toast')).toContainText('목록이 바뀌었어요');
     await expect(page.getByTestId('notice-row').first()).toContainText('집결 시간을 꼭 지켜주세요');
+    // 화면을 못 보는 사람은 토스트를 못 본다 — 알림이 "옮겼어요"에서 멈추면
+    // 스크린리더가 일어나지 않은 일을 사실로 말한다.
+    await expect(page.getByTestId('notice-section').getByTestId('sort-status')).toContainText(
+      '집결 시간을 꼭 지켜주세요, 순서를 되돌렸어요',
+    );
 
     // 스토어는 그대로다 — 거부는 아무것도 쓰지 않는다.
     await page.unroute('**/dashboard/plans/editor-sort/edit');
     await page.reload();
     await expect(page.getByTestId('notice-row').first()).toContainText('집결 시간을 꼭 지켜주세요');
+  });
+
+  /**
+   * 롤백 경합. 거부되는 저장 A가 아직 날아가는 중에 사용자가 또 옮기면(B, 성공),
+   * A의 롤백이 **B가 만든 순서까지** 되감는다. 아무 오류도 뜨지 않아
+   * 화면과 서버가 조용히 어긋난 채로 남는다.
+   */
+  test('롤백이 그 사이 성공한 이동을 지우지 않는다', async ({ page }) => {
+    await page.goto(SORT);
+    const rows = page.getByTestId('notice-row');
+    await expect(rows.first()).toContainText('집결 시간을 꼭 지켜주세요');
+
+    let seen = 0;
+    await page.route('**/dashboard/plans/editor-sort/edit', async (route) => {
+      const request = route.request();
+      const body = request.method() === 'POST' ? request.postData() : null;
+      if (!body?.includes('s-n3')) return route.continue();
+      // 첫 저장(A)만 거부시키고 늦게 돌려준다. 그 지연 동안 B가 떠난다.
+      if (++seen > 1) return route.continue();
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await route.continue({ postData: body.replace('s-n3', 's-n9') });
+    });
+
+    await grip(rows.first()).focus();
+    await page.keyboard.press('ArrowDown'); // A — 서버가 거부한다
+    await expect(rows.first()).toContainText('준비물');
+    await page.keyboard.press('ArrowDown'); // B — 서버가 받아들인다
+
+    await expect(page.getByTestId('toast')).toContainText('목록이 바뀌었어요');
+
+    // B가 만든 순서다. A의 롤백이 이걸 되감으면 안 된다.
+    const expected = ['준비물', '회비', '집결 시간을 꼭 지켜주세요'];
+    for (const [i, text] of expected.entries()) {
+      await expect(rows.nth(i), 'B의 성공한 이동이 남아야 한다').toContainText(text);
+    }
+
+    await page.unroute('**/dashboard/plans/editor-sort/edit');
+    await page.reload();
+    for (const [i, text] of expected.entries()) {
+      await expect(rows.nth(i), '화면과 서버 순서가 같아야 한다').toContainText(text);
+    }
+
+    // 되돌린다 — 집결을 맨 위로 두 칸 올린다.
+    for (const at of [2, 1]) {
+      const back = page.waitForResponse((r) => r.request().method() === 'POST');
+      await grip(rows.nth(at)).focus();
+      await page.keyboard.press('ArrowUp');
+      await back;
+    }
+    await expect(rows.first()).toContainText('집결 시간을 꼭 지켜주세요');
   });
 
   /**
