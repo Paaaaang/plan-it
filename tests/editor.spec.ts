@@ -276,7 +276,15 @@ test.describe('커버 업로더', () => {
     await expect(page.getByTestId('save-status')).toContainText('저장됨');
 
     await page.reload();
-    await expect(page.getByTestId('cover-image')).toHaveAttribute('src', /\/api\/cover\/editor-basic/);
+    const image = page.getByTestId('cover-image');
+    await expect(image).toHaveAttribute('src', /\/api\/cover\/editor-basic/);
+    // **src 문자열은 아무것도 증명하지 않는다.** 서빙 경로가 404여도 속성 값은 그대로다.
+    // 브라우저가 실제로 바이트를 받아 디코딩했는지만 본다 — 깨진 이미지면 0이다.
+    await expect
+      .poll(() => image.evaluate((el) => (el as HTMLImageElement).naturalWidth), {
+        message: '커버가 실제로 로드돼야 한다',
+      })
+      .toBeGreaterThan(0);
   });
 });
 

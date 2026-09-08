@@ -27,10 +27,21 @@ type State = {
   covers: Map<string, { bytes: Uint8Array; contentType: string }>;
 };
 
-let state: State | null = null;
+/**
+ * 왜 모듈 변수가 아니라 `globalThis`인가.
+ *
+ * Next는 Route Handler를 페이지·Server Action과 **별도 번들**로 만든다. 같은 파일을
+ * import해도 각 번들이 자기 모듈 인스턴스를 들고 돌아서, `let state`는 경계를 넘지 못한다 —
+ * `setCover`가 쓴 바이트를 `app/api/cover/[slug]/route.ts`가 못 본다(업로드 직후 404).
+ * dev의 HMR도 같은 이유로 모듈을 다시 평가해 상태를 날린다.
+ *
+ * `globalThis`는 그 번들들이 실제로 공유하는 유일한 자리다. 프로세스 메모리를
+ * 저장소로 쓰는 동안의 정상적인 Next 관용구다 — Supabase가 붙으면 통째로 사라진다.
+ */
+const g = globalThis as typeof globalThis & { __planitPlanStore?: State };
 
 function ensure(): State {
-  if (!state) {
+  if (!g.__planitPlanStore) {
     // structuredClone: 픽스처 원본을 편집이 건드리지 못하게 한다.
     // 한 장소 객체를 places[]와 items[].place가 같이 참조하는데, structuredClone은
     // 클론 안에서 그 동일성을 그대로 지킨다.
@@ -41,9 +52,9 @@ function ensure(): State {
     const status = new Map<string, PlanStatus>(
       [...plans.keys()].map((s) => [s, isLockedSlug(s) ? "private" : "public"]),
     );
-    state = { plans, status, covers: new Map() };
+    g.__planitPlanStore = { plans, status, covers: new Map() };
   }
-  return state;
+  return g.__planitPlanStore;
 }
 
 export function getPlan(slug: string): ViewerPlan | undefined {
@@ -81,5 +92,5 @@ export function getCoverBlob(slug: string): { bytes: Uint8Array; contentType: st
 
 /** 테스트 격리용. 프로덕션 코드에서 부르지 않는다. */
 export function resetStore(): void {
-  state = null;
+  delete g.__planitPlanStore;
 }
