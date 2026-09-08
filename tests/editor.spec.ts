@@ -333,18 +333,31 @@ function grip(row: Locator): Locator {
   return row.getByRole('button', { name: /순서 바꾸기/ });
 }
 
+/**
+ * 공지 행의 제목. **인라인 입력이라 텍스트가 아니라 값이다** — `toContainText`로는 안 보인다.
+ * 정렬 판정도 이걸 쓴다(순서를 보는 데 필요한 것은 각 행이 무엇이냐다).
+ */
+function noticeTitle(row: Locator): Locator {
+  return row.getByRole('textbox', { name: '공지 제목' });
+}
+
+/** 행의 삭제 버튼. 이름에 어느 공지인지가 들어간다. */
+function noticeDelete(row: Locator): Locator {
+  return row.getByRole('button', { name: /삭제/ });
+}
+
 test.describe('정렬', () => {
   test('그립에 초점을 두고 화살표로 순서를 바꾼다', async ({ page }) => {
     await page.goto(SORT);
     const rows = page.getByTestId('notice-row');
-    await expect(rows.first()).toContainText('집결 시간을 꼭 지켜주세요');
+    await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     const landed = page.waitForResponse((r) => r.request().method() === 'POST');
     await grip(rows.first()).focus();
     await page.keyboard.press('ArrowDown');
 
     // 응답을 **일부러 기다리지 않는다** — 낙관적 갱신이 실제로 먼저 도는지 보는 자리다.
-    await expect(page.getByTestId('notice-row').first()).toContainText('준비물');
+    await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue('준비물');
     // 옮긴 뒤에도 초점이 그 행의 그립에 남아야 한다 — 연속으로 여러 칸 옮길 수 있어야 하므로.
     await expect(grip(page.getByTestId('notice-row').nth(1))).toBeFocused();
     // 목록마다 알림 영역이 하나씩 있다(타임테이블·장소도 같은 컴포넌트를 쓴다) — 섹션 안에서 본다.
@@ -355,24 +368,24 @@ test.describe('정렬', () => {
 
     // 새로고침해도 남는다 = 화면만 바뀐 게 아니라 서버에도 갔다.
     await page.reload();
-    await expect(page.getByTestId('notice-row').first()).toContainText('준비물');
+    await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue('준비물');
 
     // 되돌린다.
     const back = page.waitForResponse((r) => r.request().method() === 'POST');
     await grip(page.getByTestId('notice-row').nth(1)).focus();
     await page.keyboard.press('ArrowUp');
     await back;
-    await expect(page.getByTestId('notice-row').first()).toContainText('집결 시간을 꼭 지켜주세요');
+    await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue('집결 시간을 꼭 지켜주세요');
   });
 
   test('맨 위에서 위로는 움직이지 않는다', async ({ page }) => {
     await page.goto(SORT);
     const first = page.getByTestId('notice-row').first();
-    const text = await first.textContent();
+    const text = await noticeTitle(first).inputValue();
     await grip(first).focus();
     await page.keyboard.press('ArrowUp');
     // 순환하지 않는다 — 정렬은 탭 이동과 달라서 끝에서 감기면 실수하기 쉽다.
-    await expect(page.getByTestId('notice-row').first()).toHaveText(text!);
+    await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue(text);
     await expect(grip(page.getByTestId('notice-row').first())).toBeFocused();
   });
 
@@ -383,7 +396,7 @@ test.describe('정렬', () => {
    */
   test('서버가 거부하면 순서를 되돌리고 이유를 보여준다', async ({ page }) => {
     await page.goto(SORT);
-    await expect(page.getByTestId('notice-row').first()).toContainText('집결 시간을 꼭 지켜주세요');
+    await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     await page.route('**/dashboard/plans/editor-sort/edit', async (route) => {
       const request = route.request();
@@ -399,7 +412,7 @@ test.describe('정렬', () => {
     await landed;
 
     await expect(page.getByTestId('toast')).toContainText('목록이 바뀌었어요');
-    await expect(page.getByTestId('notice-row').first()).toContainText('집결 시간을 꼭 지켜주세요');
+    await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue('집결 시간을 꼭 지켜주세요');
     // 화면을 못 보는 사람은 토스트를 못 본다 — 알림이 "옮겼어요"에서 멈추면
     // 스크린리더가 일어나지 않은 일을 사실로 말한다.
     await expect(page.getByTestId('notice-section').getByTestId('sort-status')).toContainText(
@@ -409,7 +422,7 @@ test.describe('정렬', () => {
     // 스토어는 그대로다 — 거부는 아무것도 쓰지 않는다.
     await page.unroute('**/dashboard/plans/editor-sort/edit');
     await page.reload();
-    await expect(page.getByTestId('notice-row').first()).toContainText('집결 시간을 꼭 지켜주세요');
+    await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue('집결 시간을 꼭 지켜주세요');
   });
 
   /**
@@ -420,7 +433,7 @@ test.describe('정렬', () => {
   test('롤백이 그 사이 성공한 이동을 지우지 않는다', async ({ page }) => {
     await page.goto(SORT);
     const rows = page.getByTestId('notice-row');
-    await expect(rows.first()).toContainText('집결 시간을 꼭 지켜주세요');
+    await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     let seen = 0;
     await page.route('**/dashboard/plans/editor-sort/edit', async (route) => {
@@ -435,7 +448,7 @@ test.describe('정렬', () => {
 
     await grip(rows.first()).focus();
     await page.keyboard.press('ArrowDown'); // A — 서버가 거부한다
-    await expect(rows.first()).toContainText('준비물');
+    await expect(noticeTitle(rows.first())).toHaveValue('준비물');
     await page.keyboard.press('ArrowDown'); // B — 서버가 받아들인다
 
     await expect(page.getByTestId('toast')).toContainText('목록이 바뀌었어요');
@@ -443,13 +456,13 @@ test.describe('정렬', () => {
     // B가 만든 순서다. A의 롤백이 이걸 되감으면 안 된다.
     const expected = ['준비물', '회비', '집결 시간을 꼭 지켜주세요'];
     for (const [i, text] of expected.entries()) {
-      await expect(rows.nth(i), 'B의 성공한 이동이 남아야 한다').toContainText(text);
+      await expect(noticeTitle(rows.nth(i)), 'B의 성공한 이동이 남아야 한다').toHaveValue(text);
     }
 
     await page.unroute('**/dashboard/plans/editor-sort/edit');
     await page.reload();
     for (const [i, text] of expected.entries()) {
-      await expect(rows.nth(i), '화면과 서버 순서가 같아야 한다').toContainText(text);
+      await expect(noticeTitle(rows.nth(i)), '화면과 서버 순서가 같아야 한다').toHaveValue(text);
     }
 
     // 되돌린다 — 집결을 맨 위로 두 칸 올린다.
@@ -459,7 +472,7 @@ test.describe('정렬', () => {
       await page.keyboard.press('ArrowUp');
       await back;
     }
-    await expect(rows.first()).toContainText('집결 시간을 꼭 지켜주세요');
+    await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
   });
 
   /**
@@ -469,7 +482,7 @@ test.describe('정렬', () => {
   test('그립을 끌어 첫 행을 맨 아래로 옮긴다', async ({ page }) => {
     await page.goto(SORT);
     const rows = page.getByTestId('notice-row');
-    await expect(rows.first()).toContainText('집결 시간을 꼭 지켜주세요');
+    await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     const handle = (await grip(rows.first()).boundingBox())!;
     const last = (await rows.nth(2).boundingBox())!;
@@ -487,7 +500,7 @@ test.describe('정렬', () => {
     await landed;
 
     await page.reload();
-    await expect(rows.nth(2)).toContainText('집결 시간을 꼭 지켜주세요');
+    await expect(noticeTitle(rows.nth(2))).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     // 되돌린다 — 두 칸을 키보드로 올린다.
     for (const at of [2, 1]) {
@@ -496,7 +509,7 @@ test.describe('정렬', () => {
       await page.keyboard.press('ArrowUp');
       await back;
     }
-    await expect(rows.first()).toContainText('집결 시간을 꼭 지켜주세요');
+    await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
   });
 
   // Task 7(미리보기)이 붙어야 통과한다. 표시만 하고 지우지 않는다.
@@ -506,5 +519,194 @@ test.describe('정렬', () => {
     await page.keyboard.press('ArrowDown');
     // 공지 요약은 각 공지의 첫 구절을 · 로 이은 것이다 (스펙 §7.6)
     await expect(page.getByTestId('editor-preview')).toContainText('준비물 · 집결 시간을 꼭 지켜주세요');
+  });
+});
+
+/**
+ * 공지. 쓰기 테스트는 **전용 slug(`editor-notice`)** 에만 한다 — 추가·삭제는 목록 자체를
+ * 바꾸므로 정렬 데모(editor-sort)에 얹으면 거기 순서 판정이 무너진다.
+ *
+ * 각 테스트는 끝나기 전에 되돌린다. serial 블록은 재시도할 때 처음부터 다시 도는데,
+ * 앞 테스트가 행을 하나 남기면 그 재시도가 자기 첫 단언에서 넘어진다.
+ */
+const NOTICE = '/dashboard/plans/editor-notice/edit';
+/** 공지 0개 픽스처(스펙 §9-6). 뷰어만이 아니라 편집기에서도 빈 상태가 보여야 한다. */
+const NO_NOTICE = '/dashboard/plans/long-day/edit';
+
+/** 2번 섹션 통째. 헤더의 개수("3개")가 여기 들어 있다 — 알맹이가 아니라 서버가 센 값이다. */
+function noticeSection(page: Page): Locator {
+  return page.locator('section').filter({ has: page.getByTestId('notice-section') });
+}
+
+/** Server Action 한 번이 돌아오길 기다린다. 저장 상태 문구로 기다리면 직전 저장의 문구에 속는다. */
+function posted(page: Page): Promise<unknown> {
+  return page.waitForResponse((r) => r.request().method() === 'POST');
+}
+
+test.describe('공지', () => {
+  test('공지가 없으면 빈 상태를 보여준다', async ({ page }) => {
+    await page.goto(NO_NOTICE);
+    await expect(page.getByTestId('notice-row')).toHaveCount(0);
+    await expect(page.getByTestId('notice-empty')).toBeVisible();
+    // 빈 상태에서도 시작할 길이 있어야 한다.
+    await expect(page.getByRole('button', { name: '공지 추가' })).toBeVisible();
+  });
+
+  test('공지를 추가하면 목록과 개수가 늘어난다', async ({ page }) => {
+    await page.goto(NOTICE);
+    const rows = page.getByTestId('notice-row');
+    await expect(rows).toHaveCount(3);
+    await expect(noticeSection(page)).toContainText('3개');
+
+    let landed = posted(page);
+    await page.getByRole('button', { name: '공지 추가' }).click();
+    await landed;
+    await expect(rows).toHaveCount(4);
+    // 개수는 서버가 센다 — 화면만 늘어나고 서버가 그대로면 여기서 잡힌다.
+    await expect(noticeSection(page)).toContainText('4개');
+    // 새 행의 제목에 초점이 간다. 이름이 "새 공지"인 채로 두라는 화면이 아니다.
+    await expect(noticeTitle(rows.nth(3))).toBeFocused();
+    await expect(noticeTitle(rows.nth(3))).toHaveValue('새 공지');
+
+    // 되돌린다.
+    await noticeDelete(rows.nth(3)).click();
+    landed = posted(page);
+    await page.getByTestId('dialog-panel').getByRole('button', { name: '삭제' }).click();
+    await landed;
+    await expect(rows).toHaveCount(3);
+  });
+
+  test('공지를 지우면 확인을 먼저 받는다', async ({ page }) => {
+    await page.goto(NOTICE);
+    const rows = page.getByTestId('notice-row');
+    // 픽스처 셋 중 하나를 지우면 되돌릴 때 id가 바뀐다(뒤 테스트가 id를 쓴다).
+    // 그래서 지울 행을 하나 만들어 두고 그걸 지운다 — 판정(확인을 먼저 받는가)은 같다.
+    let landed = posted(page);
+    await page.getByRole('button', { name: '공지 추가' }).click();
+    await landed;
+    await expect(rows).toHaveCount(4);
+
+    await noticeDelete(rows.nth(3)).click();
+    const dialog = page.getByTestId('dialog-panel');
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: '취소' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(rows, '취소했으면 아무것도 지워지지 않는다').toHaveCount(4);
+
+    await noticeDelete(rows.nth(3)).click();
+    landed = posted(page);
+    await page.getByTestId('dialog-panel').getByRole('button', { name: '삭제' }).click();
+    await landed;
+    await expect(rows).toHaveCount(3);
+  });
+
+  test('제목을 고치고 blur하면 저장된다', async ({ page }) => {
+    await page.goto(NOTICE);
+    await saveField(page, noticeTitle(page.getByTestId('notice-row').first()), '집결 시간 변경');
+
+    await page.reload();
+    await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue('집결 시간 변경');
+
+    // 되돌린다.
+    await saveField(
+      page,
+      noticeTitle(page.getByTestId('notice-row').first()),
+      '집결 시간을 꼭 지켜주세요',
+    );
+  });
+
+  /**
+   * 거부 ①. 클라이언트에 maxLength를 걸지 않는다 — 서버 검증이 진짜고, 걸어 두면 이 경로가
+   * 화면에서 도달 불가가 되어 검증이 죽어도 아무도 모른다.
+   */
+  test('60자가 넘는 제목은 서버가 거부하고 값을 되돌린다', async ({ page }) => {
+    await page.goto(NOTICE);
+    const first = page.getByTestId('notice-row').first();
+    const before = await noticeTitle(first).inputValue();
+
+    await saveField(page, noticeTitle(first), '가'.repeat(61));
+    await expect(page.getByTestId('toast')).toContainText('제목은 60자까지 쓸 수 있어요.');
+    // 저장 안 된 값을 화면에 둔 채로 남기면 다음 저장이 그 값을 밀어 넣는다.
+    await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue(before);
+
+    await page.reload();
+    await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue(before);
+  });
+
+  /**
+   * 거부 ②. 다른 탭이 이미 지운 공지를 지우는 상황을 흉내낸다 — 보내는 id를 없는 id로
+   * 바꾼다(길이를 맞춰야 본문이 깨지지 않는다).
+   */
+  test('없는 공지를 지우면 서버가 거부하고 목록이 그대로다', async ({ page }) => {
+    await page.goto(NOTICE);
+    const rows = page.getByTestId('notice-row');
+    await expect(rows).toHaveCount(3);
+
+    await page.route('**/dashboard/plans/editor-notice/edit', async (route) => {
+      const request = route.request();
+      const body = request.method() === 'POST' ? request.postData() : null;
+      if (!body?.includes('n-n1')) return route.continue();
+      await route.continue({ postData: body.replace('n-n1', 'n-n9') });
+    });
+
+    await noticeDelete(rows.first()).click();
+    const landed = posted(page);
+    await page.getByTestId('dialog-panel').getByRole('button', { name: '삭제' }).click();
+    await landed;
+
+    await expect(page.getByTestId('toast')).toContainText('공지를 찾을 수 없어요.');
+    await expect(rows).toHaveCount(3);
+
+    await page.unroute('**/dashboard/plans/editor-notice/edit');
+    await page.reload();
+    await expect(rows, '거부는 아무것도 쓰지 않는다').toHaveCount(3);
+  });
+
+  /**
+   * 액션이 **응답이 아니라 예외로** 끝나는 경우(네트워크 끊김). 결과를 보고 분기하는 코드는
+   * 여기서 전부 건너뛴다 — 저장 상태는 "저장 중"에 굳고, 낙관적으로 바꾼 순서는
+   * 롤백 가드에 닿지 못한 채 화면에 남는다.
+   */
+  test('네트워크가 끊기면 오류를 보여주고 낙관적 순서를 되돌린다', async ({ page }) => {
+    await page.goto(NOTICE);
+    const rows = page.getByTestId('notice-row');
+    await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
+
+    await page.route('**/dashboard/plans/editor-notice/edit', async (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
+      await route.abort('failed');
+    });
+
+    await grip(rows.first()).focus();
+    await page.keyboard.press('ArrowDown');
+
+    await expect(page.getByTestId('save-status')).toContainText('저장하지 못했어요');
+    await expect(noticeTitle(rows.first()), '되돌아와야 한다').toHaveValue('집결 시간을 꼭 지켜주세요');
+    await expect(page.getByTestId('notice-section').getByTestId('sort-status')).toContainText(
+      '순서를 되돌렸어요',
+    );
+
+    await page.unroute('**/dashboard/plans/editor-notice/edit');
+    await page.reload();
+    await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
+  });
+
+  /** 인라인 편집도 같은 자리에서 끊길 수 있다. 값이 저장된 것처럼 남으면 안 된다. */
+  test('네트워크가 끊기면 인라인 편집 값을 되돌린다', async ({ page }) => {
+    await page.goto(NOTICE);
+    const title = noticeTitle(page.getByTestId('notice-row').first());
+    const before = await title.inputValue();
+
+    await page.route('**/dashboard/plans/editor-notice/edit', async (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
+      await route.abort('failed');
+    });
+
+    await title.fill('끊긴 저장');
+    await title.blur();
+    await expect(page.getByTestId('toast')).toContainText('저장하지 못했어요');
+    await expect(title).toHaveValue(before);
+
+    await page.unroute('**/dashboard/plans/editor-notice/edit');
   });
 });

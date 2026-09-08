@@ -272,6 +272,39 @@ const editorSort: ViewerPlan = {
 };
 
 /**
+ * 공지 섹션 E2E 전용. 추가·삭제가 목록 자체를 바꾸므로 정렬 데모(editor-sort)에 얹지 않는다 —
+ * 거기 테스트는 공지 셋의 순서를 기준으로 판정한다.
+ *
+ * id를 `n-n1`~`n-n3`으로 둔 이유: 거부 경로 테스트가 요청 본문의 id를 없는 id(`n-n9`)로
+ * 바꿔치기한다. **길이가 같아야** 본문이 깨지지 않는다(tests/editor.spec.ts).
+ */
+const editorNotice: ViewerPlan = {
+  slug: "editor-notice",
+  title: "공지 데모",
+  planType: "여행",
+  partyLabel: "6명",
+  startDate: dayOffset(0),
+  endDate: dayOffset(0),
+  coverImageUrl: null,
+  notices: [
+    { id: "n-n1", title: "집결 시간을 꼭 지켜주세요", body: "10시 30분에 셔틀이 먼저 출발해요." },
+    { id: "n-n2", title: "준비물", body: "편한 신발, 얇은 패딩, 상비약, 보조배터리" },
+    { id: "n-n3", title: "회비", body: "1인 12만원이에요. 총무에게 현장 정산해요." },
+  ],
+  days: [
+    {
+      dayNumber: 1,
+      date: dayOffset(0),
+      items: [
+        { id: "en-i1", startTime: "10:30", durationMin: 60, activityName: "집결", memo: null, place: null },
+      ],
+    },
+  ],
+  places: [],
+  transport: [],
+};
+
+/**
  * slug → 일정. **Map이다. 객체 리터럴이 아니다.**
  *
  * slug는 URL 조각이 그대로 들어오는 값이라 `PLANS[slug]` 형태의 객체 조회는
@@ -287,6 +320,7 @@ const PLANS = new Map<string, ViewerPlan>([
   [editorDemo.slug, editorDemo],
   [editorBasic.slug, editorBasic],
   [editorSort.slug, editorSort],
+  [editorNotice.slug, editorNotice],
 ]);
 
 /**

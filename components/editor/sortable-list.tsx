@@ -86,7 +86,11 @@ export function SortableList<T extends { id: string }>({
       apply(next);
       setAnnounce(`${label}, ${to + 1}번째로 옮겼어요`);
 
-      if (await onReorder(next)) return;
+      // 예외도 실패로 본다. 사유는 부르는 쪽이 낸다(편집기는 `run`이 잡아 저장 상태에
+      // 띄운다) — 여기서 잡는 것은 **되돌리기가 반드시 돌게 하기 위해서다.** 이 컴포넌트는
+      // 화면을 먼저 바꿔 놓고 남의 promise를 기다리는데, 그게 throw로 끝나면 아래 롤백이
+      // 통째로 건너뛰어져 일어나지 않은 이동이 화면에 굳는다.
+      if (await onReorder(next).catch(() => false)) return;
 
       // 되돌리되, **내가 만든 순서가 아직 화면에 있을 때만** 되돌린다. 이 저장이
       // 날아가는 동안 사용자가 또 옮겼다면 그건 성공한 이동이고, `before`로 덮으면

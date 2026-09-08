@@ -84,11 +84,7 @@ plan-it/
 │   │   ├── basic-info-section.tsx          #    📝 1번 섹션 — 제목·기간·유형·인원
 │   │   ├── cover-uploader.tsx              #    커버 사진 업로더 (서버가 MIME·크기·확장자 검증)
 │   │   ├── sortable-list.tsx               #    🔀 순서 변경 목록 — 키보드 + 포인터 드래그
-│   │   ├── notice-section.tsx              #    📢 2번 섹션 — 공지 목록·순서 변경
-│   │   │
-│   │   ├── notice/                         #    📢 공지 세부 (Task 5)
-│   │   │   ├── notice-item.tsx             #       공지 항목 표시
-│   │   │   └── notice-form.tsx             #       공지 생성/수정 폼
+│   │   ├── notice-section.tsx              #    📢 2번 섹션 — 공지 인라인 편집·추가·삭제·순서
 │   │   │
 │   │   ├── timetable/                      #    🕐 타임테이블 섹션
 │   │   │   ├── timetable-section.tsx       #       타임테이블 섹션 컨테이너
@@ -255,7 +251,7 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
 - **`editor/`** — 편집기. PRD의 4개 섹션 컴포넌트로 세분화:
   - `basic-info-section.tsx` + `cover-uploader.tsx` — 기본 정보 (제목·기간·유형·인원, 커버 사진)
   - `sortable-list.tsx` — 세 섹션(공지·타임테이블·장소)이 함께 쓰는 순서 변경 목록
-  - `notice-section.tsx` + `notice/` — 공지 (CRUD, 순서 변경)
+  - `notice-section.tsx` — 공지 (인라인 편집·추가·삭제 확인 다이얼로그·순서 변경). 한 파일이다 — 행이 곧 폼이라 따로 뗄 것이 없다
   - `timetable/` — 타임테이블 (Day 탭, 일정 항목, 장소 연결)
   - `place/` — 장소 (고정/유동, 지도 임베드)
 - **`viewer/`** — 공개 뷰어 전용. 셸, 커버, 공지 바, 타임라인(레일·항목), 장소 목록·상세 시트, 비밀번호 게이트.
