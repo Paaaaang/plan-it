@@ -102,7 +102,12 @@ export function validateTags(raw: unknown): Checked<string[]> {
 /**
  * 커버 이미지 주소. 이 값은 `<img src>`와 OG 메타로 그대로 나간다 —
  * `javascript:`·`data:` 스킴이 통과하면 뷰어에서 스크립트가 된다. 그래서 허용 목록이다:
- * 앱 내부 경로(`/`로 시작, `//`는 프로토콜 상대 URL이라 제외) 또는 https URL만.
+ * 앱 내부 경로(`/`로 시작, `//`·`/\`는 프로토콜 상대 URL이라 제외) 또는 https URL만.
+ *
+ * **이 가드는 지금 도달 불가다** — 유일한 호출자(`setCover`)가 서버가 만든 문자열을 넘긴다.
+ * 그래서 화면 테스트로 닫을 수 없다(허용 목록을 통째로 지워도 전체 스위트가 통과한다).
+ * Supabase Storage나 "이미지 URL 붙여넣기"가 붙어 **외부 URL이 들어오는 경로가 생기는
+ * 시점에** 이 함수가 신뢰 경계가 되고, 그때 순수 함수 단위 테스트가 가능해진다.
  */
 export function validateCoverUrl(raw: unknown): Checked<string | null> {
   if (raw === null || raw === undefined || raw === "") return { ok: true, value: null };
@@ -110,7 +115,9 @@ export function validateCoverUrl(raw: unknown): Checked<string | null> {
     return { ok: false, message: "이미지 주소를 확인해 주세요." };
   }
   const v = raw.trim();
-  if (v.startsWith("/") && !v.startsWith("//")) return { ok: true, value: v };
+  // `/\evil.com/x.png`도 막는다 — WHATWG URL 파서는 특수 스킴에서 `\`를 `/`로 취급하므로
+  // 브라우저가 이를 `https://evil.com/x.png`로 정규화한다(내부 경로가 아니다).
+  if (v.startsWith("/") && v[1] !== "/" && v[1] !== "\\") return { ok: true, value: v };
   if (/^https:\/\/[^\s]+$/i.test(v)) return { ok: true, value: v };
   return { ok: false, message: "이미지는 https 주소만 쓸 수 있어요." };
 }

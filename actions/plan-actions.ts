@@ -85,7 +85,14 @@ export async function saveBasicInfo(slug: string, input: BasicInfoInput): Promis
   if (!end.ok) return { ok: false, message: end.message, field: "endDate" };
 
   const range = validateRange(start.value, end.value);
-  if (!range.ok) return { ok: false, message: range.message, field: "endDate" };
+  if (!range.ok) {
+    // 오류는 **사용자가 방금 만진 필드**에 붙는다. 저장된 값과 다른 쪽이 그 필드다 —
+    // 시작일을 종료일 뒤로 밀었는데 종료일이 빨개지면 멀쩡한 필드를 고치게 된다.
+    // 둘 다 바뀌었으면(폼 전체 저장) 종료일에 붙인다 — 기존 동작이고, 문구가
+    // "종료일이 시작일보다 빠를 수 없어요"라 종료일 쪽이 덜 엉뚱하다.
+    const field = start.value !== plan.startDate && end.value === plan.endDate ? "startDate" : "endDate";
+    return { ok: false, message: range.message, field };
+  }
 
   const planType = validateText(input.planType, "유형", 20);
   if (!planType.ok) return { ok: false, message: planType.message, field: "planType" };
