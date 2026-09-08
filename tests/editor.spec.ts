@@ -286,6 +286,37 @@ test.describe('커버 업로더', () => {
       })
       .toBeGreaterThan(0);
   });
+
+  /**
+   * 커버는 공개 경로다 — 뷰어와 **같은 규칙**을 따라야 한다.
+   * 임시저장은 없는 것으로 답하고(뷰어 404), 비공개는 잠금 뒤에 있다.
+   */
+  test('공개가 아닌 일정의 커버는 404다', async ({ page }) => {
+    await page.goto(BASIC);
+    await page.getByTestId('cover-input').setInputFiles({
+      name: 'cover.png',
+      mimeType: 'image/png',
+      buffer: PNG,
+    });
+    await expect(page.getByTestId('save-status')).toContainText('저장됨');
+    await page.reload();
+
+    const url = (await page.getByTestId('cover-image').getAttribute('src'))!;
+    expect(url).toContain('/api/cover/');
+    expect((await page.request.get(url)).status(), '공개 일정은 커버가 나간다').toBe(200);
+
+    const group = page.getByRole('radiogroup', { name: '공개 상태' });
+    for (const name of ['임시저장', '비공개']) {
+      await group.getByRole('radio', { name }).click();
+      await expect(page.getByTestId('save-status')).toContainText('저장됨');
+      expect((await page.request.get(url)).status(), `${name}은 커버도 막는다`).toBe(404);
+    }
+
+    // 되돌린다 — 이 slug를 뒤 테스트가 이어 쓴다.
+    await group.getByRole('radio', { name: '공개', exact: true }).click();
+    await expect(page.getByTestId('save-status')).toContainText('저장됨');
+    expect((await page.request.get(url)).status()).toBe(200);
+  });
 });
 
 /**

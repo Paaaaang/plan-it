@@ -11,12 +11,24 @@
  * 버킷 공개 URL(https)이 된다. 부르는 쪽은 바뀌지 않는다.
  *
  * 공개 경로다 — 커버는 뷰어가 로그인 없이 보는 그림이다. 기획자 전용 데이터는 없다.
+ * **그래서 뷰어와 같은 문을 지나야 한다**: 뷰어(`getBySlug`)가 안 보여주는 일정의 커버를
+ * 여기서 내주면 slug만 아는 사람이 임시저장·비공개 일정의 사진을 그대로 받아 간다.
+ *
+ * ponytail: 공개(public)가 아니면 전부 404 — 비공개는 잠금을 통과해도 막힌다.
+ *   잠금 쿠키(`planit_unlock_<slug>`)가 `path=/p/<slug>`로 좁혀져 있어 이 경로로는
+ *   애초에 오지 않는다. 쿠키 path를 `/`로 넓히면 통과시킬 수 있지만, 사진 한 장 때문에
+ *   모든 요청에 잠금 토큰을 실어 보내는 건 나쁜 거래다. 대가는 "비공개 일정 + 업로드
+ *   커버"일 때 잠금을 푼 참가자도 그 사진을 못 본다는 것 — Supabase Storage가 붙어
+ *   서명 URL이 되는 순간 이 라우트와 함께 사라진다.
  */
 
-import { getCoverBlob } from "@/lib/store/plans";
+import { getCoverBlob, getPlanStatus } from "@/lib/store/plans";
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/cover/[slug]">) {
   const { slug } = await ctx.params;
+  // 없는 일정과 못 보는 일정이 같은 답을 준다 — 404와 403이 갈리면 존재가 새어 나간다.
+  if (getPlanStatus(slug) !== "public") return new Response(null, { status: 404 });
+
   const cover = getCoverBlob(slug);
   if (!cover) return new Response(null, { status: 404 });
 
