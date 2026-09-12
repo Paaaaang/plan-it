@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GripVertical } from "lucide-react";
 
 /**
@@ -46,8 +46,17 @@ export function SortableList<T extends { id: string }>({
   const [drag, setDrag] = useState<{ from: number; to: number; dy: number; shift: number } | null>(null);
   const [announce, setAnnounce] = useState("");
   const listRef = useRef<HTMLUListElement>(null);
-  /** 드래그 시작 시점의 좌표. 드래그 중에는 DOM이 transform으로만 움직이므로 다시 재지 않는다. */
-  const from = useRef({ y: 0, mids: [] as number[] });
+  /**
+   * 드래그 시작 시점의 좌표. **목록 자체를 원점으로 잡는다** — 드래그 중에 스크롤이 끼어들면
+   * 뷰포트 기준 좌표(`clientY`)는 굴린 만큼 어긋나는데(편집기 본문이 `overflow-y-auto`다),
+   * 목록의 rect는 내용과 함께 움직이므로 둘을 빼면 그 차이가 상쇄된다. 어느 조상이
+   * 구르는지 알 필요도 없어진다.
+   *
+   * `pointer`는 마지막 포인터 위치다 — 손가락이 멈춘 채 스크롤만 될 때 다시 계산할 근거다.
+   */
+  const from = useRef({ y: 0, mids: [] as number[], pointer: 0 });
+  /** 목록의 현재 화면 위치. 스크롤하면 이 값이 같이 움직인다. */
+  const anchorTop = () => listRef.current?.getBoundingClientRect().top ?? 0;
 
   const ordered = useMemo(() => {
     if (!order) return items;
@@ -103,31 +112,61 @@ export function SortableList<T extends { id: string }>({
     [ordered, labelOf, onReorder, apply],
   );
 
+  /**
+   * 포인터(또는 스크롤) 한 번을 순서 판정으로 바꾼다. 두 경로가 **같은 산수**를 써야 한다 —
+   * 갈라지면 한쪽만 스크롤을 반영해 화면과 드롭 자리가 어긋난다.
+   */
+  const track = useCallback((clientY: number) => {
+    from.current.pointer = clientY;
+    const dy = clientY - anchorTop() - from.current.y;
+    setDrag((d) => {
+      if (!d) return d;
+      const center = from.current.mids[d.from] + dy;
+      let to = d.from;
+      for (let i = 0; i < from.current.mids.length; i++) {
+        if (i < d.from && center < from.current.mids[i]) {
+          to = i;
+          break;
+        }
+        if (i > d.from && center > from.current.mids[i]) to = i;
+      }
+      return { ...d, to, dy };
+    });
+  }, []);
+
   const onPointerDown = (index: number) => (e: React.PointerEvent<HTMLButtonElement>) => {
     if (e.button !== 0 || !listRef.current) return;
+    const top = listRef.current.getBoundingClientRect().top;
     const rows = Array.from(listRef.current.children).map((el) => el.getBoundingClientRect());
     if (rows.length < 2) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    from.current = { y: e.clientY, mids: rows.map((r) => r.top + r.height / 2) };
+    from.current = {
+      y: e.clientY - top,
+      mids: rows.map((r) => r.top - top + r.height / 2),
+      pointer: e.clientY,
+    };
     // 한 칸 = 행 높이 + 행 사이 간격. 재서 쓴다 — 값을 박아 두면 행 모양이 바뀔 때 어긋난다.
     setDrag({ from: index, to: index, dy: 0, shift: rows[1].top - rows[0].top });
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (!drag) return;
-    const dy = e.clientY - from.current.y;
-    const center = from.current.mids[drag.from] + dy;
-    let to = drag.from;
-    for (let i = 0; i < from.current.mids.length; i++) {
-      if (i < drag.from && center < from.current.mids[i]) {
-        to = i;
-        break;
-      }
-      if (i > drag.from && center > from.current.mids[i]) to = i;
-    }
-    setDrag({ ...drag, to, dy });
+    if (drag) track(e.clientY);
   };
+
+  const isDragging = drag !== null;
+
+  /**
+   * 스크롤은 포인터 이동과 같은 사건이다: 손가락이 멈춰 있어도 내용이 움직이면 손가락 밑의
+   * 행이 달라진다. 이게 없으면 굴린 뒤 그대로 놓는 손이 엉뚱한 자리에 떨어뜨린다.
+   * 캡처 단계로 듣는 이유 — 실제로 구르는 건 조상(편집기 본문)이고 scroll은 버블하지 않는다.
+   */
+  useEffect(() => {
+    if (!isDragging) return;
+    const onScroll = () => track(from.current.pointer);
+    window.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => window.removeEventListener("scroll", onScroll, { capture: true });
+  }, [isDragging, track]);
 
   const endDrag = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (!drag) return;

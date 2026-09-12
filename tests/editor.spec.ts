@@ -537,6 +537,46 @@ test.describe('정렬', () => {
     await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
   });
 
+  /**
+   * 드래그 중 스크롤. 포인터 좌표는 뷰포트 기준인데 행 위치 스냅샷이 pointerdown 시점이면
+   * 굴린 만큼 어긋나, 손가락 밑이 아닌 자리에 드롭이 확정된다. 항목이 22개인 타임테이블
+   * (Task 6)에서는 굴리지 않고 끝까지 끌 수가 없으니 그때 바로 터진다.
+   *
+   * 스크롤 주체는 window가 아니라 편집기 본문(editor-shell의 `overflow-y-auto`)이다 —
+   * 셸이 `h-dvh`라 창은 애초에 구르지 않는다.
+   */
+  test('드래그 중에 본문을 굴려도 끌리는 행이 포인터를 따라온다', async ({ page }) => {
+    await page.goto(SORT);
+    const rows = page.getByTestId('notice-row');
+    await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
+
+    const handle = (await grip(rows.first()).boundingBox())!;
+    const x = handle.x + handle.width / 2;
+    const y = handle.y + handle.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + 20, { steps: 3 });
+    const held = (await rows.first().boundingBox())!.y;
+
+    await page.mouse.wheel(0, 120);
+    await expect
+      .poll(() => page.evaluate(() => document.querySelector('main')!.scrollTop), {
+        message: '본문이 실제로 굴러야 이 판정이 의미가 있다',
+      })
+      .toBe(120);
+
+    // 손가락은 움직이지 않았다 → 끌리는 행도 화면에서 그 자리에 있어야 한다.
+    expect((await rows.first().boundingBox())!.y).toBeCloseTo(held, 0);
+
+    // 그리고 드롭은 손가락 밑 자리에 확정된다: 움직인 거리는 포인터 20 + 스크롤 120 = 140px,
+    // 한 칸이 73px(행 65 + 간격 8)이니 한 칸 아래다. 고치기 전에는 20px만 셌으므로 제자리였다.
+    const landed = page.waitForResponse((r) => r.request().method() === 'POST');
+    await page.mouse.up();
+    await landed;
+    await expect(noticeTitle(rows.nth(1))).toHaveValue('집결 시간을 꼭 지켜주세요');
+    // 되돌리지 않는다 — 다음 테스트가 beforeEach에서 씨앗부터 다시 세운다.
+  });
+
   // Task 7(미리보기)이 붙어야 통과한다. 표시만 하고 지우지 않는다.
   test.fixme('순서 변경이 미리보기에 반영된다', async ({ page }) => {
     await page.goto(SORT);
