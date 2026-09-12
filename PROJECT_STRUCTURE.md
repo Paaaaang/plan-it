@@ -41,7 +41,8 @@ plan-it/
 │   │       └── page.tsx                    #    일정 뷰어 — /p/{slug} 공유 링크
 │   │
 │   ├── api/                                # 🌐 라우트 핸들러
-│   │   └── cover/[slug]/route.ts           #    업로드된 커버 바이트 (Storage 붙기 전 임시)
+│   │   ├── cover/[slug]/route.ts           #    업로드된 커버 바이트 (Storage 붙기 전 임시)
+│   │   └── test/reseed/[slug]/route.ts     #    E2E 픽스처 되돌리기 (프로덕션에선 404)
 │   │
 │   ├── globals.css                         # 전역 스타일 — DS 토큰 통합 (색상/타이포/스페이싱/라디우스/모션)
 │   ├── icon.png                            # 파비콘 이미지

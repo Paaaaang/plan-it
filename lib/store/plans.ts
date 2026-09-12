@@ -7,7 +7,7 @@
  * 부르는 쪽(Server Action)은 그대로다.
  */
 
-import { allFixturePlans, isLockedSlug } from "@/lib/fixtures/viewer";
+import { allFixturePlans, findFixturePlan, isLockedSlug } from "@/lib/fixtures/viewer";
 import type { PlanStatus } from "@/types/editor";
 import type { ViewerPlan } from "@/types/viewer";
 
@@ -93,4 +93,23 @@ export function getCoverBlob(slug: string): { bytes: Uint8Array; contentType: st
 /** 테스트 격리용. 프로덕션 코드에서 부르지 않는다. */
 export function resetStore(): void {
   delete g.__planitPlanStore;
+}
+
+/**
+ * slug 하나를 픽스처 씨앗 값으로 되돌린다. 없는 slug면 아무것도 하지 않고 false.
+ *
+ * `resetStore()`가 아니라 이게 필요한 이유: E2E는 **여러 스펙이 같은 dev 서버를 병렬로**
+ * 때린다(desktop 편집기 · mobile 뷰어). 스토어를 통째로 날리면 그 순간 날아가는 남의
+ * 테스트가 생긴다. 자기가 쓰는 slug만 되돌리면 서로를 건드리지 않는다.
+ *
+ * 씨앗 규칙은 `ensure()`와 같은 한 줄이어야 한다 — 갈라지면 "처음 상태"가 두 개가 된다.
+ */
+export function reseedPlan(slug: string): boolean {
+  const fixture = findFixturePlan(slug);
+  if (!fixture) return false;
+  const state = ensure();
+  state.plans.set(slug, structuredClone(fixture));
+  state.status.set(slug, isLockedSlug(slug) ? "private" : "public");
+  state.covers.delete(slug);
+  return true;
 }

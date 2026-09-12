@@ -10,21 +10,38 @@ import type { Locator, Page } from '@playwright/test';
 test.skip(({ isMobile }) => isMobile, '편집기는 데스크톱 서페이스다.');
 
 /**
- * 테스트 격리 — 스토어는 프로세스 메모리다(lib/store/plans.ts). `resetStore()`는
- * 서버 프로세스 안에서만 부를 수 있어 E2E가 쓸 수 없다. 그래서 두 겹으로 막는다:
+ * 테스트 격리 — 스토어는 프로세스 메모리다(lib/store/plans.ts). 세 겹으로 막는다:
  *
- *  1. **쓰기는 전용 slug(`editor-demo`)에만** 한다. 뷰어 스펙이 쓰는 slug
+ *  1. **각 테스트는 시작할 때 자기 slug를 씨앗부터 다시 세운다**(`reseed`). 끝에서
+ *     되돌리는 방식으로는 부족했다: 되돌리기에 닿기 전에 넘어지면 그 값이 **다음 실행까지**
+ *     살아남아 엉뚱한 테스트의 첫 단언을 깨뜨린다(실제로 그렇게 터졌다).
+ *  2. **쓰기는 전용 slug(`editor-*`)에만** 한다. 뷰어 스펙이 쓰는 slug
  *     (jeju-workshop-2026 · team-offsite · long-day · secret-party · gone)를 건드리지 않는다.
  *     읽기만 하는 단언은 시안 값 그대로 jeju를 쓴다.
- *  2. 그 전용 slug를 여러 테스트가 나눠 쓰므로 **serial**로 돌린다. CI는 재시도까지 하므로
- *     각 쓰기 테스트는 끝나기 전에 바꾼 값을 되돌린다 — 재시도가 처음부터 다시 돌아도 된다.
+ *  3. 한 slug를 두 describe가 나눠 쓰는 자리가 있어(`editor-demo` · `editor-basic`)
+ *     **serial**로 돌린다 — 병렬이면 한쪽의 씨앗 뿌리기가 다른 쪽 테스트 중간을 지운다.
+ *
+ * ponytail: describe마다 전용 slug를 주면 serial을 버리고 병렬로 갈 수 있다. 픽스처
+ *   두 개를 더 만드는 값이고, 지금 전체 스위트가 1분이라 아직 그 값을 치를 이유가 없다.
  */
 test.describe.configure({ mode: 'serial' });
+
+/**
+ * slug를 픽스처 씨앗 값으로 되돌린다(`POST /api/test/reseed/[slug]` — 프로덕션엔 없는 문).
+ * 서버 프로세스 안에서만 부를 수 있는 `resetStore()`를 E2E가 쓸 수 없어 라우트로 뚫었고,
+ * 스토어를 통째로 날리지 않는 이유는 mobile 뷰어 스펙이 같은 dev 서버를 병렬로 쓰기 때문이다.
+ */
+async function reseed(page: Page, slug: string): Promise<void> {
+  const res = await page.request.post(`/api/test/reseed/${slug}`);
+  expect(res.status(), `픽스처를 다시 세우지 못했다: ${slug}`).toBe(204);
+}
 
 const JEJU = '/dashboard/plans/jeju-workshop-2026/edit';
 const DEMO = '/dashboard/plans/editor-demo/edit';
 
 test.describe('편집기 상단 바', () => {
+  test.beforeEach(({ page }) => reseed(page, 'editor-demo'));
+
   test('제목·저장 상태·상태 세그먼트·공유 링크가 보인다', async ({ page }) => {
     await page.goto(JEJU);
     await expect(page.getByRole('link', { name: '대시보드' })).toBeVisible();
@@ -98,6 +115,8 @@ test.describe('편집기 상단 바', () => {
  * `setStatus`가 스토어에 쓰고, 뷰어(`getBySlug`)가 그 상태를 읽어야 성립한다.
  */
 test.describe('상태가 뷰어를 막는다', () => {
+  test.beforeEach(({ page }) => reseed(page, 'editor-demo'));
+
   test('임시저장으로 바꾸면 공개 링크가 닫히고, 공개로 되돌리면 다시 열린다', async ({ page }) => {
     await page.goto(DEMO);
     const group = page.getByRole('radiogroup', { name: '공개 상태' });
@@ -147,6 +166,8 @@ async function saveField(page: Page, field: Locator, value: string): Promise<voi
 }
 
 test.describe('기본 정보', () => {
+  test.beforeEach(({ page }) => reseed(page, 'editor-basic'));
+
   test('필드 다섯 개가 현재 값으로 채워져 있다', async ({ page }) => {
     await page.goto(JEJU);
     const section = page.getByTestId('basic-info');
@@ -246,6 +267,8 @@ test.describe('기본 정보', () => {
 });
 
 test.describe('커버 업로더', () => {
+  test.beforeEach(({ page }) => reseed(page, 'editor-basic'));
+
   /** 1×1 PNG. 파일을 저장소에 남기지 않으려고 바이트를 여기서 만든다. */
   const PNG = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
@@ -347,6 +370,8 @@ function noticeDelete(row: Locator): Locator {
 }
 
 test.describe('정렬', () => {
+  test.beforeEach(({ page }) => reseed(page, 'editor-sort'));
+
   test('그립에 초점을 두고 화살표로 순서를 바꾼다', async ({ page }) => {
     await page.goto(SORT);
     const rows = page.getByTestId('notice-row');
@@ -544,6 +569,8 @@ function posted(page: Page): Promise<unknown> {
 }
 
 test.describe('공지', () => {
+  test.beforeEach(({ page }) => reseed(page, 'editor-notice'));
+
   test('공지가 없으면 빈 상태를 보여준다', async ({ page }) => {
     await page.goto(NO_NOTICE);
     await expect(page.getByTestId('notice-row')).toHaveCount(0);
