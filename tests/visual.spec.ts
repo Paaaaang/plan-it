@@ -177,3 +177,88 @@ test.describe('공개 뷰어', () => {
     await expect(page).toHaveScreenshot('viewer-expired.png', SHOT);
   });
 });
+
+/**
+ * 편집기. **데스크톱이 기본 서페이스**라 desktop 프로젝트에서만 찍는다(뷰어와 반대다).
+ *
+ * 못박는 것 셋:
+ *  1. 시각 — 오른쪽 미리보기가 뷰어 그대로라 레일과 항목 상태(past/current/future)가
+ *     시각을 읽는다. 뷰어 스냅샷과 같은 방법으로 13:20(KST)에 고정한다.
+ *  2. 날짜 문구 — 픽스처 날짜가 "오늘 기준 상대"다. 미리보기 쪽 텍스트는 뷰어와 같은
+ *     치환으로 덮는다.
+ *  3. **날짜 입력 값** — 여기가 뷰어와 다르다. `<input type="date">`는 값을 텍스트 노드가
+ *     아니라 브라우저 위젯으로 그려서 치환이 닿지 않는다. 스냅샷 직전에 값 자체를 고정
+ *     날짜로 바꾼다(change를 쏘지 않으므로 저장이 일어나지 않는다).
+ *
+ * 그래서 이 스냅샷이 지키는 것: 상단 바 배치, 섹션 번호 뱃지와 우측 카운트, 커버 업로더,
+ * 행의 그립·삭제 위치, 일차 칩, 장소 칩 두 상태(코랄/회색), 고정 토글, 폰 프레임의 너비·
+ * 곡률·그림자, 다크에서 좌우 표면 대비, 1단으로 접혔을 때의 미리보기 버튼.
+ */
+test.describe('편집기', () => {
+  test.skip(({ isMobile }) => isMobile, '편집기는 데스크톱이 기본이에요. desktop 프로젝트에서만 찍어요.');
+
+  const EDIT = '/dashboard/plans/jeju-workshop-2026/edit';
+
+  async function openEditor(page: Page, opts: { dark?: boolean; width?: number } = {}) {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: opts.width ?? 1440, height: 900 });
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+    await page.clock.setFixedTime(new Date(`${today}T13:20:00+09:00`));
+    if (opts.dark) {
+      await page.context().addCookies([{ name: 'planit-theme', value: 'dark', url: BASE_URL }]);
+    }
+    // 편집기는 쓰기 화면이다 — 앞선 실행이 남긴 값 위에서 찍지 않는다.
+    await page.request.post('/api/test/reseed/jeju-workshop-2026');
+    await page.goto(EDIT);
+    // 미리보기 타임라인이 현재 상태를 잡은 뒤가 최종 화면이다(useNow는 마운트 뒤에 온다).
+    // `attached`로 기다린다 — 접힌 1단에서는 미리보기가 CSS로 감춰져 있어 `visible`이 안 된다.
+    await page
+      .locator('[data-testid="timeline-row"][data-state="current"]')
+      .first()
+      .waitFor({ state: 'attached' });
+    await settle(page);
+    await page.evaluate(() => {
+      for (const el of document.querySelectorAll('input[type="date"]')) {
+        (el as HTMLInputElement).value = '2026-01-01';
+      }
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (n.nodeValue) n.nodeValue = n.nodeValue.replace(/\d{1,2}\.\d{2} [일월화수목금토]/g, '00.00 월');
+      }
+    });
+  }
+
+  test('라이트', async ({ page }) => {
+    await openEditor(page);
+    await expect(page).toHaveScreenshot('editor-light.png', SHOT);
+  });
+
+  test('다크', async ({ page }) => {
+    await openEditor(page, { dark: true });
+    await expect(page).toHaveScreenshot('editor-dark.png', SHOT);
+  });
+
+  /** 끄는 중인 행 — coral-50 배경 + 들린 그림자(스펙 §5.2). 놓지 않은 채로 찍는다. */
+  test('정렬 중인 행', async ({ page }) => {
+    await openEditor(page);
+    const grip = page.getByTestId('notice-row').first().getByRole('button', { name: /순서 바꾸기/ });
+    const box = (await grip.boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + 30, { steps: 4 });
+    await expect(page.getByTestId('notice-row').first()).toHaveClass(/bg-brand-weak/);
+    await expect(page).toHaveScreenshot('editor-dragging.png', SHOT);
+    // 제자리에 놓는다 — 순서가 그대로라 저장이 일어나지 않는다.
+    await page.mouse.move(x, y);
+    await page.mouse.up();
+  });
+
+  /** 1024px 미만 — 1단으로 접히고 미리보기가 하단 버튼(시트 입구)으로 바뀐다. */
+  test('접힌 1단', async ({ page }) => {
+    await openEditor(page, { width: 900 });
+    await expect(page.getByRole('button', { name: '미리보기' })).toBeVisible();
+    await expect(page).toHaveScreenshot('editor-narrow.png', SHOT);
+  });
+});

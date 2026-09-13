@@ -1017,3 +1017,88 @@ test.describe('미리보기', () => {
     await expect(sheet).toBeHidden();
   });
 });
+
+/**
+ * 접근성. 편집기는 폼이 많고, 화면을 못 보는 사람에게는 이 화면이 **이름과 알림으로만**
+ * 존재한다. 아래 넷은 이번 브랜치에서 실제로 고쳤거나(초점 복원·정렬 알림) 고치는 김에
+ * 굳혀 둘 것들이라, 회귀하면 여기서 걸린다.
+ */
+test.describe('접근성', () => {
+  test.beforeEach(async ({ page }) => {
+    await reseed(page, 'editor-notice');
+    await reseed(page, 'editor-sort');
+  });
+
+  test('모든 입력·버튼에 접근 가능한 이름이 있다', async ({ page }) => {
+    await page.goto(JEJU);
+    await page.getByTestId('editor-preview').waitFor();
+
+    const unnamed = await page.locator('input, textarea, select, button, a').evaluateAll((els) =>
+      els
+        .filter((el) => {
+          // 보조기술에서 감춘 것은 이름이 필요 없다 — 커버 파일 입력이 그렇다(보이는
+          // "사진 고르기" 버튼이 대신 눌린다). 감춘 채로 두는 것이 옳은 처리다.
+          if (el.getAttribute('aria-hidden') === 'true') return false;
+          const e = el as HTMLInputElement;
+          return !(
+            (e.labels && e.labels.length > 0) ||
+            e.getAttribute('aria-label')?.trim() ||
+            e.getAttribute('aria-labelledby') ||
+            (e.textContent ?? '').trim() ||
+            e.getAttribute('title')
+          );
+        })
+        .map((el) => el.outerHTML.slice(0, 120)),
+    );
+
+    expect(unnamed, '이름 없는 컨트롤은 스크린리더에 "빈 편집창"·"버튼"으로만 읽힌다').toEqual([]);
+  });
+
+  test('서버가 거부한 필드에 오류가 aria로 붙는다', async ({ page }) => {
+    // 거부되므로 스토어가 바뀌지 않는다 — 읽기 전용 slug를 그대로 쓴다.
+    await page.goto(JEJU);
+    const title = page.getByTestId('basic-info').getByRole('textbox', { name: '제목' });
+    await title.fill('   ');
+    await title.blur();
+
+    await expect(title).toHaveAttribute('aria-invalid', 'true');
+    // 색만으로 말하지 않는다: 문구가 있고, 그 문구가 필드와 연결돼 있어야 한다.
+    const describedBy = await title.getAttribute('aria-describedby');
+    expect(describedBy, '오류 문구가 필드에 연결돼야 한다').toBeTruthy();
+    await expect(page.locator(`#${describedBy}`)).toContainText('제목을 입력해 주세요.');
+  });
+
+  test('삭제 다이얼로그가 초점을 가져가고 닫을 때 돌려준다', async ({ page }) => {
+    await page.goto(NOTICE);
+    const trash = page.getByTestId('notice-row').first().getByRole('button', { name: /삭제/ });
+    await trash.click();
+
+    const dialog = page.getByTestId('dialog-panel');
+    await expect(dialog).toBeVisible();
+    // 초점이 다이얼로그 안에 들어와야 한다 — 밖에 남으면 탭이 배경을 돌아다닌다.
+    await expect
+      .poll(() => dialog.evaluate((el) => el.contains(document.activeElement)))
+      .toBe(true);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    // 닫으면 누른 자리로 돌아온다 — 안 그러면 키보드 사용자가 목록 처음부터 되짚는다.
+    await expect(trash).toBeFocused();
+  });
+
+  test('정렬 결과가 aria-live로 읽힌다', async ({ page }) => {
+    await page.goto(SORT);
+    // 알림 영역은 정렬 목록마다 하나다(공지·타임테이블이 각자 SortableList를 쓴다) —
+    // 하나로 합치면 두 목록의 알림이 서로를 지운다. 여기서는 공지 쪽을 본다.
+    const status = page.getByTestId('notice-section').getByTestId('sort-status');
+    await expect(status).toHaveAttribute('aria-live', 'polite');
+
+    const landed = posted(page);
+    await grip(page.getByTestId('notice-row').first()).focus();
+    await page.keyboard.press('ArrowDown');
+    await landed;
+
+    // 무엇이 몇 번째로 갔는지까지 말한다 — "옮겼습니다"만으로는 확인이 안 된다.
+    await expect(status).toContainText('집결 시간을 꼭 지켜주세요, 2번째로 옮겼어요');
+  });
+});
