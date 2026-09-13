@@ -142,11 +142,14 @@ export function EditorShell({
               그 사이 미리보기가 깜빡인다. 접힌 동안에도 DOM에는 남는데, 그게 비용이
               아니다: 같은 데이터를 그리는 순수 렌더라 네트워크도 타이머도 없다.
             */}
-            <aside className="hidden shrink-0 flex-col items-center gap-3 overflow-y-auto border-default bg-sunken p-5 lg:flex lg:w-[424px] lg:border-l">
-              <p className="text-micro font-extrabold tracking-wide text-tertiary">
+            <aside className="hidden shrink-0 flex-col items-center gap-3 border-default bg-sunken p-5 lg:flex lg:w-[424px] lg:border-l">
+              <p className="flex-none text-micro font-extrabold tracking-wide text-tertiary">
                 참가자가 보는 화면
               </p>
-              <PreviewPane plan={previewPlan} />
+              {/* 남는 높이를 전부 준다 — 프레임은 그 높이에서 폰 비율로 폭을 정한다. */}
+              <div className="flex min-h-0 flex-1 justify-center self-stretch">
+                <PreviewPane plan={previewPlan} />
+              </div>
             </aside>
           </div>
 
@@ -163,7 +166,8 @@ export function EditorShell({
         </div>
 
         <BottomSheet open={sheetOpen} onClose={closeSheet} title="참가자가 보는 화면">
-          <div className="mt-3 flex justify-center">
+          {/* 시트 안에서도 높이는 부모가 준다. 패널 자체 상한(85dvh)보다 낮게 잡아 제목이 남는다. */}
+          <div className="mt-3 flex h-[68dvh] justify-center">
             <PreviewPane plan={previewPlan} />
           </div>
         </BottomSheet>

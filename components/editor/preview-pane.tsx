@@ -15,12 +15,17 @@ import type { ViewerPlan } from "@/types/viewer";
  *
  * 안쪽에 스크롤을 따로 주는 이유: 하단 CTA가 `sticky bottom-0`이라 **스크롤 컨테이너가
  * 있어야** 제자리에 선다. 프레임 자체는 `overflow-hidden`으로 모서리를 자른다.
+ *
+ * 크기는 **높이를 부모가 주고 폭은 비율이 정한다**(390:844 = 뷰어 기준 뷰포트).
+ * 높이를 박아 두면 큰 화면에서 오른쪽 열에 빈 자리가 남고, 반대로 열을 통째로 채우게
+ * 두면 폰이 아니라 기둥이 되어 "참가자 화면에 이만큼 들어간다"는 말이 거짓이 된다.
+ * 비율을 고정하면 열을 채우면서도 그 말이 계속 참이다.
  */
 export function PreviewPane({ plan }: { plan: ViewerPlan }) {
   return (
     <div
       data-testid="editor-preview"
-      className="h-[720px] max-h-full w-[344px] max-w-full overflow-hidden rounded-sheet border border-default bg-bg shadow-pop"
+      className="aspect-[390/844] h-full w-auto max-w-full overflow-hidden rounded-sheet border border-default bg-bg shadow-pop"
     >
       <div className="h-full overflow-y-auto">
         <ViewerShell plan={plan} />

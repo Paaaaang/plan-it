@@ -105,7 +105,12 @@ export function BottomSheet({
         tabIndex={-1}
         // 내용이 길어도 패널이 화면 위로 자라면 안 된다. lockBodyScroll이 걸려 있어
         // 밀려 나간 제목을 스크롤로 되돌릴 수 없다 — 넘치는 만큼은 패널 안에서 스크롤한다.
-        className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-sheet bg-raised px-5 pb-5 pt-2.5 shadow-sheet"
+        //
+        // 폭에도 상한을 둔다. 시트는 모바일 관용구라 폭을 안 묶으면 1440px 편집기에서
+        // 화면을 가로지르는 띠가 되고, 제목과 내용이 왼쪽 끝에 홀로 남는다. 상한은
+        // 뷰어 본문과 같은 480px이다(viewer-shell의 max-w-[480px]) — 이 값 아래에서는
+        // 아무것도 달라지지 않으므로 모바일 뷰어는 지금 모습 그대로다.
+        className="absolute inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[480px] overflow-y-auto overscroll-contain rounded-t-sheet bg-raised px-5 pb-5 pt-2.5 shadow-sheet"
         style={{ animation: "planit-sheet-in var(--dur-base) var(--ease-out)" }}
         {...focusScopeProps}
       >
