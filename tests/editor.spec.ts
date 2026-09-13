@@ -190,7 +190,7 @@ test.describe('기본 정보', () => {
   });
 
   // Task 7(미리보기)이 붙어야 통과한다. 표시만 하고 지우지 않는다.
-  test.fixme('유형을 바꾸면 미리보기 커버 뱃지가 따라 바뀐다', async ({ page }) => {
+  test('유형을 바꾸면 미리보기 커버 뱃지가 따라 바뀐다', async ({ page }) => {
     await page.goto(BASIC);
     await page.getByLabel('유형').fill('워크샵');
     await page.getByLabel('유형').blur();
@@ -615,8 +615,7 @@ test.describe('정렬', () => {
     // 되돌리지 않는다 — 다음 테스트가 beforeEach에서 씨앗부터 다시 세운다.
   });
 
-  // Task 7(미리보기)이 붙어야 통과한다. 표시만 하고 지우지 않는다.
-  test.fixme('순서 변경이 미리보기에 반영된다', async ({ page }) => {
+  test('순서 변경이 미리보기에 반영된다', async ({ page }) => {
     await page.goto(SORT);
     await grip(page.getByTestId('notice-row').first()).focus();
     await page.keyboard.press('ArrowDown');
@@ -973,5 +972,48 @@ test.describe('장소', () => {
 
     // 항목은 장소 객체의 사본을 들고 있다 — 액션이 그 사본까지 고친다(place-actions).
     await expect(placeChip(page.getByTestId('item-row').nth(1))).toHaveText('합정 대회의실');
+  });
+});
+
+/**
+ * 미리보기. **확정된 뷰어 컴포넌트를 그대로 쓴다**(스펙 §5.2) — 미리보기 전용 뷰어를 따로
+ * 만들면 두 화면이 반드시 어긋난다. 그래서 여기 판정은 "뷰어가 그려졌나"가 아니라
+ * "편집 중인 값이 뷰어에 닿았나"다.
+ */
+test.describe('미리보기', () => {
+  test.beforeEach(({ page }) => reseed(page, 'editor-tt'));
+
+  test('폰 프레임에 참가자 화면이 뜬다', async ({ page }) => {
+    await page.goto(TT);
+    const pv = page.getByTestId('editor-preview');
+    await expect(pv.getByRole('heading', { name: '타임테이블 데모' })).toBeVisible();
+    // 1일차 3개 — 편집기 목록과 같은 데이터를 뷰어 모양으로 그린다.
+    await expect(pv.getByTestId('timeline-row')).toHaveCount(3);
+    await expect(pv.getByTestId('viewer-cta')).toBeVisible();
+  });
+
+  test('제목을 바꾸면 미리보기가 즉시 따라온다', async ({ page }) => {
+    await page.goto(TT);
+    const title = page.getByRole('textbox', { name: '일정 제목' });
+    const pv = page.getByTestId('editor-preview');
+
+    // 저장 전이다 — 입력만 했는데도 따라와야 한다(둘이 한 편집 상태를 본다).
+    await title.fill('타임테이블 데모 2027');
+    await expect(pv.getByRole('heading', { name: '타임테이블 데모 2027' })).toBeVisible();
+  });
+
+  test('1024px 미만에서는 미리보기가 하단 시트로 내려간다', async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 800 });
+    await page.goto(TT);
+    // 오른쪽 열은 CSS로 접힌다 — 미디어 쿼리를 JS로 재지 않는다(브레이크포인트 하나면 된다).
+    await expect(page.getByTestId('editor-preview')).toBeHidden();
+
+    await page.getByRole('button', { name: '미리보기' }).click();
+    const sheet = page.getByTestId('sheet-panel');
+    await expect(sheet.getByTestId('editor-preview')).toBeVisible();
+    await expect(sheet.getByRole('heading', { name: '타임테이블 데모' })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
   });
 });

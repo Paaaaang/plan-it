@@ -1,8 +1,10 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { ToastProvider } from "@/components/ui/toast";
 import { TopBar } from "@/components/editor/top-bar";
+import { PreviewPane } from "@/components/editor/preview-pane";
 import { useEditorPlan, type SaveState } from "@/hooks/use-editor-plan";
 import { saveBasicInfo } from "@/actions/plan-actions";
 import type { ActionResult, BasicInfoInput, PlanStatus } from "@/types/editor";
@@ -92,6 +94,32 @@ export function EditorShell({
     else setBasics(before);
   }, [plan.slug, run]);
 
+  /**
+   * 미리보기가 보는 일정. 서버가 내려준 일정 위에 **편집 중인 기본 정보를 덮는다.**
+   *
+   * 서버 값만 쓰면 저장이 끝난 뒤에야 따라온다 — 기획자가 제목을 고치는 동안 참가자 화면이
+   * 옛 제목을 들고 있다. 반대로 나머지(공지·타임테이블·장소)는 저장이 곧 진실이라
+   * 서버 값 그대로다: 액션이 끝나면 RSC가 새 props를 내려준다.
+   */
+  const previewPlan = useMemo<ViewerPlan>(
+    () => ({
+      ...plan,
+      title: basics.title,
+      startDate: basics.startDate,
+      endDate: basics.endDate,
+      planType: basics.planType,
+      // 빈 문자열은 "값 없음"이다 — 뷰어 DTO에서는 null이 그 뜻이다(부제 줄이 그걸 본다).
+      partyLabel: basics.partyLabel || null,
+    }),
+    [plan, basics],
+  );
+
+  const [sheetOpen, setSheetOpen] = useState(false);
+  // 모달 핸들러는 안정적이어야 한다 — 매 렌더 새 클로저를 넘기면 Escape 리스너가
+  // 재등록되어 모달 스택 순서가 흔들린다(bottom-sheet.tsx의 modalStack).
+  const openSheet = useCallback(() => setSheetOpen(true), []);
+  const closeSheet = useCallback(() => setSheetOpen(false), []);
+
   const value = useMemo<EditorContextValue>(
     () => ({ slug: plan.slug, basics, edit, commit, save, run }),
     [plan.slug, basics, edit, commit, save, run],
@@ -108,17 +136,37 @@ export function EditorShell({
               {children}
             </main>
 
-            {/* Task 7이 폰 프레임 미리보기를 채운다. 지금은 자리만 잡는다. */}
-            <aside
-              data-testid="editor-preview"
-              className="flex shrink-0 flex-col items-center gap-3 border-default bg-sunken p-5 lg:w-[424px] lg:border-l"
-            >
+            {/*
+              1024px 미만에서는 오른쪽 열을 접는다(스펙 §5.2). **CSS 브레이크포인트 하나로
+              한다** — 미디어 쿼리를 JS로 재면 서버 렌더와 첫 페인트가 어긋나고(폭을 모른다),
+              그 사이 미리보기가 깜빡인다. 접힌 동안에도 DOM에는 남는데, 그게 비용이
+              아니다: 같은 데이터를 그리는 순수 렌더라 네트워크도 타이머도 없다.
+            */}
+            <aside className="hidden shrink-0 flex-col items-center gap-3 overflow-y-auto border-default bg-sunken p-5 lg:flex lg:w-[424px] lg:border-l">
               <p className="text-micro font-extrabold tracking-wide text-tertiary">
                 참가자가 보는 화면
               </p>
+              <PreviewPane plan={previewPlan} />
             </aside>
           </div>
+
+          {/* 접혔을 때의 입구. 시트는 버튼이 있을 때만 열리므로 이것도 CSS로 충분하다. */}
+          <div className="flex-none border-t border-default bg-surface p-3 lg:hidden">
+            <button
+              type="button"
+              onClick={openSheet}
+              className="w-full rounded-field bg-neutral-fill py-2.5 text-label font-bold text-secondary"
+            >
+              미리보기
+            </button>
+          </div>
         </div>
+
+        <BottomSheet open={sheetOpen} onClose={closeSheet} title="참가자가 보는 화면">
+          <div className="mt-3 flex justify-center">
+            <PreviewPane plan={previewPlan} />
+          </div>
+        </BottomSheet>
       </EditorContext.Provider>
     </ToastProvider>
   );

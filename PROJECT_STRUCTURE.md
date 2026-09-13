@@ -87,7 +87,8 @@ plan-it/
 │   │   ├── sortable-list.tsx               #    🔀 순서 변경 목록 — 키보드 + 포인터 드래그
 │   │   ├── notice-section.tsx              #    📢 2번 섹션 — 공지 인라인 편집·추가·삭제·순서
 │   │   ├── timetable-section.tsx           #    🕐 3번 섹션 — 일차 칩·항목 인라인 편집·장소 연결 시트
-│   │   └── place-section.tsx               #    📍 4번 섹션 — 장소 인라인 편집·고정 토글·삭제 경고
+│   │   ├── place-section.tsx               #    📍 4번 섹션 — 장소 인라인 편집·고정 토글·삭제 경고
+│   │   └── preview-pane.tsx                #    👁️ 폰 프레임 미리보기 — 뷰어 셸을 그대로 재사용
 │   │
 │   ├── viewer/                             # 👁️ 공개 뷰어 컴포넌트
 │   │   ├── viewer-shell.tsx                #    셸: 탭·일차·시트 상태 (유일한 클라이언트 경계)
@@ -245,6 +246,7 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
   - `notice-section.tsx` — 공지 (인라인 편집·추가·삭제 확인 다이얼로그·순서 변경). 한 파일이다 — 행이 곧 폼이라 따로 뗄 것이 없다
   - `timetable-section.tsx` — 타임테이블 (일차 칩, 항목 인라인 편집, 장소 연결 BottomSheet). 헤더 카운트에 고른 일차가 들어가서 **자기 SectionShell을 직접 그린다**
   - `place-section.tsx` — 장소 (인라인 편집, 고정 토글, 삭제 시 끊기는 연결 수 안내). 드래그 정렬이 없다 — 순서는 고정 여부와 타임테이블이 정한다
+  - `preview-pane.tsx` — 참가자가 보는 화면. **뷰어 셸을 그대로 쓴다**(스펙 §5.2). 1024px 미만에서는 셸이 이 판을 BottomSheet로 내린다
 - **`viewer/`** — 공개 뷰어 전용. 셸, 커버, 공지 바, 타임라인(레일·항목), 장소 목록·상세 시트, 비밀번호 게이트.
 - **`admin/`** — 관리자 콘솔. KPI 위젯, 모더레이션, 공지 관리.
 
