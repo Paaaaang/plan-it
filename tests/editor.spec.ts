@@ -777,3 +777,163 @@ test.describe('공지', () => {
     await page.unroute('**/dashboard/plans/editor-notice/edit');
   });
 });
+
+/**
+ * 타임테이블(3번) · 장소(4번). 두 섹션이 서로의 데이터를 만지므로(장소를 지우면 그 장소를
+ * 쓰던 항목의 연결이 끊긴다) **전용 slug(`editor-tt`)** 하나를 같이 쓴다 — 둘을 갈라 놓으면
+ * 정작 그 연결이 끊기는 경로를 볼 수 없다. 각 테스트는 beforeEach에서 씨앗부터 다시 세운다.
+ */
+const TT = '/dashboard/plans/editor-tt/edit';
+
+/** 타임테이블 행의 활동명. 공지와 같은 이유로 텍스트가 아니라 값이다(인라인 입력). */
+function itemName(row: Locator): Locator {
+  return row.getByRole('textbox', { name: '일정 이름' });
+}
+
+/** 장소 칩. 연결되면 장소 이름, 미연결이면 "장소 연결"이 보인다. */
+function placeChip(row: Locator): Locator {
+  return row.getByRole('button', { name: /장소 (연결|바꾸기)/ });
+}
+
+test.describe('타임테이블', () => {
+  test.beforeEach(({ page }) => reseed(page, 'editor-tt'));
+
+  test('일차 칩으로 날짜를 바꾸면 행과 카운트가 바뀐다', async ({ page }) => {
+    await page.goto(TT);
+    const rows = page.getByTestId('item-row');
+    await expect(rows).toHaveCount(3);
+    await expect(page.getByText('1일차 · 3개')).toBeVisible();
+
+    await page.getByTestId('editor-day-chips').getByRole('button', { name: '2일차' }).click();
+    await expect(rows).toHaveCount(2);
+    await expect(page.getByText('2일차 · 2개')).toBeVisible();
+    await expect(itemName(rows.first())).toHaveValue('회고');
+  });
+
+  test('장소 미연결 행은 장소 연결 칩으로 남는다', async ({ page }) => {
+    await page.goto(TT);
+    const walk = page.getByTestId('item-row').filter({ has: page.getByRole('textbox', { name: '일정 이름' }) }).nth(2);
+    await expect(itemName(walk)).toHaveValue('산책');
+    await expect(placeChip(walk)).toHaveText('장소 연결');
+    // 연결된 행은 장소 이름을 보여준다 — 같은 자리, 다른 값이다.
+    await expect(placeChip(page.getByTestId('item-row').first())).toHaveText('연남 카페');
+  });
+
+  test('잘못된 시간은 서버가 거부하고 값을 되돌린다', async ({ page }) => {
+    await page.goto(TT);
+    const time = page.getByTestId('item-row').first().getByRole('textbox', { name: '시작 시간' });
+    await time.fill('99:99');
+    await time.blur();
+    await expect(page.getByTestId('toast')).toContainText('00:00 ~ 23:59');
+    // 저장 안 된 값을 화면에 남기면 다음 저장이 사용자가 본 적 없는 값을 밀어 넣는다.
+    await expect(time).toHaveValue('10:00');
+  });
+
+  test('장소 연결 시트에서 장소를 고르면 칩이 바뀐다', async ({ page }) => {
+    await page.goto(TT);
+    const walk = page.getByTestId('item-row').nth(2);
+    await placeChip(walk).click();
+
+    const sheet = page.getByTestId('sheet-panel');
+    await expect(sheet).toBeVisible();
+    const landed = posted(page);
+    await sheet.getByRole('button', { name: /경의선숲길/ }).click();
+    await landed;
+
+    await expect(placeChip(walk)).toHaveText('경의선숲길');
+    await expect(sheet).toBeHidden();
+
+    // 서버에 갔는지 본다 — 낙관적 표시만으로는 알 수 없다.
+    await page.reload();
+    await expect(placeChip(page.getByTestId('item-row').nth(2))).toHaveText('경의선숲길');
+  });
+
+  test('일정을 추가하면 행이 늘고 새 행으로 초점이 간다', async ({ page }) => {
+    await page.goto(TT);
+    const rows = page.getByTestId('item-row');
+    const landed = posted(page);
+    await page.getByRole('button', { name: '일정 추가' }).click();
+    await landed;
+
+    await expect(rows).toHaveCount(4);
+    await expect(itemName(rows.nth(3))).toBeFocused();
+  });
+
+  test('일정을 지우면 확인을 먼저 받는다', async ({ page }) => {
+    await page.goto(TT);
+    const rows = page.getByTestId('item-row');
+    await rows.first().getByRole('button', { name: /삭제/ }).click();
+
+    await expect(page.getByTestId('dialog-panel')).toContainText('모여서 커피');
+    const landed = posted(page);
+    await page.getByRole('button', { name: '삭제', exact: true }).click();
+    await landed;
+
+    await expect(rows).toHaveCount(2);
+    await expect(itemName(rows.first())).toHaveValue('오전 세션');
+  });
+
+  test('그립에 초점을 두고 화살표로 순서를 바꾼다', async ({ page }) => {
+    await page.goto(TT);
+    const rows = page.getByTestId('item-row');
+    const landed = posted(page);
+    await grip(rows.first()).focus();
+    await page.keyboard.press('ArrowDown');
+    await landed;
+
+    await expect(itemName(rows.first())).toHaveValue('오전 세션');
+    await page.reload();
+    await expect(itemName(page.getByTestId('item-row').nth(1))).toHaveValue('모여서 커피');
+  });
+});
+
+test.describe('장소', () => {
+  test.beforeEach(({ page }) => reseed(page, 'editor-tt'));
+
+  test('고정 장소가 먼저 나오고 토글할 수 있다', async ({ page }) => {
+    await page.goto(TT);
+    const rows = page.getByTestId('place-row');
+    // 픽스처 순서는 카페 · 세미나실(고정) · 숲길이다. 고정이 위로 올라와야 한다.
+    await expect(rows.first().getByRole('textbox', { name: '장소 이름' })).toHaveValue('합정 세미나실');
+
+    const pin = rows.first().getByRole('button', { name: /고정/ });
+    await expect(pin).toHaveAttribute('aria-pressed', 'true');
+    const landed = posted(page);
+    await pin.click();
+    await landed;
+
+    // 고정을 풀면 픽스처 순서로 돌아간다 — 이제 카페가 맨 위다.
+    await expect(rows.first().getByRole('textbox', { name: '장소 이름' })).toHaveValue('연남 카페');
+  });
+
+  test('장소를 지우면 끊기는 연결이 몇 개인지 알려준다', async ({ page }) => {
+    await page.goto(TT);
+    const hall = page.getByTestId('place-row').first();
+    await hall.getByRole('button', { name: /삭제/ }).click();
+
+    // 세미나실은 1일차 오전 세션과 2일차 회고가 쓰고 있다.
+    const dialog = page.getByTestId('dialog-panel');
+    await expect(dialog).toContainText('합정 세미나실');
+    await expect(dialog).toContainText('2개');
+
+    const landed = posted(page);
+    await page.getByRole('button', { name: '삭제', exact: true }).click();
+    await landed;
+
+    await expect(page.getByTestId('place-row')).toHaveCount(2);
+    // 그 장소를 쓰던 항목은 "장소 연결"로 돌아간다(F-EDIT-PLACE-5).
+    await expect(placeChip(page.getByTestId('item-row').nth(1))).toHaveText('장소 연결');
+  });
+
+  test('이름을 고치고 blur하면 저장되고 타임테이블 칩도 따라온다', async ({ page }) => {
+    await page.goto(TT);
+    const name = page.getByTestId('place-row').first().getByRole('textbox', { name: '장소 이름' });
+    const landed = posted(page);
+    await name.fill('합정 대회의실');
+    await name.blur();
+    await landed;
+
+    // 항목은 장소 객체의 사본을 들고 있다 — 액션이 그 사본까지 고친다(place-actions).
+    await expect(placeChip(page.getByTestId('item-row').nth(1))).toHaveText('합정 대회의실');
+  });
+});

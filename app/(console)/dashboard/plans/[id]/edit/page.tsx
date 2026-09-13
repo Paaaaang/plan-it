@@ -16,6 +16,8 @@ import { EditorShell } from "@/components/editor/editor-shell";
 import { SectionShell } from "@/components/editor/section-shell";
 import { BasicInfoSection } from "@/components/editor/basic-info-section";
 import { NoticeSection } from "@/components/editor/notice-section";
+import { TimetableSection } from "@/components/editor/timetable-section";
+import { PlaceSection } from "@/components/editor/place-section";
 
 export const metadata: Metadata = {
   title: "일정 편집 — 플랜잇",
@@ -29,22 +31,23 @@ export default async function EditPlanPage(props: PageProps<"/dashboard/plans/[i
   // 스토어에 일정이 있으면 상태도 있다. 없다면 아직 공개된 적 없는 것으로 본다.
   const status = getPlanStatus(id) ?? "draft";
 
-  const firstDay = plan.days[0];
-
   return (
     <EditorShell plan={plan} status={status}>
-      {/* 각 섹션의 알맹이는 뒤 태스크가 채운다. 지금은 셸과 상단 바까지다. */}
       <SectionShell number={1} title="기본 정보">
         <BasicInfoSection plan={plan} />
       </SectionShell>
       <SectionShell number={2} title="공지" count={`${plan.notices.length}개`}>
         <NoticeSection notices={plan.notices} />
       </SectionShell>
-      <SectionShell
-        number={3}
-        title="타임테이블"
-        count={firstDay ? `1일차 · ${firstDay.items.length}개` : "0개"}
-      />
+      {/*
+        3번은 껍데기를 자기가 그린다 — 헤더 카운트에 **고른 일차**가 들어가고 그건
+        클라이언트 상태다(timetable-section.tsx 참고).
+      */}
+      <TimetableSection days={plan.days} places={plan.places} />
+      <SectionShell number={4} title="장소" count={`${plan.places.length}개`}>
+        {/* days를 같이 넘긴다 — 장소를 지울 때 끊기는 연결이 몇 개인지 세어 알려준다. */}
+        <PlaceSection places={plan.places} days={plan.days} />
+      </SectionShell>
     </EditorShell>
   );
 }

@@ -305,6 +305,52 @@ const editorNotice: ViewerPlan = {
 };
 
 /**
+ * 타임테이블·장소 E2E 전용. 두 섹션이 서로의 데이터를 만지므로(장소를 지우면 항목의 연결이
+ * 끊긴다) 다른 편집기 slug에 얹지 않는다.
+ *
+ * 필요한 모양이 정해져 있다: **이틀**(일차 칩 전환을 보려면 하루로는 안 된다) · 1일차에
+ * **장소 미연결 항목 하나**(회색 `장소 연결` 칩) · **고정 장소가 목록 중간에**(고정이 위로
+ * 올라오는지 보려면 픽스처 순서가 이미 정렬돼 있으면 안 된다).
+ */
+const ttPlaces: ViewerPlace[] = [
+  { id: "t-pl-cafe", name: "연남 카페", address: "서울 마포구 연남로 1", lat: null, lng: null, memo: null, tags: ["식사"], isPinned: false },
+  { id: "t-pl-hall", name: "합정 세미나실", address: "서울 마포구 양화로 45", lat: null, lng: null, memo: "3층 B실이에요.", tags: ["회의"], isPinned: true },
+  { id: "t-pl-park", name: "경의선숲길", address: "서울 마포구 연남동 385", lat: null, lng: null, memo: null, tags: ["산책"], isPinned: false },
+];
+
+const editorTimetable: ViewerPlan = {
+  slug: "editor-tt",
+  title: "타임테이블 데모",
+  planType: "워크샵",
+  partyLabel: "4명",
+  startDate: dayOffset(0),
+  endDate: dayOffset(1),
+  coverImageUrl: null,
+  notices: [],
+  days: [
+    {
+      dayNumber: 1,
+      date: dayOffset(0),
+      items: [
+        { id: "t-i1", startTime: "10:00", durationMin: 60, activityName: "모여서 커피", memo: null, place: ttPlaces[0] },
+        { id: "t-i2", startTime: "11:30", durationMin: 120, activityName: "오전 세션", memo: null, place: ttPlaces[1] },
+        { id: "t-i3", startTime: "14:00", durationMin: null, activityName: "산책", memo: null, place: null },
+      ],
+    },
+    {
+      dayNumber: 2,
+      date: dayOffset(1),
+      items: [
+        { id: "t-i4", startTime: "09:30", durationMin: 90, activityName: "회고", memo: null, place: ttPlaces[1] },
+        { id: "t-i5", startTime: "12:00", durationMin: null, activityName: "점심 해산", memo: null, place: null },
+      ],
+    },
+  ],
+  places: ttPlaces,
+  transport: [],
+};
+
+/**
  * slug → 일정. **Map이다. 객체 리터럴이 아니다.**
  *
  * slug는 URL 조각이 그대로 들어오는 값이라 `PLANS[slug]` 형태의 객체 조회는
@@ -321,6 +367,7 @@ const PLANS = new Map<string, ViewerPlan>([
   [editorBasic.slug, editorBasic],
   [editorSort.slug, editorSort],
   [editorNotice.slug, editorNotice],
+  [editorTimetable.slug, editorTimetable],
 ]);
 
 /**

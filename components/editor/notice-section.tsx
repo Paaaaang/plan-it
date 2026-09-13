@@ -3,11 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/toast";
 import { SortableList } from "@/components/editor/sortable-list";
 import { useEditor } from "@/components/editor/editor-shell";
+import { useEditorAction } from "@/hooks/use-editor-action";
 import { addNotice, deleteNotice, reorderNotices, updateNotice } from "@/actions/notice-actions";
-import type { ActionResult } from "@/types/editor";
 import type { ViewerNotice } from "@/types/viewer";
 
 /** 추가 버튼이 넣는 공지. 제목이 비면 서버가 거부하므로(검증) 이름을 하나 주고 시작한다. */
@@ -93,31 +92,12 @@ function NoticeRow({
  * 행에 가 있다.
  */
 export function NoticeSection({ notices }: { notices: ViewerNotice[] }) {
-  const { slug, run } = useEditor();
-  const { show } = useToast();
+  const { slug } = useEditor();
+  const call = useEditorAction();
   const [pending, setPending] = useState<ViewerNotice | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   /** 방금 추가했다 = 새 행의 제목으로 초점을 옮겨야 한다. 아래 이펙트가 소비한다. */
   const added = useRef(false);
-
-  /**
-   * 액션 하나를 저장 상태에 걸고, 거부 사유를 토스트로 낸다.
-   * 네 갈래(추가·수정·삭제·정렬)가 같은 처리를 하므로 한 자리에 둔다.
-   */
-  const call = useCallback(
-    async (action: () => Promise<ActionResult>) => {
-      let reason = "";
-      const ok = await run(async () => {
-        const res = await action();
-        if (!res.ok) reason = res.message;
-        return res;
-      });
-      // 사유가 비었다 = 응답이 아니라 예외로 끝났다(run이 잡는다). 그래도 말은 해야 한다.
-      if (!ok) show(reason || "저장하지 못했어요. 연결을 확인해 주세요.", "danger");
-      return ok;
-    },
-    [run, show],
-  );
 
   const reorder = useCallback(
     (ids: string[]) => call(() => reorderNotices(slug, ids)),
