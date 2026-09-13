@@ -21,7 +21,7 @@ type State = {
   status: Map<string, PlanStatus>;
   /**
    * 커버 이미지 바이트. Supabase Storage가 붙기 전의 임시 자리다 —
-   * `app/api/cover/[slug]/route.ts`가 여기서 읽어 내보낸다.
+   * `app/api/cover/[slug]/[v]/route.ts`가 여기서 읽어 내보낸다.
    * contentType은 **서버 허용 목록에서 고른 값**이지 업로더가 보낸 문자열이 아니다.
    */
   covers: Map<string, { bytes: Uint8Array; contentType: string }>;
@@ -32,7 +32,7 @@ type State = {
  *
  * Next는 Route Handler를 페이지·Server Action과 **별도 번들**로 만든다. 같은 파일을
  * import해도 각 번들이 자기 모듈 인스턴스를 들고 돌아서, `let state`는 경계를 넘지 못한다 —
- * `setCover`가 쓴 바이트를 `app/api/cover/[slug]/route.ts`가 못 본다(업로드 직후 404).
+ * `setCover`가 쓴 바이트를 `app/api/cover/[slug]/[v]/route.ts`가 못 본다(업로드 직후 404).
  * dev의 HMR도 같은 이유로 모듈을 다시 평가해 상태를 날린다.
  *
  * `globalThis`는 그 번들들이 실제로 공유하는 유일한 자리다. 프로세스 메모리를

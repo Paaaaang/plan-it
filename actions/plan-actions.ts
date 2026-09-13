@@ -17,7 +17,7 @@
  *  - lib/store/plans.ts          → 조회·갱신 (getPlan, updatePlan, setPlanStatus, setCoverBlob)
  *  - lib/editor/validate.ts      → 입력 검증
  *  - lib/utils/date.ts           → 기간 → 일차 산술
- *  - app/api/cover/[slug]        → 업로드된 커버 바이트를 내보내는 곳
+ *  - app/api/cover/[slug]/[v]    → 업로드된 커버 바이트를 내보내는 곳
  *  - types/editor.ts             → ActionResult, BasicInfoInput, PlanStatus
  *  - types/viewer.ts             → 저장 대상 모양 (ViewerPlan)
  *
@@ -150,7 +150,7 @@ const COVER_TYPES = new Map<string, string[]>([
  * 커버 사진 업로드.
  *
  * **저장 방식**: 이 단계에는 Storage가 없다. 바이트는 메모리 스토어에 넣고
- * `coverImageUrl`에는 내부 경로(`/api/cover/<slug>`)를 저장한다.
+ * `coverImageUrl`에는 내부 경로(`/api/cover/<slug>/<version>`)를 저장한다.
  * 브리프는 data URL을 말했지만 `validateCoverUrl`이 `data:`를 막는다 — 그 가드는
  * 옳다(커버 주소는 `<img src>`와 OG 메타로 그대로 나간다). 그래서 저장 위치만 바꾸고
  * **가드는 그대로 통과시킨다**: 내부 경로도 같은 `validateCoverUrl`을 지난다.
@@ -183,8 +183,10 @@ export async function setCover(slug: string, form: FormData): Promise<ActionResu
 
   setCoverBlob(slug, new Uint8Array(await file.arrayBuffer()), file.type);
 
-  // 같은 경로에 새 사진이 들어오므로 캐시 무효화 조각을 붙인다.
-  const path = `/api/cover/${encodeURIComponent(slug)}?v=${Date.now()}`;
+  // 같은 일정에 새 사진이 들어오므로 캐시 무효화 조각을 붙인다. **쿼리가 아니라 경로다** —
+  // `next/image`는 로컬 이미지의 쿼리 문자열을 기본적으로 막고(localPatterns의 `search: ''`),
+  // 막히면 커버를 올린 일정의 공개 뷰어가 500으로 떨어진다.
+  const path = `/api/cover/${encodeURIComponent(slug)}/${Date.now()}`;
   const cover = validateCoverUrl(path);
   if (!cover.ok) return { ok: false, message: cover.message, field: "coverImageUrl" };
 

@@ -275,6 +275,16 @@ test.describe('커버 업로더', () => {
     'base64',
   );
 
+  /**
+   * 16×16 PNG. **뷰어 판정에는 1×1을 쓸 수 없다** — 뷰어 커버는 `next/image`를 지나는데,
+   * 1픽셀 원본을 최적화하면 브라우저가 디코딩하지 못하는 결과가 나온다(naturalWidth 0).
+   * 업로드 경로만 보는 위 테스트들은 원본 바이트를 그대로 받으므로 1×1로 충분하다.
+   */
+  const PNG16 = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAIElEQVR42mP8z8BQz0AEYBxVSF+FjKOhSF+F/xlHfUmSQgCZ9Qz9dEG0IQAAAABJRU5ErkJggg==',
+    'base64',
+  );
+
   test('허용 목록 밖 형식은 서버가 거부한다', async ({ page }) => {
     // 클라이언트는 `image/*`까지만 거른다(accept 속성과 같은 기준). GIF는 그 문을
     // 통과하지만 서버 허용 목록(JPG·PNG·WebP)에 없다 — 서버 거부가 화면에 떠야 한다.
@@ -306,6 +316,34 @@ test.describe('커버 업로더', () => {
     await expect
       .poll(() => image.evaluate((el) => (el as HTMLImageElement).naturalWidth), {
         message: '커버가 실제로 로드돼야 한다',
+      })
+      .toBeGreaterThan(0);
+  });
+
+  /**
+   * 올린 커버를 **공개 뷰어가 실제로 그리는지** 본다. 편집기 미리보기(Task 7)를 붙이기
+   * 전까지 이 URL을 `next/image`로 그리는 화면이 없어서 아무도 몰랐다 — 커버를 올린
+   * 일정의 공개 링크가 **500**이었다(로컬 이미지의 쿼리 문자열을 Next가 막는다).
+   * 편집기가 아니라 뷰어에서 판정한다: 링크를 받은 참가자가 보는 것이 그 화면이다.
+   */
+  test('올린 커버를 든 공개 뷰어가 열리고 사진이 그려진다', async ({ page }) => {
+    await page.goto(BASIC);
+    await page.getByTestId('cover-input').setInputFiles({
+      name: 'cover.png',
+      mimeType: 'image/png',
+      buffer: PNG16,
+    });
+    await expect(page.getByTestId('save-status')).toContainText('저장됨');
+
+    const res = await page.goto('/p/editor-basic');
+    expect(res?.status(), '공개 링크가 열려야 한다').toBe(200);
+    await expect(page.getByTestId('cover')).toHaveAttribute('data-cover', 'photo');
+
+    // src 문자열은 아무것도 증명하지 않는다 — 브라우저가 바이트를 디코딩했는지만 본다.
+    const cover = page.getByTestId('cover').locator('img');
+    await expect
+      .poll(() => cover.evaluate((el) => (el as HTMLImageElement).naturalWidth), {
+        message: '뷰어 커버가 실제로 로드돼야 한다',
       })
       .toBeGreaterThan(0);
   });

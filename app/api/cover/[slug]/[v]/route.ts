@@ -1,6 +1,13 @@
 /**
  * @file 커버 이미지 바이트 서빙
- * @route GET /api/cover/[slug]
+ * @route GET /api/cover/[slug]/[v]
+ *
+ * `[v]`는 캐시 무효화 조각이다. 라우트는 이 값을 읽지 않는다 — **경로에 있는 이유**는
+ * `next/image`가 로컬 이미지의 쿼리 문자열을 기본적으로 막기 때문이다(`images.localPatterns`
+ * 기본값은 `search: ''`). 버전을 `?v=`로 붙였을 때 뷰어가 500으로 떨어졌다: 커버를 올린
+ * 일정의 공개 링크가 통째로 죽는다. 설정을 열어 쿼리를 허용할 수도 있었지만, 그러면 우리
+ * 경로에 임의 쿼리로 이미지 최적화를 요청할 수 있게 된다(Next 문서가 경고하는 그대로).
+ * 경로 조각은 기본 허용 규칙 안에 있어 설정을 열 필요가 없다.
  *
  * 업로드된 커버는 아직 어디에도 올라가지 않는다(스토리지가 없다). `setCover`가 바이트를
  * 메모리 스토어에 넣고 `coverImageUrl`에는 **이 경로**를 저장한다. 그래서 저장된 값이
@@ -24,7 +31,7 @@
 
 import { getCoverBlob, getPlanStatus } from "@/lib/store/plans";
 
-export async function GET(_req: Request, ctx: RouteContext<"/api/cover/[slug]">) {
+export async function GET(_req: Request, ctx: RouteContext<"/api/cover/[slug]/[v]">) {
   const { slug } = await ctx.params;
   // 없는 일정과 못 보는 일정이 같은 답을 준다 — 404와 403이 갈리면 존재가 새어 나간다.
   if (getPlanStatus(slug) !== "public") return new Response(null, { status: 404 });
