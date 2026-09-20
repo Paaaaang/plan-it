@@ -1,7 +1,7 @@
 // node:crypto를 쓴다 — 이 파일은 서버에서만 import한다.
 // 클라이언트 컴포넌트는 데이터를 props로 받는다.
 import { createHash } from "node:crypto";
-import type { ViewerPlan, ViewerPlace } from "@/types/viewer";
+import type { ViewerPlan, ViewerPlace } from "../../types/viewer.ts";
 
 // KST(Asia/Seoul)로 고정한다. rail.ts::isSameDay는 브라우저 로컬 TZ로 "오늘"을 비교하는데,
 // 이 함수가 서버 로컬 TZ(예: CI의 UTC)로 날짜를 만들면 두 기준이 어긋나 레일 상태가

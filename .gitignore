@@ -61,3 +61,7 @@ node_modules/
 
 # .env.example은 더미 값만 담는다 — 커밋한다
 !.env.example
+
+# supabase
+supabase/.branches
+supabase/.temp
