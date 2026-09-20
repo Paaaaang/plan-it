@@ -13,8 +13,13 @@ import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 const N = 16384;
 const KEYLEN = 32;
 
-export function hashPassword(plain: string): string {
-  const salt = randomBytes(16);
+/**
+ * @param salt 호출자가 지정한 솔트(16바이트). **생성된 seed.sql이 바이트 단위로
+ *   안정되게 하려는 용도로만 존재한다** — 실제 사용자 비밀번호를 해시하는
+ *   프로덕션 호출부는 이 인자를 절대 넘기지 않는다(기본값인 무작위 솔트를 쓴다).
+ *   여기 넘기면 같은 입력에 항상 같은 해시가 나와 사전 계산 공격에 취약해진다.
+ */
+export function hashPassword(plain: string, salt: Buffer = randomBytes(16)): string {
   const hash = scryptSync(plain, salt, KEYLEN, { N });
   return `scrypt$${N}$${salt.toString("hex")}$${hash.toString("hex")}`;
 }

@@ -3,6 +3,7 @@
  * @description seed 생성 스크립트와 reseed 라우트가 **같은 변환**을 쓰게 한다.
  *              갈라지면 "처음 상태"가 두 개가 된다.
  */
+import { createHash } from "node:crypto";
 import type { ViewerPlan } from "../../types/viewer.ts";
 import { hashPassword } from "../viewer/password.ts";
 
@@ -21,6 +22,20 @@ function q(v: string | null): string {
 
 function tagsLiteral(tags: string[]): string {
   return tags.length === 0 ? "'{}'" : `array[${tags.map((t) => q(t)).join(", ")}]::text[]`;
+}
+
+/**
+ * slug에서 결정적으로 뽑은 16바이트 솔트. **여기서만 쓴다.**
+ * `supabase/seed.sql`은 "생성물이지만 커밋한다"는 전제가 재현 가능해야 한다는
+ * 뜻인데, `hashPassword`의 기본 무작위 솔트를 그대로 쓰면 `npm run seed:gen`을
+ * 두 번 돌릴 때마다 소스 변경 없이 diff가 난다. 여기서 예측 가능한 솔트를 써도
+ * 안전한 이유는 셋 다 겹친다: 비밀번호 자체가 이미 소스에 평문으로 있고
+ * (`SEED_PASSWORDS`), DB가 로컬이고, 공개된 픽스처 비밀번호는 솔트를 숨겨도
+ * 어차피 보호되지 않는다. **실제 사용자 비밀번호에는 이 근거가 적용되지
+ * 않는다** — `hashPassword`를 이 인자 없이 부르면 여전히 매번 무작위 솔트다.
+ */
+function seedSalt(slug: string): Buffer {
+  return createHash("sha256").update(slug).digest().subarray(0, 16);
 }
 
 /**
@@ -46,7 +61,7 @@ export function planInsertSql(plan: ViewerPlan): string {
         q(plan.startDate),
         q(plan.endDate),
         q(status),
-        pw ? q(hashPassword(pw)) : "null",
+        pw ? q(hashPassword(pw, seedSalt(plan.slug))) : "null",
         q(plan.coverImageUrl),
         expired ? "now() - interval '1 day'" : "null",
       ].join(", ") +
