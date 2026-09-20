@@ -100,6 +100,36 @@ export async function getPlan(slug: string): Promise<ViewerPlan | undefined> {
 export type ChildTable = "notices" | "places" | "transport_info" | "schedule_items";
 
 /**
+ * day_number로 day의 id를 찾는다. `addItem`이 쓴다 — schedule_items는 plan_id가
+ * 없어서(days를 거쳐야 소유가 정해진다) 저장하기 전에 day_id를 먼저 알아야 한다.
+ *
+ * 원래 actions/schedule-actions.ts가 이 조회를 `adminClient()`로 직접 했다. 이 파일
+ * 안의 다른 쿼리는 전부 unwrap을 거쳐 DB 장애와 "그런 날짜가 없다"를 구분하는데,
+ * 액션 파일로 새 나간 이 하나만 error를 버리고 있었다 — 스토어가 유일한 DB 경계라는
+ * 규약과도 맞지 않았다. 여기로 옮겨 둘 다 고친다.
+ */
+export async function findDayId(slug: string, dayNumber: number): Promise<string | undefined> {
+  const result = await adminClient()
+    .from("days")
+    .select("id")
+    .eq("plan_id", slug)
+    .eq("day_number", dayNumber)
+    .maybeSingle();
+  return unwrap(result, `days(plan_id=${slug}, day_number=${dayNumber})`)?.id;
+}
+
+/** 이 slug 소유의 장소인지. `linkPlace`가 "존재하는 장소"까지만 보장하는 FK를 보강한다. */
+export async function placeExists(slug: string, placeId: string): Promise<boolean> {
+  const result = await adminClient()
+    .from("places")
+    .select("id")
+    .eq("plan_id", slug)
+    .eq("id", placeId)
+    .maybeSingle();
+  return unwrap(result, `places(plan_id=${slug}, id=${placeId})`) !== null;
+}
+
+/**
  * 소유 범위 검사를 한 자리에 둔다.
  *
  * `schedule_items`는 plan_id가 없다(days를 거친다). 그래서 이 함수가 테이블마다
@@ -128,7 +158,7 @@ function scoped(q: FilterBuilder, slug: string, ids: string[] | "all") {
 
 export async function insertRow(
   table: ChildTable, slug: string, values: Record<string, unknown>,
-): Promise<string | undefined> {
+): Promise<string> {
   const db = adminClient();
   // display_order는 **그 목록 안에서** 끝이다. schedule_items의 목록 단위는 일정 전체가
   // 아니라 하루다 — 일정 전체로 세면 2일차 첫 항목이 order=4 같은 값을 받아, 그 날
@@ -186,6 +216,12 @@ export async function deleteRow(table: ChildTable, slug: string, id: string): Pr
  * 만들어 보내므로 단일 SQL 문 = 원자적이다. 부분 컬럼(id·display_order)만 넣어 upsert하면
  * INSERT 분기가 나머지 NOT NULL 컬럼 때문에 실패할 수 있어(행이 실제로는 있어도 Postgres는
  * INSERT 문의 값 목록 자체를 먼저 검증한다) select("*")로 전체 컬럼을 들고 온다.
+ *
+ * 다만 이 select → upsert 사이에도 창이 있다 — 그 사이 다른 요청이 같은 행의 다른
+ * 컬럼(예: title)을 고치면 여기서 읽은 옛 값 그대로 upsert되어 그 수정이 덮인다.
+ * read-modify-write라 R20(saveBasicInfo 경합)과 같은 족속이고 창은 훨씬 좁다(select
+ * 한 번의 왕복 시간). 정직하게 남긴다 — 고치려면 display_order만 건드리는 부분
+ * upsert나 버전 컬럼이 필요하고, 둘 다 이 범위의 설계 결정이 아니다.
  */
 export async function reorderRows(table: ChildTable, slug: string, ids: string[]): Promise<boolean> {
   const db = adminClient();
@@ -212,10 +248,6 @@ export async function updatePlanRow(slug: string, values: Record<string, unknown
     .select("slug");
   const data = unwrap(result, `plans update(slug=${slug})`);
   return (data?.length ?? 0) > 0;
-}
-
-export async function setPlanStatus(slug: string, status: PlanStatus): Promise<boolean> {
-  return updatePlanRow(slug, { status });
 }
 
 /**

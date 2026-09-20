@@ -33,8 +33,9 @@ export const WINDOW_MS = 10 * 60_000;
  *
  * 없으면 아무도 다시 오지 않는 slug의 항목이 프로세스가 죽을 때까지 남는다 —
  * `'use server'` export는 누구나 POST할 수 있으므로 그 상태는 바운드가 없다.
- * 카운터를 올릴 때만 부른다: Map에는 비공개 slug만 들어오고(아래 verifyPassword의
- * isLockedSlug 가드), 항목은 10분 뒤 전부 청소 대상이 되므로 크기가 곧 상한이다.
+ * 카운터를 올릴 때만 부른다: Map에는 비공개 slug만 들어오고(actions/viewer-actions.ts의
+ * verifyPassword가 getPlanMeta로 status==='private'인지 먼저 본다), 항목은 10분 뒤
+ * 전부 청소 대상이 되므로 크기가 곧 상한이다.
  *
  * ponytail: 매 실패마다 O(n) 전수 스윕 — n이 "최근 10분 안에 틀린 비공개 slug 수"라
  *           작다. Redis로 옮기면 TTL이 이 일을 대신한다.

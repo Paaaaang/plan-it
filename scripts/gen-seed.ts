@@ -19,6 +19,8 @@
  * 실행: npm run seed:gen
  */
 import { writeFileSync } from "node:fs";
+// 상대 경로 + .ts 확장자다, `@/`가 아니다 — 이 스크립트 자체가 `node --experimental-strip-types`로
+// 직접 실행되고(package.json의 seed:gen), plain node는 tsconfig paths를 못 푼다.
 import { allFixturePlans } from "../lib/fixtures/viewer.ts";
 import { planInsertSql, SEED_OWNER_ID, EXEC_SQL_FUNCTION_SQL } from "../lib/store/seed-sql.ts";
 

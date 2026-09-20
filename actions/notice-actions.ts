@@ -44,9 +44,7 @@ export async function addNotice(slug: string, input: NoticeInput): Promise<Actio
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  if (!(await insertRow("notices", slug, { title: checked.value.title, body: checked.value.body }))) {
-    return { ok: false, message: "일정을 찾을 수 없어요." };
-  }
+  await insertRow("notices", slug, { title: checked.value.title, body: checked.value.body });
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };

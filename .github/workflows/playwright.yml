@@ -23,8 +23,23 @@ jobs:
       run: npm run build
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
+    # Postgres는 로컬 Supabase(CLI + Docker)다 — 러너에 별도 CLI 설치 액션은 필요 없다.
+    # `supabase`가 이미 devDependency라 `npm ci`가 CLI를 같이 넣는다(스펙 §5.2).
+    # 여기서 한 번 먼저 띄우는 건 오직 env를 읽기 위해서다: `npm run test`의 `pretest`가
+    # 다시 `supabase start`를 부르지만 이미 떠 있으면 즉시 반환한다(package.json 참고) —
+    # 그래서 db reset·seed 로직을 YAML에 중복하지 않고 npm 스크립트 그대로 쓴다.
+    - name: Start local Supabase
+      run: npx supabase start
+    - name: Export Supabase env
+      run: |
+        sb_status="$(npx supabase status -o env)"
+        {
+          echo "NEXT_PUBLIC_SUPABASE_URL=$(echo "$sb_status" | grep '^API_URL=' | cut -d= -f2-)"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(echo "$sb_status" | grep '^ANON_KEY=' | cut -d= -f2-)"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$sb_status" | grep '^SERVICE_ROLE_KEY=' | cut -d= -f2-)"
+        } >> "$GITHUB_ENV"
     - name: Run Playwright tests
-      run: npx playwright test
+      run: npm run test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:

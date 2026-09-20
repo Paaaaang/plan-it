@@ -4,13 +4,13 @@ import type { Locator, Page } from '@playwright/test';
 /**
  * 편집기는 데스크톱 서페이스다(스펙 §5.2 — 1024px 미만은 1단으로 접히고 미리보기가
  * 하단 시트로 내려간다). iPhone 14 프로젝트에서 같은 단언을 두 번 돌릴 이유가 없고,
- * 두 프로젝트가 같은 dev 서버의 **같은 메모리 스토어**를 병렬로 때리면 아래 쓰기
+ * 두 프로젝트가 같은 dev 서버의 **같은 Postgres**를 병렬로 때리면 아래 쓰기
  * 테스트가 서로를 오염시킨다.
  */
 test.skip(({ isMobile }) => isMobile, '편집기는 데스크톱 서페이스다.');
 
 /**
- * 테스트 격리 — 스토어는 프로세스 메모리다(lib/store/plans.ts). 세 겹으로 막는다:
+ * 테스트 격리 — 스토어는 Postgres다(lib/store/plans.ts). 세 겹으로 막는다:
  *
  *  1. **각 테스트는 시작할 때 자기 slug를 씨앗부터 다시 세운다**(`reseed`). 끝에서
  *     되돌리는 방식으로는 부족했다: 되돌리기에 닿기 전에 넘어지면 그 값이 **다음 실행까지**
@@ -28,8 +28,9 @@ test.describe.configure({ mode: 'serial' });
 
 /**
  * slug를 픽스처 씨앗 값으로 되돌린다(`POST /api/test/reseed/[slug]` — 프로덕션엔 없는 문).
- * 서버 프로세스 안에서만 부를 수 있는 `resetStore()`를 E2E가 쓸 수 없어 라우트로 뚫었고,
- * 스토어를 통째로 날리지 않는 이유는 mobile 뷰어 스펙이 같은 dev 서버를 병렬로 쓰기 때문이다.
+ * Playwright는 브라우저 쪽에서 돌아 서버 프로세스의 `reseedPlan()`(lib/store/plans.ts)을
+ * 직접 부를 수 없어 라우트로 뚫었고, DB 전체가 아니라 그 slug 한 행만 되돌리는 이유는
+ * mobile 뷰어 스펙이 같은 dev 서버·같은 DB를 병렬로 쓰기 때문이다.
  */
 async function reseed(page: Page, slug: string): Promise<void> {
   const res = await page.request.post(`/api/test/reseed/${slug}`);
@@ -970,7 +971,8 @@ test.describe('장소', () => {
     await name.blur();
     await landed;
 
-    // 항목은 장소 객체의 사본을 들고 있다 — 액션이 그 사본까지 고친다(place-actions).
+    // 항목은 장소를 참조로 들고 있다(schedule_items.place_id 외래키) — 사본이 아니라서
+    // 장소 이름을 고치면 그 장소를 가리키는 항목도 다시 읽을 때 최신 이름으로 조인된다.
     await expect(placeChip(page.getByTestId('item-row').nth(1))).toHaveText('합정 대회의실');
   });
 });

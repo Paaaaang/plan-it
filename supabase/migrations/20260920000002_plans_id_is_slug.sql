@@ -1,0 +1,15 @@
+-- lib/store/plans.ts의 자식 쿼리(notices/places/days/transport_info)는 전부
+-- `.eq("plan_id", slug)`다 — plans.id가 곧 slug라는 전제다. 지금은 seed 생성기
+-- (lib/store/seed-sql.ts)가 id 컬럼에 slug를 직접 써 넣어서 성립하지만, 스키마는
+-- `id`와 `slug`를 별개 컬럼으로 뒀고(`id`는 gen_random_uuid() 기본값) 아무것도
+-- 그 둘을 같게 강제하지 않는다.
+--
+-- 2단계에서 대시보드가 INSERT로 일정을 만들면 id에 uuid 기본값이 들어가고, 그 순간
+-- 자식 쿼리 넷이 조용히 0행을 돌려준다 — 에러가 아니라서 "공지도 일정도 없는 정상
+-- 일정"처럼 렌더된다. 이 제약은 그 실패를 시끄럽게(INSERT 시점에 위반 에러로) 만든다.
+--
+-- 스펙 §4.1은 `plan_id = (SELECT id FROM plans WHERE slug = $1)` 서브쿼리를 명시했다 —
+-- 진짜 수정은 스토어를 그 서브쿼리로 바꾸는 것이고, 그건 2단계의 소유권 배선과 같이
+-- 간다. 지금 그 절반만 하는 게 더 나쁘므로(전제를 코드에서만 지우고 나머지는 그대로
+-- 둔 채 어중간하게 걸쳐 있게 된다) 여기서는 전제를 "적어 둔다"만 한다.
+alter table plans add constraint plans_id_is_slug check (id = slug);

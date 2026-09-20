@@ -199,7 +199,9 @@ plan-it/
 │
 ├── supabase/                                # 🗄️ 로컬 Supabase (CLI + Docker)
 │   ├── migrations/                          #    프로덕션 스키마만 (`supabase db push`가 그대로 원격에 적용)
-│   │   └── 20260920000000_initial_schema.sql
+│   │   ├── 20260920000000_initial_schema.sql
+│   │   ├── 20260920000001_enable_rls.sql    #    RLS 기본 거부 스위치(정책은 2단계)
+│   │   └── 20260920000002_plans_id_is_slug.sql  #  plans.id = slug 전제를 제약으로 못박는다(1단계 한정)
 │   └── seed.sql                             #    생성물. `npm run seed:gen`이 매번 다시 씀 — .gitignore, 커밋 안 함
 │
 ├── scripts/                                  # 🔧 개발용 스크립트

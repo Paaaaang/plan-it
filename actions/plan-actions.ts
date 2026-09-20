@@ -15,7 +15,7 @@
  *  - setCover(slug, form)        → 커버 사진 업로드 (FormData의 "file")
  *
  * @connects
- *  - lib/store/plans.ts          → 조회·행 단위 쓰기 (getPlan, updatePlanRow, syncDayRows, setPlanStatus, setCoverBlob)
+ *  - lib/store/plans.ts          → 조회·행 단위 쓰기 (getPlan, updatePlanRow, syncDayRows, setCoverBlob)
  *  - lib/editor/validate.ts      → 입력 검증
  *  - lib/utils/date.ts           → 기간 → 일차 산술
  *  - app/api/cover/[slug]/[v]    → 업로드된 커버 바이트를 내보내는 곳
@@ -28,7 +28,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getPlan, updatePlanRow, syncDayRows, setPlanStatus, setCoverBlob } from "@/lib/store/plans";
+import { getPlan, updatePlanRow, syncDayRows, setCoverBlob } from "@/lib/store/plans";
 import { addDays, diffDays } from "@/lib/utils/date";
 import {
   validateTitle,
@@ -137,7 +137,7 @@ export async function setStatus(slug: string, status: string): Promise<ActionRes
   const checked = validateStatus(status);
   if (!checked.ok) return { ok: false, message: checked.message, field: "status" };
 
-  if (!(await setPlanStatus(slug, checked.value))) {
+  if (!(await updatePlanRow(slug, { status: checked.value }))) {
     return { ok: false, message: "일정을 찾을 수 없어요." };
   }
 

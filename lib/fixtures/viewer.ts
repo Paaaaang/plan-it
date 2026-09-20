@@ -1,3 +1,6 @@
+// 상대 경로 + .ts 확장자 — `@/` 별칭이 아니다. `npm run seed:gen`이 이 파일을
+// `node --experimental-strip-types`로 직접 돌리는데, plain node는 tsconfig의
+// paths(`@/*`)를 못 푼다. "정리"랍시고 `@/types/viewer`로 바꾸면 seed:gen이 깨진다.
 import type { ViewerPlan, ViewerPlace } from "../../types/viewer.ts";
 
 // KST(Asia/Seoul)로 고정한다. rail.ts::isSameDay는 브라우저 로컬 TZ로 "오늘"을 비교하는데,
@@ -181,10 +184,10 @@ const longDay: ViewerPlan = {
  * (테이블 하나에 같은 id가 두 플랜에서 들어온다).
  *
  * `structuredClone`은 입력 트리 안의 공유 참조(장소 객체를 `places[]`와
- * `items[].place`가 같이 가리키는 것)를 클론 안에서도 그대로 유지한다
- * (lib/store/plans.ts::ensure의 structuredClone 주석 참고) — 그래서 `places[]`
- * 원소의 `.id`를 바꾸면 그 객체를 참조하는 `items[].place.id`도 같은 객체이므로
- * 자동으로 같이 바뀐다. 별도로 `item.place`를 다시 이어줄 필요가 없다.
+ * `items[].place`가 같이 가리키는 것 — 이 파일의 픽스처 리터럴이 실제로 그렇게
+ * 써 있다, 예: `place: jejuPlaces[0]`)를 클론 안에서도 그대로 유지한다 — 그래서
+ * `places[]` 원소의 `.id`를 바꾸면 그 객체를 참조하는 `items[].place.id`도 같은
+ * 객체이므로 자동으로 같이 바뀐다. 별도로 `item.place`를 다시 이어줄 필요가 없다.
  * `transport[].placeId`는 문자열 참조(객체 동일성이 아니다)라 이것만 매핑해서
  * 따로 바꿔준다.
  */
@@ -222,10 +225,9 @@ function cloneWithPrefixedIds(source: ViewerPlan, slug: string, title: string): 
 const secretParty: ViewerPlan = cloneWithPrefixedIds(jeju, "secret-party", "비공개 모임");
 
 /**
- * 만료된 링크. `EXPIRED_SEED_SLUGS`(lib/store/seed-sql.ts)가 이 slug에
- * `expires_at`을 과거로 찍는다 — DB가 붙으면 만료 판정이 `EXPIRED_SLUGS` 접두사
- * 하드코딩이 아니라 이 행의 `expires_at`이 되므로, 실제 `plans` 행이 있어야
- * 그 전환이 의미가 있다. 만료 화면은 일정 내용을 렌더링하지 않으므로
+ * 만료된 링크. `EXPIRED_SEED_SLUGS`(lib/store/seed-sql.ts)가 이 slug에 seed 시점
+ * `expires_at`을 과거로 찍는다 — 만료 판정의 진실은 그 컬럼 하나다(getPlanMeta가
+ * 읽는다). slug 접두사 하드코딩은 없다. 만료 화면은 일정 내용을 렌더링하지 않으므로
  * (app/p/[slug]/page.tsx) 알맹이는 비워 둔다.
  */
 const gone: ViewerPlan = {

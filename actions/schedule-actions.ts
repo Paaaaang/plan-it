@@ -16,8 +16,8 @@
  *  - linkPlace(slug, itemId, placeId)    → 장소 연결/해제 (F-EDIT-TT-5)
  *
  * @connects
- *  - lib/store/plans.ts          → 조회·행 단위 쓰기 (getPlan, insertRow, updateRow, deleteRow, reorderRows)
- *  - lib/supabase/admin.ts       → days·places 직접 조회 (day_id 찾기, 장소 소유 확인)
+ *  - lib/store/plans.ts          → 조회·행 단위 쓰기 + 소유 확인
+ *                                   (getPlan, insertRow, updateRow, deleteRow, reorderRows, findDayId, placeExists)
  *  - lib/editor/validate.ts      → 입력 검증 + reorderByIds
  *  - types/editor.ts             → ActionResult, ItemInput
  *  - types/viewer.ts             → ViewerDay, ViewerItem
@@ -29,8 +29,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getPlan, insertRow, updateRow, deleteRow, reorderRows } from "@/lib/store/plans";
-import { adminClient } from "@/lib/supabase/admin";
+import { getPlan, insertRow, updateRow, deleteRow, reorderRows, findDayId, placeExists } from "@/lib/store/plans";
 import {
   validateTime,
   validateTitle,
@@ -69,22 +68,16 @@ export async function addItem(slug: string, dayNumber: number, input: ItemInput)
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  const { data: day } = await adminClient()
-    .from("days")
-    .select("id")
-    .eq("plan_id", slug)
-    .eq("day_number", dayNumber)
-    .maybeSingle();
-  if (!day) return { ok: false, message: "해당 날짜를 찾을 수 없어요." };
+  const dayId = await findDayId(slug, dayNumber);
+  if (!dayId) return { ok: false, message: "해당 날짜를 찾을 수 없어요." };
 
-  const id = await insertRow("schedule_items", slug, {
-    day_id: day.id,
+  await insertRow("schedule_items", slug, {
+    day_id: dayId,
     start_time: checked.value.startTime,
     duration_min: checked.value.durationMin,
     activity_name: checked.value.activityName,
     memo: checked.value.memo,
   });
-  if (!id) return { ok: false, message: "일정 항목을 저장하지 못했어요." };
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -144,8 +137,7 @@ export async function linkPlace(slug: string, itemId: string, placeId: string | 
   // TODO(auth): 소유자 확인.
   if (placeId !== null) {
     // 남의 일정 장소를 연결하지 못하게 막는다. FK만으로는 "존재하는 장소"까지만 보장된다.
-    const { data } = await adminClient().from("places").select("id").eq("plan_id", slug).eq("id", placeId).maybeSingle();
-    if (!data) return { ok: false, message: "장소를 찾을 수 없어요.", field: "placeId" };
+    if (!(await placeExists(slug, placeId))) return { ok: false, message: "장소를 찾을 수 없어요.", field: "placeId" };
   }
 
   if (!(await updateRow("schedule_items", slug, itemId, { place_id: placeId }))) {

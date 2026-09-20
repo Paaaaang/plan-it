@@ -44,9 +44,24 @@ npm run dev        # 개발 서버 :3000
 npm run build      # 프로덕션 빌드
 npm run lint       # eslint
 npm run typecheck  # tsc --noEmit
-npm run test       # playwright (dev 서버 자동 기동)
+npm run test       # playwright (pretest가 로컬 Supabase를 기동·리셋한다)
 npm run test:ui    # playwright UI 모드
+npm run db:start   # 로컬 Supabase만 띄운다 (Docker 필요)
+npm run db:reset   # seed 재생성 + 마이그레이션·seed 재적용 (start까지 포함)
 ```
+
+### 새 클론에서 처음 할 것 — `.env.local`
+
+DB는 로컬 Supabase(CLI + Docker)다. Docker를 띄운 채로:
+
+```bash
+npx supabase start   # 최초 1회는 이미지를 받느라 느리다. 끝나면 URL·키를 출력한다
+```
+
+그 출력값을 `.env.local`에 그대로 옮긴다(`.env.example` 참고):
+`NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `SUPABASE_SERVICE_ROLE_KEY`.
+이 세 값은 로컬 컨테이너에만 통하는 고정 개발용 값이다(Supabase 공개 문서에 실린 데모 키) —
+원격 프로젝트 키를 여기 넣지 않는다. `VIEWER_SECRET`은 아무 문자열이나 넣어도 개발에는 지장 없다.
 
 ---
 

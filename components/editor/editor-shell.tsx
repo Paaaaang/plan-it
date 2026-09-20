@@ -82,16 +82,30 @@ export function EditorShell({
     setBasics((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  const commit = useCallback(async () => {
-    const next = latest.current;
-    const before = saved.current;
-    if (JSON.stringify(next) === JSON.stringify(before)) return;
+  // saveBasicInfo 호출을 순서대로 매단다(증상 봉합, 설계 수정 아님).
+  //
+  // 날짜 blur와 제목 blur가 거의 동시에 나면 두 commit이 동시에 뜬다 — 둘 다 다섯 필드
+  // 스냅샷 전체를 보낸다. 날짜 쪽(더 무겁다: syncDayRows까지 돈다)이 늦게 도착하면
+  // 화면은 "저장됨"이라 말하지만 DB에는 옛 제목이 남는다(5회 중 2회 재현). 진짜 수정은
+  // 낙관적 동시성(버전 컬럼) 또는 부분 필드 저장이고, 둘 다 이 범위 밖의 설계 결정이다.
+  // 여기서는 요청을 큐에 태워 한 번에 하나만 내보낸다 — 뒤 요청은 앞 요청이 끝난
+  // *뒤에* latest.current를 다시 읽으므로, 그사이 쌓인 변경까지 포함한 최종 스냅샷이
+  // 마지막에 착지한다. 탭이 둘이거나 사용자가 둘인 경우는 여전히 못 막는다(인증 단계 문제).
+  const queue = useRef<Promise<void>>(Promise.resolve());
 
-    const ok = await run(() => saveBasicInfo(plan.slug, next));
-    // 서버가 거부하면 입력을 마지막 저장 값으로 되돌린다 — 화면과 서버가 어긋난 채로
-    // 남으면 다음 저장이 사용자가 본 적 없는 값을 밀어 넣는다.
-    if (ok) saved.current = next;
-    else setBasics(before);
+  const commit = useCallback((): Promise<void> => {
+    queue.current = queue.current.then(async () => {
+      const next = latest.current;
+      const before = saved.current;
+      if (JSON.stringify(next) === JSON.stringify(before)) return;
+
+      const ok = await run(() => saveBasicInfo(plan.slug, next));
+      // 서버가 거부하면 입력을 마지막 저장 값으로 되돌린다 — 화면과 서버가 어긋난 채로
+      // 남으면 다음 저장이 사용자가 본 적 없는 값을 밀어 넣는다.
+      if (ok) saved.current = next;
+      else setBasics(before);
+    });
+    return queue.current;
   }, [plan.slug, run]);
 
   /**

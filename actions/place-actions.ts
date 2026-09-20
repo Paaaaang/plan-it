@@ -60,14 +60,13 @@ export async function addPlace(slug: string, input: PlaceInput): Promise<ActionR
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  const id = await insertRow("places", slug, {
+  await insertRow("places", slug, {
     name: checked.value.name,
     address: checked.value.address,
     memo: checked.value.memo,
     tags: checked.value.tags,
     is_pinned: checked.value.isPinned,
   });
-  if (!id) return { ok: false, message: "일정을 찾을 수 없어요." };
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };

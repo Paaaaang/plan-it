@@ -284,12 +284,14 @@ test.describe('장소 시트', () => {
 /**
  * 비밀번호 게이트 · 오류/만료 화면.
  *
- * 테스트 격리 — 시도 카운터는 프로세스 메모리다(actions/viewer-actions.ts).
+ * 테스트 격리 — 시도 카운터는 프로세스 메모리다(lib/viewer/attempts.ts).
  * desktop·mobile 두 프로젝트가 같은 dev 서버를 병렬로 때리고 CI는 재시도까지 한다.
  * 카운터를 건드리는 테스트가 고정 slug를 쓰면 "4번"이 실행 순서에 따라 3번·2번이 된다.
- * → **틀리는 테스트만 매 실행마다 새 slug를 쓴다.** `secret-`로 시작하는 slug는 전부
- *   비공개이고(lib/fixtures/viewer.ts::isLockedSlug), 비밀번호 해시가 없는 slug는
- *   어떤 입력도 틀린 것으로 처리된다(fail-closed). 나머지 테스트는 secret-party를 쓴다 —
+ * → **틀리는 테스트는 매번 reseed로 secret-party를 되돌려 카운터를 같이 지운다**
+ *   (reseedPlan이 resetAttempts도 부른다). 비공개 판정은 slug 접두사가 아니라
+ *   `plans.status='private'` 컬럼 하나다(`SEED_PASSWORDS`(lib/store/seed-sql.ts)가
+ *   seed 시점에 이 slug에 평문 비밀번호를 매핑해 scrypt 해시로 찍는다). 나머지
+ *   테스트는 secret-party를 쓴다 —
  *   읽기만 하거나(게이트 노출) 성공해서 카운터를 지운다. 둘 다 카운터를 올리지 않는다.
  */
 test.describe('비밀번호 게이트 · 오류', () => {

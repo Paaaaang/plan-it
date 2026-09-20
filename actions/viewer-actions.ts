@@ -1,8 +1,8 @@
 /**
  * @file 뷰어 데이터 조회 · 비밀번호 검증 서버 액션
  * @description 공개 뷰어용 일정 데이터 조회와 비공개 일정 잠금 해제.
- *              상태·만료·해시는 Postgres(lib/store/plans.ts의 getPlanMeta)가 진실이다.
- *              일정 본문은 아직 편집기 쓰기가 메모리 스토어를 겨냥한다 — Task 3이 옮긴다.
+ *              상태·만료·해시·본문 전부 Postgres(lib/store/plans.ts)가 진실이다 —
+ *              편집기 쓰기도 같은 테이블을 행 단위로 고친다(메모리 스토어는 없다).
  *
  * 'use server'
  *

@@ -10,7 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "seed:gen": "node --experimental-strip-types scripts/gen-seed.ts",
     "db:start": "npx supabase start",
-    "db:reset": "npm run seed:gen && npx supabase db reset",
+    "db:reset": "npx supabase start && npm run seed:gen && npx supabase db reset",
     "pretest": "npm run db:reset",
     "test": "playwright test",
     "test:ui": "playwright test --ui"
