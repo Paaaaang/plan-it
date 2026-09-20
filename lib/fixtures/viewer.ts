@@ -177,10 +177,72 @@ const longDay: ViewerPlan = {
 };
 
 /**
+ * jeju를 깊이 복제해서 새 slug 전용 자식 id를 붙인다. 한 행은 부모가 하나다 —
+ * `{ ...jeju, slug: "secret-party" }`처럼 얕게 복사하면 places·notices·
+ * schedule_items·transport 객체를 jeju와 그대로 공유해서 자식 id도 같이 공유된다.
+ * 메모리 스토어(구조가 Map)에선 안 드러나지만 관계형 DB에선 그대로 PK 충돌이다
+ * (테이블 하나에 같은 id가 두 플랜에서 들어온다).
+ *
+ * `structuredClone`은 입력 트리 안의 공유 참조(장소 객체를 `places[]`와
+ * `items[].place`가 같이 가리키는 것)를 클론 안에서도 그대로 유지한다
+ * (lib/store/plans.ts::ensure의 structuredClone 주석 참고) — 그래서 `places[]`
+ * 원소의 `.id`를 바꾸면 그 객체를 참조하는 `items[].place.id`도 같은 객체이므로
+ * 자동으로 같이 바뀐다. 별도로 `item.place`를 다시 이어줄 필요가 없다.
+ * `transport[].placeId`는 문자열 참조(객체 동일성이 아니다)라 이것만 매핑해서
+ * 따로 바꿔준다.
+ */
+function cloneWithPrefixedIds(source: ViewerPlan, slug: string, title: string): ViewerPlan {
+  const cloned = structuredClone(source);
+  const prefix = `${slug}-`;
+  const placeIdMap = new Map<string, string>();
+
+  cloned.places.forEach((p) => {
+    const newId = prefix + p.id;
+    placeIdMap.set(p.id, newId);
+    p.id = newId;
+  });
+  cloned.notices.forEach((n) => {
+    n.id = prefix + n.id;
+  });
+  cloned.days.forEach((d) => {
+    d.items.forEach((it) => {
+      it.id = prefix + it.id;
+    });
+  });
+  cloned.transport.forEach((t) => {
+    t.id = prefix + t.id;
+    if (t.placeId) t.placeId = placeIdMap.get(t.placeId) ?? t.placeId;
+  });
+
+  return { ...cloned, slug, title };
+}
+
+/**
  * 비공개(비밀번호) 일정. 스토어의 씨앗 상태가 `private`이 된다 — `isLockedSlug`가
  * 그 번역을 한다(lib/store/plans.ts::ensure). 잠금 판정의 진실은 스토어 하나다.
  */
-const secretParty: ViewerPlan = { ...jeju, slug: "secret-party", title: "비공개 모임" };
+const secretParty: ViewerPlan = cloneWithPrefixedIds(jeju, "secret-party", "비공개 모임");
+
+/**
+ * 만료된 링크. `EXPIRED_SEED_SLUGS`(lib/store/seed-sql.ts)가 이 slug에
+ * `expires_at`을 과거로 찍는다 — DB가 붙으면 만료 판정이 `EXPIRED_SLUGS` 접두사
+ * 하드코딩이 아니라 이 행의 `expires_at`이 되므로, 실제 `plans` 행이 있어야
+ * 그 전환이 의미가 있다. 만료 화면은 일정 내용을 렌더링하지 않으므로
+ * (app/p/[slug]/page.tsx) 알맹이는 비워 둔다.
+ */
+const gone: ViewerPlan = {
+  slug: "gone",
+  title: "만료된 일정",
+  planType: "여행",
+  partyLabel: null,
+  startDate: dayOffset(-10),
+  endDate: dayOffset(-8),
+  coverImageUrl: null,
+  notices: [],
+  days: [],
+  places: [],
+  transport: [],
+};
 
 /** 편집기 E2E 전용. 상태·제목을 쓰는 테스트가 뷰어 픽스처를 오염시키지 않게 따로 둔다. */
 const editorDemo: ViewerPlan = {
@@ -363,6 +425,7 @@ const PLANS = new Map<string, ViewerPlan>([
   [offsite.slug, offsite],
   [longDay.slug, longDay],
   [secretParty.slug, secretParty],
+  [gone.slug, gone],
   [editorDemo.slug, editorDemo],
   [editorBasic.slug, editorBasic],
   [editorSort.slug, editorSort],

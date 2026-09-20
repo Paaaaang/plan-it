@@ -53,21 +53,17 @@ export function planInsertSql(plan: ViewerPlan): string {
       `);`,
   );
 
-  // on conflict do nothing: secret-party는 jeju를 얕게 복사한 픽스처라(`{ ...jeju, slug: ... }`)
-  // places·notices·schedule_items·transport_info의 자식 id를 jeju와 그대로 공유한다.
-  // 값이 똑같은 행이 두 번 들어오는 것뿐이라 스킵해도 데이터 손실이 없고,
-  // 이 함수가 나중에 reseed 라우트(Task 4)에서 몇 번을 다시 불려도 안전하다.
   plan.places.forEach((p) => {
     lines.push(
       `insert into places (id, plan_id, name, address, lat, lng, memo, tags, is_pinned) values (` +
         [q(p.id), q(plan.slug), q(p.name), q(p.address), p.lat ?? "null", p.lng ?? "null", q(p.memo), tagsLiteral(p.tags), String(p.isPinned)].join(", ") +
-        `) on conflict (id) do nothing;`,
+        `);`,
     );
   });
 
   plan.notices.forEach((n, i) => {
     lines.push(
-      `insert into notices (id, plan_id, title, body, display_order) values (${q(n.id)}, ${q(plan.slug)}, ${q(n.title)}, ${q(n.body)}, ${i}) on conflict (id) do nothing;`,
+      `insert into notices (id, plan_id, title, body, display_order) values (${q(n.id)}, ${q(plan.slug)}, ${q(n.title)}, ${q(n.body)}, ${i});`,
     );
   });
 
@@ -80,7 +76,7 @@ export function planInsertSql(plan: ViewerPlan): string {
       lines.push(
         `insert into schedule_items (id, day_id, start_time, duration_min, activity_name, memo, place_id, display_order) values (` +
           [q(it.id), q(dayId), q(it.startTime), it.durationMin ?? "null", q(it.activityName), q(it.memo), q(it.place?.id ?? null), i].join(", ") +
-          `) on conflict (id) do nothing;`,
+          `);`,
       );
     });
   });
@@ -89,7 +85,7 @@ export function planInsertSql(plan: ViewerPlan): string {
     lines.push(
       `insert into transport_info (id, plan_id, place_id, mode, from_label, to_label, duration_label, note, display_order) values (` +
         [q(t.id), q(plan.slug), q(t.placeId), q(t.mode), q(t.fromLabel), q(t.toLabel), q(t.durationLabel), q(t.note), i].join(", ") +
-        `) on conflict (id) do nothing;`,
+        `);`,
     );
   });
 
