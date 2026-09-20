@@ -14,8 +14,9 @@
  * slug 하나뿐이고, 하는 일은 **서버가 들고 있는 픽스처로 되돌리기**다 — 본문으로 상태를
  * 주입할 수 없다.
  *
- * TODO(supabase): 메모리 스토어가 사라지면 이 라우트도 사라진다. 그때 격리는
- * 트랜잭션 롤백이나 스키마 분리로 한다.
+ * TODO(supabase): 이 라우트는 메모리 스토어의 산물이 아니라 **테스트 격리 장치**다.
+ *   Postgres로 옮긴 뒤에도 남는다. 트랜잭션 롤백으로 바꾸려면 Playwright가 서버의
+ *   요청 경계와 트랜잭션을 공유해야 하는데 dev 서버 구조상 그럴 수 없다.
  */
 
 import { reseedPlan } from "@/lib/store/plans";
@@ -25,5 +26,5 @@ export async function POST(_req: Request, ctx: RouteContext<"/api/test/reseed/[s
 
   const { slug } = await ctx.params;
   // 픽스처에 없는 slug는 되돌릴 씨앗이 없다 — 조용히 성공하면 테스트가 오타를 못 본다.
-  return new Response(null, { status: reseedPlan(slug) ? 204 : 404 });
+  return new Response(null, { status: (await reseedPlan(slug)) ? 204 : 404 });
 }

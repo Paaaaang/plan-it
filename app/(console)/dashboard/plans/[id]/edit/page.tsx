@@ -26,10 +26,10 @@ export const metadata: Metadata = {
 export default async function EditPlanPage(props: PageProps<"/dashboard/plans/[id]/edit">) {
   const { id } = await props.params;
 
-  const plan = getPlan(id);
+  const plan = await getPlan(id);
   if (!plan) notFound();
   // 스토어에 일정이 있으면 상태도 있다. 없다면 아직 공개된 적 없는 것으로 본다.
-  const status = getPlanStatus(id) ?? "draft";
+  const status = (await getPlanStatus(id)) ?? "draft";
 
   return (
     <EditorShell plan={plan} status={status}>

@@ -18,7 +18,7 @@ import { ViewerShell } from "@/components/viewer/viewer-shell";
 import { PasswordGate } from "@/components/viewer/password-gate";
 import { StatusScreen } from "@/components/viewer/status-screen";
 import { coverSubline } from "@/lib/viewer/summary";
-import { MAX_ATTEMPTS } from "@/lib/fixtures/viewer";
+import { MAX_ATTEMPTS } from "@/lib/viewer/attempts";
 
 export async function generateMetadata(props: PageProps<"/p/[slug]">): Promise<Metadata> {
   const { slug } = await props.params;

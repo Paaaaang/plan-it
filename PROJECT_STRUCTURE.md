@@ -121,10 +121,14 @@ plan-it/
 │   │   ├── rail.ts                         #    레일 진행도·항목 상태 계산
 │   │   ├── summary.ts                      #    공지 요약·기간/날짜 문구
 │   │   ├── links.ts                        #    카카오맵·네이버지도 딥링크
-│   │   └── get-plan.ts                     #    getBySlug 요청 단위 캐시 (React cache)
+│   │   ├── get-plan.ts                     #    getBySlug 요청 단위 캐시 (React cache)
+│   │   ├── password.ts                     #    비밀번호 해시(salt+scrypt)·검증(timingSafeEqual)
+│   │   └── attempts.ts                     #    비밀번호 시도 카운터 ('use server' 밖 — reseed도 초기화해야 해서)
 │   │
-│   ├── store/                              # 🗃️ 메모리 스토어 (Supabase 이전 단계)
-│   │   └── plans.ts                        #    slug→ViewerPlan · 상태 맵. 뷰어와 편집기의 공통 저장소
+│   ├── store/                              # 🗃️ Postgres 경계 — 뷰어·편집기가 DB에 닿는 유일한 자리
+│   │   ├── plans.ts                        #    일정 행 CRUD(조회는 조인해 ViewerPlan으로 조립, 쓰기는 행 단위) + 커버 바이트(아직 메모리)
+│   │   ├── rows.ts                         #    DB 행(snake_case) → ViewerPlan 조립(assemblePlan)
+│   │   └── seed-sql.ts                     #    픽스처 → SQL 변환. seed 생성기와 reseed 라우트가 같이 쓴다
 │   │
 │   ├── editor/                             # ✏️ 편집기 순수 로직
 │   │   └── validate.ts                     #    입력 검증 (제목·날짜·시간·태그·순서)
@@ -193,6 +197,14 @@ plan-it/
 │   ├── README.md
 │   └── project/                            #    tokens / components / guidelines / ui_kits / assets
 │
+├── supabase/                                # 🗄️ 로컬 Supabase (CLI + Docker)
+│   ├── migrations/                          #    프로덕션 스키마만 (`supabase db push`가 그대로 원격에 적용)
+│   │   └── 20260920000000_initial_schema.sql
+│   └── seed.sql                             #    생성물. `npm run seed:gen`이 매번 다시 씀 — .gitignore, 커밋 안 함
+│
+├── scripts/                                  # 🔧 개발용 스크립트
+│   └── gen-seed.ts                          #    lib/fixtures/viewer.ts → supabase/seed.sql (exec_sql 함수 포함)
+│
 ├── .github/workflows/playwright.yml        # CI — push/PR 시 E2E 실행
 │
 ├── proxy.ts                                # Next.js Proxy (구 middleware) — 인증/권한 라우팅
@@ -253,7 +265,22 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
 ### 3. `lib/` (라이브러리)
 
 - **`supabase/`** — 환경별 Supabase 클라이언트. Client/Server/Middleware/Admin 분리.
+- **`store/`** — Postgres 경계. `plans.ts`가 조회(조인 → `rows.ts::assemblePlan`)와 행 단위 쓰기를 맡고,
+  커버 이미지 바이트만 아직 프로세스 메모리에 남는다(3단계 Storage 전까지). `seed-sql.ts`는 픽스처를
+  SQL로 바꾸는 변환 하나를 seed 생성기(`scripts/gen-seed.ts`)와 reseed 라우트가 같이 쓰게 한다.
+- **`viewer/`** — `password.ts`(salt+scrypt 해시·검증), `attempts.ts`(비밀번호 시도 카운터 — reseed가
+  초기화해야 해서 `'use server'` 파일 밖에 둔다) 포함.
 - **`utils/`** — 순수 유틸리티 함수. slug 생성, 날짜 계산, 캐시 무효화, 입력 검증.
+
+### 3-1. `supabase/` · `scripts/` (DB · seed)
+
+- **`supabase/migrations/`** — 프로덕션 스키마만 둔다. `supabase db push`가 이 폴더를 그대로 원격에
+  적용하므로, 테스트 전용 코드(예: 임의 SQL을 실행하는 `exec_sql` 함수)는 여기 두지 않는다.
+- **`supabase/seed.sql`** — 생성물이다. `npm run seed:gen`(`db:reset`이 먼저 돌린다)이 매번
+  `lib/fixtures/viewer.ts`를 읽어 다시 쓴다. 날짜가 `dayOffset()`으로 "오늘" 기준 상대값이라
+  커밋하면 하루 지나 stale해지므로 `.gitignore` 대상이다.
+- **`scripts/gen-seed.ts`** — 픽스처 → `seed.sql` 변환 스크립트. `exec_sql` 함수 정의도 여기서
+  함께 낸다 — `db reset`(로컬 전용)에서만 실행되게 해서 프로덕션에 닿을 길을 구조적으로 막는다.
 
 ### 4. `hooks/` (커스텀 훅)
 

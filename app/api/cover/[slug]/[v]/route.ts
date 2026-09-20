@@ -34,7 +34,7 @@ import { getCoverBlob, getPlanStatus } from "@/lib/store/plans";
 export async function GET(_req: Request, ctx: RouteContext<"/api/cover/[slug]/[v]">) {
   const { slug } = await ctx.params;
   // 없는 일정과 못 보는 일정이 같은 답을 준다 — 404와 403이 갈리면 존재가 새어 나간다.
-  if (getPlanStatus(slug) !== "public") return new Response(null, { status: 404 });
+  if ((await getPlanStatus(slug)) !== "public") return new Response(null, { status: 404 });
 
   const cover = getCoverBlob(slug);
   if (!cover) return new Response(null, { status: 404 });

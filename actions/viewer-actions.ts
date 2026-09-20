@@ -1,9 +1,8 @@
 /**
  * @file 뷰어 데이터 조회 · 비밀번호 검증 서버 액션
  * @description 공개 뷰어용 일정 데이터 조회와 비공개 일정 잠금 해제.
- *              조회는 메모리 스토어(lib/store/plans.ts)를 거친다 — 픽스처로 씨앗을 뿌리고
- *              편집기가 같은 곳에 쓴다. **공개 상태(draft/public/private)도 스토어가 진실이다.**
- *              만료만 아직 픽스처 규칙이다.
+ *              상태·만료·해시는 Postgres(lib/store/plans.ts의 getPlanMeta)가 진실이다.
+ *              일정 본문은 아직 편집기 쓰기가 메모리 스토어를 겨냥한다 — Task 3이 옮긴다.
  *
  * 'use server'
  *
@@ -14,8 +13,9 @@
  *  - verifyPassword(slug, pw)     → 비공개 일정 비밀번호 검증 + 통과 시 httpOnly 쿠키 발급
  *
  * @connects
- *  - lib/store/plans.ts           → 일정·상태 조회 (getPlan, getPlanStatus) — 편집기가 쓰는 그 스토어다
- *  - lib/fixtures/viewer.ts       → 만료 판정과 비밀번호 (isLockedSlug, EXPIRED_SLUGS, FIXTURE_PASSWORD_HASH, MAX_ATTEMPTS)
+ *  - lib/store/plans.ts           → 일정·상태·만료·해시 조회 (getPlan, getPlanMeta)
+ *  - lib/viewer/password.ts       → 해시 검증 (verifyPasswordHash)
+ *  - lib/viewer/attempts.ts       → 시도 카운터 (attempts, WINDOW_MS, sweepAttempts, remainingFor)
  *  - types/viewer.ts              → 반환 타입 (ViewerResult, ViewerPlan)
  *
  * @security
@@ -23,21 +23,15 @@
  *    걷어냈다 — 파라미터로 받으면 호출부 하나만 잊어도 게이트가 통째로 우회된다.
  *  - isUnlocked는 export하지 않는다. `'use server'` 파일의 export는 전부 공개
  *    엔드포인트가 되므로, 내부 배관은 모듈 안에 둔다.
- *
- * @todo Supabase 연동 — getBySlug 내부 조회 블록과 FIXTURE_PASSWORD_HASH만 교체 예정.
  */
 
 "use server";
 
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { getPlan as getStoredPlan, getPlanStatus } from "@/lib/store/plans";
-import {
-  isLockedSlug,
-  EXPIRED_SLUGS,
-  FIXTURE_PASSWORD_HASH,
-  MAX_ATTEMPTS,
-} from "@/lib/fixtures/viewer";
+import { getPlan as getStoredPlan, getPlanMeta } from "@/lib/store/plans";
+import { verifyPasswordHash } from "@/lib/viewer/password";
+import { attempts, WINDOW_MS, sweepAttempts, remainingFor } from "@/lib/viewer/attempts";
 import type { ViewerResult } from "@/types/viewer";
 
 /** slug는 URL 조각이다. 이 형식이 아니면 조회도 검증도 하지 않는다. */
@@ -85,50 +79,22 @@ export async function getBySlug(slug: string): Promise<ViewerResult> {
     return { status: "notFound" };
   }
 
-  // TODO(supabase): 이 블록만 Postgres 조회로 교체한다. 아래 분기 구조는 그대로 쓴다.
-  if (EXPIRED_SLUGS.has(slug)) return { status: "expired" };
+  // 상태·만료·해시를 한 번에 읽는다. 없는 slug는 여기서 끝난다.
+  const meta = await getPlanMeta(slug);
+  if (!meta) return { status: "notFound" };
 
-  // 공개 상태는 스토어가 진실이다 — 편집기의 setStatus가 쓰는 그 맵이다.
-  // 세그먼트를 옮기면 이 경로가 즉시 따라야 상태가 장식이 아니게 된다.
-  const status = getPlanStatus(slug);
+  // 만료가 먼저다 — 만료된 링크는 공개였든 비공개였든 같은 화면을 본다.
+  if (meta.expiresAt !== null && new Date(meta.expiresAt) <= new Date()) {
+    return { status: "expired" };
+  }
 
   // 임시저장은 기획자만 보는 상태다. "있지만 못 본다"가 아니라 없는 것으로 답한다 —
   // 404와 403이 갈리면 링크를 받은 사람이 일정의 존재를 알아낼 수 있다.
-  if (status === "draft") return { status: "notFound" };
-  if (status === "private" && !(await isUnlocked(slug))) return { status: "locked", slug };
+  if (meta.status === "draft") return { status: "notFound" };
+  if (meta.status === "private" && !(await isUnlocked(slug))) return { status: "locked", slug };
 
-  const plan = getStoredPlan(slug);
+  const plan = await getStoredPlan(slug);
   return plan ? { status: "ok", plan } : { status: "notFound" };
-}
-
-/**
- * 시도 횟수. 인스턴스 메모리에 둔다.
- *
- * ponytail: 프로세스 메모리 · slug 전역 카운터 — 인스턴스가 여럿이면 새어나가고,
- *           한 사람이 남을 잠글 수 있다(DoS). Redis가 붙는 시점에 IP+slug 키로 옮긴다.
- */
-const attempts = new Map<string, { count: number; at: number }>();
-const WINDOW_MS = 10 * 60_000;
-
-/**
- * 창(window)이 지난 항목을 걷어낸다.
- *
- * 없으면 아무도 다시 오지 않는 slug의 항목이 프로세스가 죽을 때까지 남는다 —
- * `'use server'` export는 누구나 POST할 수 있으므로 그 상태는 바운드가 없다.
- * 카운터를 올릴 때만 부른다: Map에는 비공개 slug만 들어오고(아래 verifyPassword의
- * isLockedSlug 가드), 항목은 10분 뒤 전부 청소 대상이 되므로 크기가 곧 상한이다.
- *
- * ponytail: 매 실패마다 O(n) 전수 스윕 — n이 "최근 10분 안에 틀린 비공개 slug 수"라
- *           작다. Redis로 옮기면 TTL이 이 일을 대신한다.
- */
-function sweepAttempts(now: number): void {
-  for (const [k, v] of attempts) {
-    if (now - v.at > WINDOW_MS) attempts.delete(k);
-  }
-}
-
-function remainingFor(slug: string): number {
-  return Math.max(0, MAX_ATTEMPTS - (attempts.get(slug)?.count ?? 0));
 }
 
 /**
@@ -140,10 +106,11 @@ export async function verifyPassword(
   password: string,
 ): Promise<{ ok: true } | { ok: false; remaining: number }> {
   if (typeof slug !== "string" || !SLUG_RE.test(slug)) return { ok: false, remaining: 0 };
-  // 비공개 일정이 아니면 검증할 것이 없다. 이 가드가 없으면 존재하지도 않는 slug마다
+  // 비공개가 아니면 검증할 것이 없다. 이 가드가 없으면 존재하지 않는 slug마다
   // attempts에 항목이 생겨 공격자 입력만으로 Map이 무한히 자란다.
   // (열람 가능 여부는 이미 GET /p/[slug]가 드러내므로 새로 새는 정보는 없다.)
-  if (!isLockedSlug(slug)) return { ok: false, remaining: 0 };
+  const meta = await getPlanMeta(slug);
+  if (meta?.status !== "private") return { ok: false, remaining: 0 };
   if (typeof password !== "string" || password.length === 0 || password.length > 64) {
     return { ok: false, remaining: remainingFor(slug) };
   }
@@ -152,9 +119,7 @@ export async function verifyPassword(
   if (rec && Date.now() - rec.at > WINDOW_MS) attempts.delete(slug);
   if (remainingFor(slug) <= 0) return { ok: false, remaining: 0 };
 
-  const want = FIXTURE_PASSWORD_HASH.get(slug);
-  const got = createHash("sha256").update(password).digest("hex");
-  const match = !!want && timingSafeEqual(Buffer.from(got, "hex"), Buffer.from(want, "hex"));
+  const match = verifyPasswordHash(password, meta.passwordHash);
 
   if (!match) {
     const now = Date.now();

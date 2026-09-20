@@ -2,7 +2,7 @@
  * @file 타임테이블 항목 CRUD + 장소 연결 서버 액션
  * @description Day 안의 항목(ViewerItem) 추가·수정·삭제·순서 변경과 장소 연결.
  *              Day는 일정의 기간에서 파생되므로 여기서 만들지 않는다 — dayNumber로 찾아 쓴다.
- *              목록은 언제나 배열 전체를 새로 써서 스토어에 넣는다(부분 변형 금지).
+ *              행 단위로 Postgres에 쓴다.
  *
  * 'use server'
  *
@@ -16,19 +16,21 @@
  *  - linkPlace(slug, itemId, placeId)    → 장소 연결/해제 (F-EDIT-TT-5)
  *
  * @connects
- *  - lib/store/plans.ts          → 조회·갱신 (getPlan, updatePlan)
+ *  - lib/store/plans.ts          → 조회·행 단위 쓰기 (getPlan, insertRow, updateRow, deleteRow, reorderRows)
+ *  - lib/supabase/admin.ts       → days·places 직접 조회 (day_id 찾기, 장소 소유 확인)
  *  - lib/editor/validate.ts      → 입력 검증 + reorderByIds
  *  - types/editor.ts             → ActionResult, ItemInput
  *  - types/viewer.ts             → ViewerDay, ViewerItem
  *
- * @important 항목은 장소 객체를 **박아서** 들고 있다(ViewerItem.place). 장소가 바뀌면
- *            actions/place-actions.ts가 이 사본까지 같이 고친다.
+ * @important ViewerItem.place는 이제 참조다(schedule_items.place_id 외래키). 장소가 바뀌어도
+ *            항목 쪽을 따로 고칠 필요가 없다 — 읽을 때 조인해서 최신 값을 낸다.
  */
 
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getPlan, updatePlan } from "@/lib/store/plans";
+import { getPlan, insertRow, updateRow, deleteRow, reorderRows } from "@/lib/store/plans";
+import { adminClient } from "@/lib/supabase/admin";
 import {
   validateTime,
   validateTitle,
@@ -37,7 +39,7 @@ import {
   reorderByIds,
 } from "@/lib/editor/validate";
 import type { ActionResult, ItemInput } from "@/types/editor";
-import type { ViewerDay, ViewerItem } from "@/types/viewer";
+import type { ViewerItem } from "@/types/viewer";
 
 type ItemFields = Omit<ViewerItem, "id" | "place">;
 
@@ -62,30 +64,27 @@ function checkInput(input: ItemInput): { ok: true; value: ItemFields } | { ok: f
   };
 }
 
-/** 항목 하나만 바꾼 days 배열을 새로 만든다. 어느 Day에 있는지는 모르고 id로 찾는다. */
-function mapItem(days: ViewerDay[], itemId: string, fn: (item: ViewerItem) => ViewerItem): ViewerDay[] {
-  return days.map((d) => ({ ...d, items: d.items.map((it) => (it.id === itemId ? fn(it) : it)) }));
-}
-
-function hasItem(days: ViewerDay[], itemId: string): boolean {
-  return days.some((d) => d.items.some((it) => it.id === itemId));
-}
-
 export async function addItem(slug: string, dayNumber: number, input: ItemInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
-  if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
-  if (!plan.days.some((d) => d.dayNumber === dayNumber)) {
-    return { ok: false, message: "해당 날짜를 찾을 수 없어요." };
-  }
-
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  const item: ViewerItem = { id: crypto.randomUUID(), ...checked.value, place: null };
-  updatePlan(slug, {
-    days: plan.days.map((d) => (d.dayNumber === dayNumber ? { ...d, items: [...d.items, item] } : d)),
+  const { data: day } = await adminClient()
+    .from("days")
+    .select("id")
+    .eq("plan_id", slug)
+    .eq("day_number", dayNumber)
+    .maybeSingle();
+  if (!day) return { ok: false, message: "해당 날짜를 찾을 수 없어요." };
+
+  const id = await insertRow("schedule_items", slug, {
+    day_id: day.id,
+    start_time: checked.value.startTime,
+    duration_min: checked.value.durationMin,
+    activity_name: checked.value.activityName,
+    memo: checked.value.memo,
   });
+  if (!id) return { ok: false, message: "일정 항목을 저장하지 못했어요." };
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -93,14 +92,19 @@ export async function addItem(slug: string, dayNumber: number, input: ItemInput)
 
 export async function updateItem(slug: string, itemId: string, input: ItemInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
-  if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
-  if (!hasItem(plan.days, itemId)) return { ok: false, message: "일정 항목을 찾을 수 없어요." };
-
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  updatePlan(slug, { days: mapItem(plan.days, itemId, (it) => ({ ...it, ...checked.value })) });
+  if (
+    !(await updateRow("schedule_items", slug, itemId, {
+      start_time: checked.value.startTime,
+      duration_min: checked.value.durationMin,
+      activity_name: checked.value.activityName,
+      memo: checked.value.memo,
+    }))
+  ) {
+    return { ok: false, message: "일정 항목을 찾을 수 없어요." };
+  }
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -108,13 +112,9 @@ export async function updateItem(slug: string, itemId: string, input: ItemInput)
 
 export async function deleteItem(slug: string, itemId: string): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
-  if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
-  if (!hasItem(plan.days, itemId)) return { ok: false, message: "일정 항목을 찾을 수 없어요." };
-
-  updatePlan(slug, {
-    days: plan.days.map((d) => ({ ...d, items: d.items.filter((it) => it.id !== itemId) })),
-  });
+  if (!(await deleteRow("schedule_items", slug, itemId))) {
+    return { ok: false, message: "일정 항목을 찾을 수 없어요." };
+  }
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -122,7 +122,7 @@ export async function deleteItem(slug: string, itemId: string): Promise<ActionRe
 
 export async function reorderItems(slug: string, dayNumber: number, ids: string[]): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
+  const plan = await getPlan(slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
 
   const day = plan.days.find((d) => d.dayNumber === dayNumber);
@@ -131,9 +131,9 @@ export async function reorderItems(slug: string, dayNumber: number, ids: string[
   const next = reorderByIds(day.items, ids);
   if (!next.ok) return { ok: false, message: next.message };
 
-  updatePlan(slug, {
-    days: plan.days.map((d) => (d.dayNumber === dayNumber ? { ...d, items: next.value } : d)),
-  });
+  if (!(await reorderRows("schedule_items", slug, ids))) {
+    return { ok: false, message: "순서를 저장하지 못했어요." };
+  }
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -141,15 +141,16 @@ export async function reorderItems(slug: string, dayNumber: number, ids: string[
 
 /** placeId가 null이면 연결을 끊는다. */
 export async function linkPlace(slug: string, itemId: string, placeId: string | null): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
-  if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
-  if (!hasItem(plan.days, itemId)) return { ok: false, message: "일정 항목을 찾을 수 없어요." };
+  // TODO(auth): 소유자 확인.
+  if (placeId !== null) {
+    // 남의 일정 장소를 연결하지 못하게 막는다. FK만으로는 "존재하는 장소"까지만 보장된다.
+    const { data } = await adminClient().from("places").select("id").eq("plan_id", slug).eq("id", placeId).maybeSingle();
+    if (!data) return { ok: false, message: "장소를 찾을 수 없어요.", field: "placeId" };
+  }
 
-  const place = placeId === null ? null : plan.places.find((p) => p.id === placeId);
-  if (place === undefined) return { ok: false, message: "장소를 찾을 수 없어요.", field: "placeId" };
-
-  updatePlan(slug, { days: mapItem(plan.days, itemId, (it) => ({ ...it, place })) });
+  if (!(await updateRow("schedule_items", slug, itemId, { place_id: placeId }))) {
+    return { ok: false, message: "일정 항목을 찾을 수 없어요." };
+  }
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };

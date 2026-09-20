@@ -1,6 +1,3 @@
-// node:crypto를 쓴다 — 이 파일은 서버에서만 import한다.
-// 클라이언트 컴포넌트는 데이터를 props로 받는다.
-import { createHash } from "node:crypto";
 import type { ViewerPlan, ViewerPlace } from "../../types/viewer.ts";
 
 // KST(Asia/Seoul)로 고정한다. rail.ts::isSameDay는 브라우저 로컬 TZ로 "오늘"을 비교하는데,
@@ -218,8 +215,9 @@ function cloneWithPrefixedIds(source: ViewerPlan, slug: string, title: string): 
 }
 
 /**
- * 비공개(비밀번호) 일정. 스토어의 씨앗 상태가 `private`이 된다 — `isLockedSlug`가
- * 그 번역을 한다(lib/store/plans.ts::ensure). 잠금 판정의 진실은 스토어 하나다.
+ * 비공개(비밀번호) 일정. `SEED_PASSWORDS`(lib/store/seed-sql.ts)가 이 slug에 평문
+ * 비밀번호를 매핑해 두면 seed SQL이 `status='private'` + scrypt 해시로 찍는다.
+ * 잠금 판정의 진실은 그 컬럼 하나다 — 접두사 규칙이 아니다.
  */
 const secretParty: ViewerPlan = cloneWithPrefixedIds(jeju, "secret-party", "비공개 모임");
 
@@ -433,41 +431,6 @@ const PLANS = new Map<string, ViewerPlan>([
   [editorTimetable.slug, editorTimetable],
 ]);
 
-/**
- * 비공개(비밀번호) 일정의 **씨앗** 판정. `secret-`로 시작하는 slug는 전부 잠긴 것으로 본다.
- *
- * 이 함수는 스토어 상태로 번역되는 자리에서만 쓴다(lib/store/plans.ts). 뷰어(getBySlug)는
- * 스토어 상태만 본다 — 그래야 편집기가 `setStatus`로 바꾼 것이 즉시 반영되고,
- * 잠금 판정이 두 갈래로 갈라지지 않는다.
- *
- * 왜 집합이 아니라 접두사인가: 시도 카운터가 프로세스 메모리다
- * (actions/viewer-actions.ts). E2E가 고정 slug를 나눠 쓰면 프로젝트 병렬·재시도에
- * 따라 남은 횟수가 흔들린다. 접두사로 열어 두면 틀리는 테스트가 매번 새 slug를 쓸 수 있다.
- * 비밀번호 해시가 없는 slug는 어떤 입력도 통과하지 못한다(fail-closed).
- *
- * DB가 붙으면 plans.visibility = 'private' 조회로 대체된다.
- */
-export function isLockedSlug(slug: string): boolean {
-  return slug.startsWith("secret-");
-}
-
-/** 만료된 링크 */
-export const EXPIRED_SLUGS = new Set(["gone"]);
-
-/**
- * 픽스처 단계의 비밀번호 해시. DB가 붙으면 plans.password_hash로 옮긴다.
- *
- * PLANS와 같은 이유로 Map이다 — slug를 키로 쓰는 조회는 전부 프로토타입 키에 뚫린다.
- *
- * ponytail: sha256(솔트 없음) — **픽스처이기 때문이다.** 실제 DB 컬럼이 붙는 순간
- *           salt + scrypt(node:crypto.scrypt)로 바꾼다. 지금 값은 소스에 평문이 없는
- *           고정 다이제스트일 뿐, 오프라인 크래킹 저항이 없다.
- */
-export const FIXTURE_PASSWORD_HASH = new Map<string, string>([
-  // sha256("1234")
-  ["secret-party", createHash("sha256").update("1234").digest("hex")],
-]);
-
 /** 비밀번호 시도 상한. 막다른 길에 닿기 전에 남은 횟수를 미리 알려준다(스펙 §5.1). */
 export const MAX_ATTEMPTS = 5;
 
@@ -475,7 +438,7 @@ export function findFixturePlan(slug: string): ViewerPlan | undefined {
   return PLANS.get(slug);
 }
 
-/** 메모리 스토어(lib/store/plans.ts)의 씨앗. PLANS는 Map이라 values()를 편다. */
+/** seed 생성기(scripts/gen-seed.ts)·reseed(lib/store/plans.ts)의 씨앗. PLANS는 Map이라 values()를 편다. */
 export function allFixturePlans(): ViewerPlan[] {
   return [...PLANS.values()];
 }

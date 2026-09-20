@@ -292,8 +292,6 @@ test.describe('장소 시트', () => {
  *   어떤 입력도 틀린 것으로 처리된다(fail-closed). 나머지 테스트는 secret-party를 쓴다 —
  *   읽기만 하거나(게이트 노출) 성공해서 카운터를 지운다. 둘 다 카운터를 올리지 않는다.
  */
-const freshLockedSlug = () => `secret-${crypto.randomUUID()}`;
-
 test.describe('비밀번호 게이트 · 오류', () => {
   test('비공개 일정은 게이트를 먼저 보여준다', async ({ page }) => {
     await page.goto('/p/secret-party');
@@ -304,7 +302,12 @@ test.describe('비밀번호 게이트 · 오류', () => {
   });
 
   test('틀리면 남은 시도가 줄어든다', async ({ page }) => {
-    await page.goto(`/p/${freshLockedSlug()}`);
+    // 시도 카운터는 slug 전역이라 앞 테스트가 남긴 값 위에서 시작하면 안 된다.
+    // reseed가 DB를 되돌리면서 그 slug의 카운터도 같이 지운다.
+    const res = await page.request.post('/api/test/reseed/secret-party');
+    expect(res.status()).toBe(204);
+
+    await page.goto('/p/secret-party');
     await page.getByLabel('비밀번호').fill('0000');
     await page.getByRole('button', { name: '확인' }).click();
     await expect(page.getByText(/4번/)).toBeVisible();

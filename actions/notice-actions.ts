@@ -1,7 +1,7 @@
 /**
  * @file 공지 CRUD + 순서 변경 서버 액션
- * @description 공지(Notice) 추가·수정·삭제·순서 변경. 목록은 언제나 **배열 전체를 새로 써서**
- *              스토어에 넣는다 — 부분 변형은 스토어가 들고 있는 참조와 조용히 어긋난다.
+ * @description 공지(Notice) 추가·수정·삭제·순서 변경. 행 단위로 Postgres에 쓴다 —
+ *              목록 전체를 다시 쓰던 메모리 스토어 시절의 방식은 여기서 끝났다.
  *
  * 'use server'
  *
@@ -14,7 +14,7 @@
  *  - reorderNotices(slug, ids)   → 순서 변경 (F-EDIT-NOTICE-3)
  *
  * @connects
- *  - lib/store/plans.ts          → 조회·갱신 (getPlan, updatePlan)
+ *  - lib/store/plans.ts          → 조회·행 단위 쓰기 (getPlan, insertRow, updateRow, deleteRow, reorderRows)
  *  - lib/editor/validate.ts      → 입력 검증 + reorderByIds
  *  - types/editor.ts             → ActionResult, NoticeInput
  *  - types/viewer.ts             → ViewerNotice
@@ -25,7 +25,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getPlan, updatePlan } from "@/lib/store/plans";
+import { getPlan, insertRow, updateRow, deleteRow, reorderRows } from "@/lib/store/plans";
 import { validateTitle, validateText, reorderByIds } from "@/lib/editor/validate";
 import type { ActionResult, NoticeInput } from "@/types/editor";
 import type { ViewerNotice } from "@/types/viewer";
@@ -41,15 +41,12 @@ function checkInput(input: NoticeInput): { ok: true; value: Omit<ViewerNotice, "
 
 export async function addNotice(slug: string, input: NoticeInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
-  if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
-
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  updatePlan(slug, {
-    notices: [...plan.notices, { id: crypto.randomUUID(), ...checked.value }],
-  });
+  if (!(await insertRow("notices", slug, { title: checked.value.title, body: checked.value.body }))) {
+    return { ok: false, message: "일정을 찾을 수 없어요." };
+  }
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -57,16 +54,13 @@ export async function addNotice(slug: string, input: NoticeInput): Promise<Actio
 
 export async function updateNotice(slug: string, id: string, input: NoticeInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
-  if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
-  if (!plan.notices.some((n) => n.id === id)) return { ok: false, message: "공지를 찾을 수 없어요." };
-
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  updatePlan(slug, {
-    notices: plan.notices.map((n) => (n.id === id ? { ...n, ...checked.value } : n)),
-  });
+  // 행이 없으면 false — "없는 공지"와 "남의 일정 공지"가 같은 답을 준다.
+  if (!(await updateRow("notices", slug, id, { title: checked.value.title, body: checked.value.body }))) {
+    return { ok: false, message: "공지를 찾을 수 없어요." };
+  }
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -74,11 +68,9 @@ export async function updateNotice(slug: string, id: string, input: NoticeInput)
 
 export async function deleteNotice(slug: string, id: string): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
-  if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
-  if (!plan.notices.some((n) => n.id === id)) return { ok: false, message: "공지를 찾을 수 없어요." };
-
-  updatePlan(slug, { notices: plan.notices.filter((n) => n.id !== id) });
+  if (!(await deleteRow("notices", slug, id))) {
+    return { ok: false, message: "공지를 찾을 수 없어요." };
+  }
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -86,13 +78,16 @@ export async function deleteNotice(slug: string, id: string): Promise<ActionResu
 
 export async function reorderNotices(slug: string, ids: string[]): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
+  const plan = await getPlan(slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
 
+  // 검증은 그대로 쓴다 — 길이·중복·미지의 id를 여기서 거른다.
   const next = reorderByIds(plan.notices, ids);
   if (!next.ok) return { ok: false, message: next.message };
 
-  updatePlan(slug, { notices: next.value });
+  if (!(await reorderRows("notices", slug, ids))) {
+    return { ok: false, message: "순서를 저장하지 못했어요." };
+  }
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };

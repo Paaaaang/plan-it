@@ -1,6 +1,6 @@
 /**
  * @file 장소 CRUD + 고정 토글 서버 액션
- * @description 장소(Place) 등록·수정·삭제·고정 토글. 목록은 배열 전체를 새로 써서 저장한다.
+ * @description 장소(Place) 등록·수정·삭제·고정 토글. 행 단위로 Postgres에 쓴다.
  *
  * 'use server'
  *
@@ -13,23 +13,23 @@
  *  - togglePin(slug, id)          → 고정/유동 토글 (F-EDIT-PLACE-2)
  *
  * @connects
- *  - lib/store/plans.ts           → 조회·갱신 (getPlan, updatePlan)
+ *  - lib/store/plans.ts           → 조회·행 단위 쓰기 (getPlan, insertRow, updateRow, deleteRow)
  *  - lib/editor/validate.ts       → 입력 검증
  *  - types/editor.ts              → ActionResult, PlaceInput
- *  - types/viewer.ts              → ViewerDay, ViewerPlace
+ *  - types/viewer.ts              → ViewerPlace
  *
- * @important ViewerItem.place는 장소 객체의 **사본**이다(참조 id가 아니라). 장소를 고치거나
- *            지울 때 days 안의 사본까지 같이 고치지 않으면 뷰어가 옛 값이나 깨진 객체를 든다.
- *            좌표(lat/lng)는 지오코딩이 붙기 전이라 편집 대상이 아니다 — 기존 값을 지킨다.
+ * @important 장소는 이제 참조다. schedule_items.place_id가 가리키고, 읽을 때 조인한다.
+ *            사본을 동기화하던 syncEmbedded는 사라졌다 — 삭제 시 연결 해제는
+ *            `ON DELETE SET NULL`이 지킨다(F-EDIT-PLACE-5).
  */
 
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getPlan, updatePlan } from "@/lib/store/plans";
+import { getPlan, insertRow, updateRow, deleteRow } from "@/lib/store/plans";
 import { validateTitle, validateText, validateTags } from "@/lib/editor/validate";
 import type { ActionResult, PlaceInput } from "@/types/editor";
-import type { ViewerDay, ViewerPlace } from "@/types/viewer";
+import type { ViewerPlace } from "@/types/viewer";
 
 type PlaceFields = Omit<ViewerPlace, "id" | "lat" | "lng">;
 
@@ -55,24 +55,19 @@ function checkInput(input: PlaceInput): { ok: true; value: PlaceFields } | { ok:
   };
 }
 
-/** days 안에 박힌 장소 사본을 갈아 끼운다. next가 null이면 연결이 끊긴다. */
-function syncEmbedded(days: ViewerDay[], id: string, next: ViewerPlace | null): ViewerDay[] {
-  return days.map((d) => ({
-    ...d,
-    items: d.items.map((it) => (it.place?.id === id ? { ...it, place: next } : it)),
-  }));
-}
-
 export async function addPlace(slug: string, input: PlaceInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
-  if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
-
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  const place: ViewerPlace = { id: crypto.randomUUID(), ...checked.value, lat: null, lng: null };
-  updatePlan(slug, { places: [...plan.places, place] });
+  const id = await insertRow("places", slug, {
+    name: checked.value.name,
+    address: checked.value.address,
+    memo: checked.value.memo,
+    tags: checked.value.tags,
+    is_pinned: checked.value.isPinned,
+  });
+  if (!id) return { ok: false, message: "일정을 찾을 수 없어요." };
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -80,20 +75,20 @@ export async function addPlace(slug: string, input: PlaceInput): Promise<ActionR
 
 export async function updatePlace(slug: string, id: string, input: PlaceInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
-  if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
-
-  const cur = plan.places.find((p) => p.id === id);
-  if (!cur) return { ok: false, message: "장소를 찾을 수 없어요." };
-
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  const next: ViewerPlace = { ...cur, ...checked.value };
-  updatePlan(slug, {
-    places: plan.places.map((p) => (p.id === id ? next : p)),
-    days: syncEmbedded(plan.days, id, next),
-  });
+  if (
+    !(await updateRow("places", slug, id, {
+      name: checked.value.name,
+      address: checked.value.address,
+      memo: checked.value.memo,
+      tags: checked.value.tags,
+      is_pinned: checked.value.isPinned,
+    }))
+  ) {
+    return { ok: false, message: "장소를 찾을 수 없어요." };
+  }
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -101,17 +96,9 @@ export async function updatePlace(slug: string, id: string, input: PlaceInput): 
 
 export async function deletePlace(slug: string, id: string): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
-  if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
-  if (!plan.places.some((p) => p.id === id)) return { ok: false, message: "장소를 찾을 수 없어요." };
-
-  // 참조를 끊는다. 남겨 두면 뷰어가 "장소 미연결"을 보여줘야 할 자리에서
-  // 목록에 없는 장소 객체를 들고 시트를 연다.
-  updatePlan(slug, {
-    places: plan.places.filter((p) => p.id !== id),
-    days: syncEmbedded(plan.days, id, null),
-    transport: plan.transport.map((t) => (t.placeId === id ? { ...t, placeId: null } : t)),
-  });
+  if (!(await deleteRow("places", slug, id))) {
+    return { ok: false, message: "장소를 찾을 수 없어요." };
+  }
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -119,17 +106,15 @@ export async function deletePlace(slug: string, id: string): Promise<ActionResul
 
 export async function togglePin(slug: string, id: string): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = getPlan(slug);
+  const plan = await getPlan(slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
 
   const cur = plan.places.find((p) => p.id === id);
   if (!cur) return { ok: false, message: "장소를 찾을 수 없어요." };
 
-  const next: ViewerPlace = { ...cur, isPinned: !cur.isPinned };
-  updatePlan(slug, {
-    places: plan.places.map((p) => (p.id === id ? next : p)),
-    days: syncEmbedded(plan.days, id, next),
-  });
+  if (!(await updateRow("places", slug, id, { is_pinned: !cur.isPinned }))) {
+    return { ok: false, message: "장소를 찾을 수 없어요." };
+  }
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
