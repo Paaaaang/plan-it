@@ -19,53 +19,51 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/session";
 
 /**
- * 프로덕션 안전밸브 — 아래 TODO 4개가 아직 스텁이라 이 proxy는 실제로
- * 아무것도 막지 않는다. 인증이 붙기 전까지 콘솔·관리자 경로가 배포되는 일이
- * 없게 한다.
+ * 프로덕션 안전밸브 — 카카오 provider가 설정되지 않은 동안 콘솔·관리자 경로를 막는다.
  *
- * "인증이 설정됐는가"의 판정: `lib/supabase/session.ts`가 세션을 확인하려면
- * `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY`가 둘 다
- * 있어야 한다(그 파일 헤더의 @env). 지금 그 파일은 비어 있어 이 변수가
- * 있어도 실제로 세션을 검사하는 코드는 없지만, 이 값의 존재가 "다음 사람이
- * 인증 배선을 시작했다"는 가장 이른 신호다 — 값이 없으면 확실히 안 붙은
- * 것이고, 그 확실한 쪽만 막는다.
+ * 세션 검사가 진짜로 돌아도, 로그인 버튼이 동작하지 않는 동안 프로덕션 콘솔을 여는 것은
+ * 말이 안 된다. 조건이 1단계의 "auth env 없음"에서 "카카오 키 없음"으로 바뀌었다.
  *
- * 개발·테스트(`next dev`, NODE_ENV=development)는 절대 막지 않는다 — 211개
- * Playwright 테스트가 편집기를 무인증으로 연다(webServer가 `npm run dev`를
- * 띄운다). `next build && next start`로 띄운 프로덕션에서만, 그리고 위 변수가
- * 없을 때만 막는다. 404를 쓰는 이유: 링크만 아는 사람에게 경로의 존재 자체를
- * 알리지 않는다 — 로그인 리다이렉트(302)는 "여기 뭔가 있다"는 걸 알려준다.
- *
- * 실제 세션 검사가 이 함수 안에 들어가는 순간(아래 TODO 4개 해소) 이 블록은
- * 지운다 — 그때부터는 진짜 인증이 401/리다이렉트로 막는다.
+ * 이 블록을 지우는 조건: KAKAO_CLIENT_ID가 프로덕션 env에 있고, 2c단계가 /admin에
+ * role 검사를 붙였을 때. 그 전에는 지우지 않는다.
  */
-const AUTH_WIRED = Boolean(
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-);
+const KAKAO_WIRED = Boolean(process.env.KAKAO_CLIENT_ID);
 
-export function proxy(request: NextRequest) {
-  if (process.env.NODE_ENV === "production" && !AUTH_WIRED) {
-    const { pathname } = request.nextUrl;
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (process.env.NODE_ENV === "production" && !KAKAO_WIRED) {
     if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
       return new NextResponse(null, { status: 404 });
     }
   }
 
-  // TODO: lib/supabase/session.ts 연동 — 세션 갱신 + 인증 체크
-  // TODO: 콘솔 경로 비인증 리다이렉트
-  // TODO: 관리자 경로 권한 체크
-  // TODO: 인증 페이지 로그인 상태 리다이렉트
+  // 세션 쿠키를 갱신한다. 인가 판정은 하지 않는다 — Next 문서가 proxy를 완전한 인가
+  // 해결책으로 쓰지 말라고 명시한다(authentication.md). 진짜 판정은 lib/auth/dal.ts다.
+  const response = await updateSession(request);
 
-  return NextResponse.next();
+  // 낙관적 검사: 쿠키가 아예 없으면 보낸다. 쿠키가 있다는 것이 유효한 세션을 뜻하지는
+  // 않지만, 없는 것은 확실히 비로그인이다.
+  const hasSession = request.cookies.getAll().some((c) => c.name.startsWith("sb-"));
+
+  if (!hasSession && (pathname.startsWith("/dashboard") || pathname.startsWith("/admin"))) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  if (hasSession && pathname === "/login") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  return response;
 }
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/admin/:path*",
-    "/login",
-    "/signup",
-  ],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/login"],
 };

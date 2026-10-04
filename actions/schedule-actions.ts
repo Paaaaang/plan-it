@@ -6,7 +6,8 @@
  *
  * 'use server'
  *
- * @auth 미구현 — proxy.ts가 스텁이라 지금은 아무나 부를 수 있다 (각 액션의 TODO(auth) 참고).
+ * @auth 각 액션이 getSessionUserId()로 세션을 직접 본다. 소유자 확인은 앱 코드로 하지
+ *       않는다 — createServerClient()로 나간 쿼리는 RLS가 owner_id를 강제한다.
  *
  * @actions
  *  - addItem(slug, dayNumber, input)     → 항목 추가 (F-EDIT-TT-2)
@@ -29,7 +30,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { adminClient } from "@/lib/supabase/admin";
+import { getSessionUserId } from "@/lib/auth/dal";
+import { createServerClient } from "@/lib/supabase/server";
 import { getPlan, insertRow, updateRow, deleteRow, reorderRows, findDayId, placeExists } from "@/lib/store/plans";
 import {
   validateTime,
@@ -65,9 +67,11 @@ function checkInput(input: ItemInput): { ok: true; value: ItemFields } | { ok: f
 }
 
 export async function addItem(slug: string, dayNumber: number, input: ItemInput): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
-  const db = adminClient();
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
@@ -87,13 +91,16 @@ export async function addItem(slug: string, dayNumber: number, input: ItemInput)
 }
 
 export async function updateItem(slug: string, itemId: string, input: ItemInput): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
   if (
-    !(await updateRow(adminClient(), "schedule_items", slug, itemId, {
+    !(await updateRow(db, "schedule_items", slug, itemId, {
       start_time: checked.value.startTime,
       duration_min: checked.value.durationMin,
       activity_name: checked.value.activityName,
@@ -108,9 +115,12 @@ export async function updateItem(slug: string, itemId: string, input: ItemInput)
 }
 
 export async function deleteItem(slug: string, itemId: string): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
-  if (!(await deleteRow(adminClient(), "schedule_items", slug, itemId))) {
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
+  if (!(await deleteRow(db, "schedule_items", slug, itemId))) {
     return { ok: false, message: "일정 항목을 찾을 수 없어요." };
   }
 
@@ -119,9 +129,11 @@ export async function deleteItem(slug: string, itemId: string): Promise<ActionRe
 }
 
 export async function reorderItems(slug: string, dayNumber: number, ids: string[]): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
-  const db = adminClient();
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
   const plan = await getPlan(db, slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
 
@@ -141,9 +153,11 @@ export async function reorderItems(slug: string, dayNumber: number, ids: string[
 
 /** placeId가 null이면 연결을 끊는다. */
 export async function linkPlace(slug: string, itemId: string, placeId: string | null): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
-  const db = adminClient();
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
   if (placeId !== null) {
     // 남의 일정 장소를 연결하지 못하게 막는다. FK만으로는 "존재하는 장소"까지만 보장된다.
     if (!(await placeExists(db, slug, placeId))) return { ok: false, message: "장소를 찾을 수 없어요.", field: "placeId" };

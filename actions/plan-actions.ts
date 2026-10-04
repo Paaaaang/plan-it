@@ -6,8 +6,9 @@
  *
  * 'use server'
  *
- * @auth 미구현 — proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
- *       각 액션 첫 줄의 `TODO(auth)`가 인증이 붙을 때 채워야 할 자리다.
+ * @auth 각 액션이 getSessionUserId()로 세션을 직접 본다 — 'use server' export는 누구나
+ *       POST할 수 있어서 페이지가 확인했다는 것이 보증이 되지 않는다. 소유자 확인은
+ *       앱 코드로 하지 않는다 — createServerClient()로 나간 쿼리는 RLS가 owner_id를 강제한다.
  *
  * @actions
  *  - saveBasicInfo(slug, input)  → 제목·기간·유형·인원 저장 + 일차 동기화 (F-EDIT-BASIC-1·2·3)
@@ -28,7 +29,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { adminClient } from "@/lib/supabase/admin";
+import { getSessionUserId } from "@/lib/auth/dal";
+import { createServerClient } from "@/lib/supabase/server";
 import { getPlan, updatePlanRow, syncDayRows, setCoverBlob } from "@/lib/store/plans";
 import { addDays, diffDays } from "@/lib/utils/date";
 import {
@@ -71,9 +73,11 @@ function syncDays(days: ViewerDay[], start: string, end: string): ActionResult<V
 }
 
 export async function saveBasicInfo(slug: string, input: BasicInfoInput): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
-  const db = adminClient();
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
   const plan = await getPlan(db, slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
   // 타입은 컴파일 시점의 약속일 뿐이다. `'use server'` export는 누구나 POST할 수 있다.
@@ -136,12 +140,15 @@ export async function saveBasicInfo(slug: string, input: BasicInfoInput): Promis
 }
 
 export async function setStatus(slug: string, status: string): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
   const checked = validateStatus(status);
   if (!checked.ok) return { ok: false, message: checked.message, field: "status" };
 
-  if (!(await updatePlanRow(adminClient(), slug, { status: checked.value }))) {
+  if (!(await updatePlanRow(db, slug, { status: checked.value }))) {
     return { ok: false, message: "일정을 찾을 수 없어요." };
   }
 
@@ -172,9 +179,11 @@ const COVER_TYPES = new Map<string, string[]>([
  * **MIME·크기·확장자 검증은 지금도 서버에서 한다.** 그건 저장 위치와 무관한 보안 사항이다.
  */
 export async function setCover(slug: string, form: FormData): Promise<ActionResult<string>> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
-  const db = adminClient();
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
   const plan = await getPlan(db, slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
 

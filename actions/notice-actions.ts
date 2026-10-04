@@ -5,7 +5,8 @@
  *
  * 'use server'
  *
- * @auth 미구현 — proxy.ts가 스텁이라 지금은 아무나 부를 수 있다 (각 액션의 TODO(auth) 참고).
+ * @auth 각 액션이 getSessionUserId()로 세션을 직접 본다. 소유자 확인은 앱 코드로 하지
+ *       않는다 — createServerClient()로 나간 쿼리는 RLS가 owner_id를 강제한다.
  *
  * @actions
  *  - addNotice(slug, input)      → 공지 추가 (F-EDIT-NOTICE-1)
@@ -25,7 +26,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { adminClient } from "@/lib/supabase/admin";
+import { getSessionUserId } from "@/lib/auth/dal";
+import { createServerClient } from "@/lib/supabase/server";
 import { getPlan, insertRow, updateRow, deleteRow, reorderRows } from "@/lib/store/plans";
 import { validateTitle, validateText, reorderByIds } from "@/lib/editor/validate";
 import type { ActionResult, NoticeInput } from "@/types/editor";
@@ -41,25 +43,31 @@ function checkInput(input: NoticeInput): { ok: true; value: Omit<ViewerNotice, "
 }
 
 export async function addNotice(slug: string, input: NoticeInput): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  await insertRow(adminClient(), "notices", slug, { title: checked.value.title, body: checked.value.body });
+  await insertRow(db, "notices", slug, { title: checked.value.title, body: checked.value.body });
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
 }
 
 export async function updateNotice(slug: string, id: string, input: NoticeInput): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
   // 행이 없으면 false — "없는 공지"와 "남의 일정 공지"가 같은 답을 준다.
-  if (!(await updateRow(adminClient(), "notices", slug, id, { title: checked.value.title, body: checked.value.body }))) {
+  if (!(await updateRow(db, "notices", slug, id, { title: checked.value.title, body: checked.value.body }))) {
     return { ok: false, message: "공지를 찾을 수 없어요." };
   }
 
@@ -68,9 +76,12 @@ export async function updateNotice(slug: string, id: string, input: NoticeInput)
 }
 
 export async function deleteNotice(slug: string, id: string): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
-  if (!(await deleteRow(adminClient(), "notices", slug, id))) {
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
+  if (!(await deleteRow(db, "notices", slug, id))) {
     return { ok: false, message: "공지를 찾을 수 없어요." };
   }
 
@@ -79,9 +90,11 @@ export async function deleteNotice(slug: string, id: string): Promise<ActionResu
 }
 
 export async function reorderNotices(slug: string, ids: string[]): Promise<ActionResult> {
-  // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
-  const db = adminClient();
+  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
+  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
+  if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
+
+  const db = await createServerClient();
   const plan = await getPlan(db, slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
 
