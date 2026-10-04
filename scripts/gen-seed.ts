@@ -22,7 +22,7 @@ import { writeFileSync } from "node:fs";
 // 상대 경로 + .ts 확장자다, `@/`가 아니다 — 이 스크립트 자체가 `node --experimental-strip-types`로
 // 직접 실행되고(package.json의 seed:gen), plain node는 tsconfig paths를 못 푼다.
 import { allFixturePlans } from "../lib/fixtures/viewer.ts";
-import { planInsertSql, SEED_OWNER_ID, EXEC_SQL_FUNCTION_SQL } from "../lib/store/seed-sql.ts";
+import { planInsertSql, SEED_OWNER_ID, EXEC_SQL_FUNCTION_SQL, seedOwnerSql } from "../lib/store/seed-sql.ts";
 
 const sql = [
   "-- 생성물이다. 손으로 고치지 않는다. `npm run db:reset`이 매번 다시 만든다(커밋 대상 아님).",
@@ -30,7 +30,13 @@ const sql = [
   "",
   EXEC_SQL_FUNCTION_SQL,
   "",
-  `insert into profiles (id, display_name, role) values ('${SEED_OWNER_ID}', '플랜잇 개발 계정', 'member');`,
+  seedOwnerSql(),
+  "",
+  // auth.users insert가 위에서 트리거(on_auth_user_created)를 돌려 profiles 행을 이미 만든다.
+  // 여기서 또 넣는 이유는 시드 데이터(display_name 등)가 fixture 쪽 권위를 갖게 하려는 것 —
+  // on conflict do update로 트리거가 채운 값을 덮어써서 둘이 겹쳐도 잃는 데이터가 없다.
+  `insert into profiles (id, display_name, role) values ('${SEED_OWNER_ID}', '플랜잇 개발 계정', 'member')`,
+  `  on conflict (id) do update set display_name = excluded.display_name, role = excluded.role;`,
   "",
   ...allFixturePlans().map(planInsertSql),
 ].join("\n");

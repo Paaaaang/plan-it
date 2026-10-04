@@ -10,6 +10,25 @@ import { hashPassword } from "../viewer/password.ts";
 /** 1단계의 고정 소유자. 2단계에서 auth.uid()로 갈아끼운다. */
 export const SEED_OWNER_ID = "00000000-0000-4000-8000-000000000001";
 
+/** 시드 소유자의 이메일. E2E가 이 계정으로 로그인한다. */
+export const SEED_OWNER_EMAIL = "seed-owner@plan-it.test";
+
+/**
+ * 시드 소유자를 실제 auth.users 행으로 만든다.
+ *
+ * 로컬 전용이다 — seed.sql은 `db reset`만 읽고 `db push`는 읽지 않는다(1단계 R18과 같은 성질).
+ * 비밀번호를 넣지 않는다: 이 앱은 카카오만 쓰고, E2E는 admin API가 발급한 매직링크로
+ * 세션을 얻는다(비밀번호 grant를 켜지 않는다).
+ */
+export function seedOwnerSql(): string {
+  return [
+    `insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)`,
+    `values ('${SEED_OWNER_ID}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',`,
+    `        '${SEED_OWNER_EMAIL}', now(), now(), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"name":"시드 기획자"}'::jsonb)`,
+    `on conflict (id) do nothing;`,
+  ].join("\n");
+}
+
 /**
  * E2E 전용. 생성된 INSERT 묶음을 한 번에 실행한다.
  *
