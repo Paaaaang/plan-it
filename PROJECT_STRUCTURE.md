@@ -13,10 +13,11 @@ plan-it/
 ├── app/                                    # App Router — 라우팅 및 페이지
 │   ├── (auth)/                             # 🔓 인증 관련 라우트 그룹
 │   │   ├── layout.tsx                      #    인증 페이지 공통 레이아웃
-│   │   ├── login/
-│   │   │   └── page.tsx                    #    로그인 페이지
-│   │   └── signup/
-│   │       └── page.tsx                    #    회원가입 페이지
+│   │   └── login/
+│   │       └── page.tsx                    #    로그인 페이지 (카카오 OAuth)
+│   │
+│   ├── auth/callback/
+│   │   └── route.ts                        # 🔓 OAuth 콜백 — 코드를 세션으로 교환 (proxy matcher 밖)
 │   │
 │   ├── (console)/                          # 🖥️ 기획자 콘솔 라우트 그룹 (인증 필요)
 │   │   ├── layout.tsx                      #    콘솔 공통 레이아웃 (내비게이션 등)
@@ -50,6 +51,9 @@ plan-it/
 │   └── page.tsx                            # 랜딩페이지 (/)
 │
 ├── components/                             # 재사용 가능한 컴포넌트
+│   ├── auth/                                # 🔓 인증 컴포넌트
+│   │   └── kakao-button.tsx                #    카카오 OAuth 시작 버튼
+│   │
 │   ├── ui/                                 # 🧱 공통 UI 컴포넌트
 │   │   ├── badge.tsx                       #    상태 배지 (공개/비공개/임시저장)
 │   │   ├── bottom-sheet.tsx                #    모바일 BottomSheet
@@ -229,7 +233,8 @@ plan-it/
 
 Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**를 사용하여 관심사를 분리합니다.
 
-- **`(auth)/`** — 인증 관련 페이지 (로그인/회원가입). 중앙 정렬 카드 + 로고 레이아웃. ✅ 보일러플레이트 완료.
+- **`(auth)/`** — 로그인 페이지. 카카오 통합 로그인이라 가입 페이지가 없다. 중앙 정렬 카드 + 로고 레이아웃. ✅ 구현 완료.
+- **`auth/callback/`** — OAuth 콜백 라우트 핸들러. 세션 없이 들어오는 것이 정상이라 proxy matcher 밖에 둔다.
 - **`(console)/`** — 기획자 콘솔. 인증된 사용자만 접근. 좌측 사이드바 + 메인 레이아웃. ✅ 보일러플레이트 완료.
 - **`(admin)/`** — 관리자 콘솔. `role='admin'`만 접근. 다크 사이드바 + KPI/모더레이션/공지. ✅ 보일러플레이트 완료.
 - **`p/[slug]/`** — 공개 뷰어. 모바일 퍼스트 480px. generateMetadata로 OG 태그 지원. ✅ 보일러플레이트 완료.
@@ -300,7 +305,7 @@ Next.js Server Actions. 기능명세서의 API 개요(§7)를 기반으로 도�
 - `schedule-actions.ts` — Day/ScheduleItem CRUD + 장소 연결
 - `place-actions.ts` — 장소 CRUD + 고정/유동 토글
 - `transport-actions.ts` — 교통 안내 CRUD
-- `auth-actions.ts` — Supabase Auth 기반 로그인/로그아웃
+- `auth-actions.ts` — 로그아웃 (로그인은 카카오 OAuth라 서버 액션이 아니다)
 - `viewer-actions.ts` — 공개 뷰어 데이터 조회 + 비밀번호 검증
 - `analytics-actions.ts` — KPI 이벤트 로깅
 - `admin-actions.ts` — 관리자 전용 (KPI 집계, 모더레이션, 공지 배포)

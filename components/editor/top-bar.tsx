@@ -11,6 +11,7 @@ import { useNow } from "@/hooks/use-now";
 import { type SaveState } from "@/hooks/use-editor-plan";
 import { useEditor } from "@/components/editor/editor-shell";
 import { setStatus } from "@/actions/plan-actions";
+import { signOut } from "@/actions/auth-actions";
 import type { PlanStatus } from "@/types/editor";
 
 const STATUS_ITEMS = [
@@ -139,6 +140,15 @@ export function TopBar({ slug, status: initialStatus }: { slug: string; status: 
       <Button variant="primary" size="sm" onClick={copyLink}>
         공유하기
       </Button>
+
+      {/* 대시보드가 아직 없어(2b 예정) 로그아웃 호출부가 지금은 여기 하나뿐이다. */}
+      <button
+        type="button"
+        onClick={() => signOut()}
+        className="border-l border-default pl-3 text-caption font-semibold text-tertiary transition-colors duration-fast ease-planit hover:text-primary"
+      >
+        로그아웃
+      </button>
     </header>
   );
 }

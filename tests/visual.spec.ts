@@ -262,3 +262,16 @@ test.describe('편집기', () => {
     await expect(page).toHaveScreenshot('editor-narrow.png', SHOT);
   });
 });
+
+test.describe('로그인', () => {
+  test.skip(({ isMobile }) => isMobile, '콘솔은 데스크톱이 기본이다.');
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('라이트', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/login');
+    await settle(page);
+    await expect(page).toHaveScreenshot('login-light.png', SHOT);
+  });
+});

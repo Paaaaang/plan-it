@@ -5,6 +5,7 @@
  */
 
 import type { Metadata } from "next";
+import { KakaoButton } from "@/components/auth/kakao-button";
 
 export const metadata: Metadata = {
   title: "로그인 — 플랜잇",
@@ -14,28 +15,13 @@ export const metadata: Metadata = {
 export default function LoginPage() {
   return (
     <>
-      <h1
-        style={{
-          font: "var(--h3-fw) var(--h3-size)/var(--h3-lh) var(--font-sans)",
-          letterSpacing: "var(--h3-ls)",
-          color: "var(--text-primary)",
-          marginBottom: "var(--space-2)",
-          textAlign: "center",
-        }}
-      >
+      <h1 className="text-center text-title-2 font-extrabold tracking-tight text-primary">
         로그인
       </h1>
-      <p
-        style={{
-          font: "var(--body-2-fw) var(--body-2-size)/var(--body-2-lh) var(--font-sans)",
-          color: "var(--text-secondary)",
-          textAlign: "center",
-          marginBottom: "var(--space-6)",
-        }}
-      >
-        이메일과 비밀번호를 입력해 주세요
+      <p className="mt-2 mb-6 text-center text-label text-secondary">
+        카카오 계정으로 로그인하고 일정을 관리해요
       </p>
-      {/* TODO: 로그인 폼 구현 — actions/auth-actions.ts 연동 */}
+      <KakaoButton />
     </>
   );
 }

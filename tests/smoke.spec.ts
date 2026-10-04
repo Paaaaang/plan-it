@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 // 라우트가 살아있는지만 본다. 화면 내용 검증은 해당 화면 스펙 테스트에서.
-const PUBLIC_ROUTES = ['/', '/login', '/signup'];
+const PUBLIC_ROUTES = ['/', '/login'];
 
 for (const path of PUBLIC_ROUTES) {
   test(`${path} 렌더 + 콘솔 에러 없음`, async ({ page }) => {

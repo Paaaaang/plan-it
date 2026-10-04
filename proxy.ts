@@ -5,7 +5,7 @@
  * @routing-rules
  *  1. /dashboard/* → 비인증 → /login 리다이렉트
  *  2. /admin/*     → 비인증 또는 role≠admin → 403 또는 리다이렉트
- *  3. /login,/signup → 이미 인증됨 → /dashboard 리다이렉트
+ *  3. /login       → 이미 인증됨 → /dashboard 리다이렉트
  *  4. /p/[slug]    → 인증 체크 없음
  *  5. /            → 인증 체크 없음
  *
