@@ -12,8 +12,13 @@
  *  - actions/admin-actions.ts      → 관리자 전용 작업
  *
  * @env SUPABASE_SERVICE_ROLE_KEY (서버 전용, NEXT_PUBLIC_ 아님)
+ *
+ * 1단계에서는 패키지가 없어 못 넣었다. Next 문서의 DAL 예시가 이 import를 쓰고,
+ * 이 단계에서 @supabase/ssr과 함께 들어왔다 — 서비스 롤 키가 클라이언트 번들에
+ * 닿는 경로를 컴파일 타임에 막는다.
  */
 
+import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let cached: SupabaseClient | undefined;
