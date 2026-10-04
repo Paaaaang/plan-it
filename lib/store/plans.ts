@@ -1,7 +1,16 @@
 /**
  * @file 일정 행 CRUD + 커버 메모리 스토어
- * @description 조회·쓰기는 이제 전부 Postgres(adminClient)로 간다. 커버 이미지 바이트만
+ * @description 조회·쓰기는 이제 전부 Postgres로 간다. 커버 이미지 바이트만
  *              아직 메모리에 남는다 — Supabase Storage가 붙기 전의 임시 자리다.
+ *
+ * ## 왜 클라이언트를 주입받나
+ *
+ * 공개 뷰어는 서비스 롤로 읽는다 — 로그인이 없어 auth.uid()가 없고, 남의 일정을
+ * 읽어야 하는 유일한 경로다. 콘솔은 사용자 JWT로 돈다 — RLS가 owner_id를 강제하므로
+ * 앱이 필터를 빠뜨려도 남의 행에 닿지 않는다.
+ *
+ * 기본값을 두지 않는다. 기본이 서비스 롤이면 콘솔에서 인자를 빠뜨리는 순간 RLS가
+ * 조용히 우회된다 — 타입 에러로 만들어 그 실수를 컴파일 타임에 잡는다.
  */
 
 import { findFixturePlan } from "@/lib/fixtures/viewer";
@@ -57,8 +66,7 @@ function unwrap<T>(result: { data: T | null; error: { message: string } | null }
  * 복제돼 오고, 중첩 임베드는 PostgREST가 만드는 모양이 타입과 달라 변환이 더 복잡해진다.
  * 한 일정의 자식 수가 수십 개라 왕복 6회가 더 싸다.
  */
-export async function getPlan(slug: string): Promise<ViewerPlan | undefined> {
-  const db = adminClient();
+export async function getPlan(db: SupabaseClient, slug: string): Promise<ViewerPlan | undefined> {
   const planResult = await db
     .from("plans")
     .select("slug, title, plan_type, party_label, start_date, end_date, cover_image_url")
@@ -108,8 +116,8 @@ export type ChildTable = "notices" | "places" | "transport_info" | "schedule_ite
  * 액션 파일로 새 나간 이 하나만 error를 버리고 있었다 — 스토어가 유일한 DB 경계라는
  * 규약과도 맞지 않았다. 여기로 옮겨 둘 다 고친다.
  */
-export async function findDayId(slug: string, dayNumber: number): Promise<string | undefined> {
-  const result = await adminClient()
+export async function findDayId(db: SupabaseClient, slug: string, dayNumber: number): Promise<string | undefined> {
+  const result = await db
     .from("days")
     .select("id")
     .eq("plan_id", slug)
@@ -119,8 +127,8 @@ export async function findDayId(slug: string, dayNumber: number): Promise<string
 }
 
 /** 이 slug 소유의 장소인지. `linkPlace`가 "존재하는 장소"까지만 보장하는 FK를 보강한다. */
-export async function placeExists(slug: string, placeId: string): Promise<boolean> {
-  const result = await adminClient()
+export async function placeExists(db: SupabaseClient, slug: string, placeId: string): Promise<boolean> {
+  const result = await db
     .from("places")
     .select("id")
     .eq("plan_id", slug)
@@ -136,9 +144,9 @@ export async function placeExists(slug: string, placeId: string): Promise<boolea
  * 다른 조건을 만든다 — 부르는 쪽이 그걸 알면 한 군데서 빠뜨리는 순간 남의 일정 행을
  * 고칠 수 있다. 2단계에서 여기에 `AND owner_id = auth.uid()`가 붙는다.
  */
-async function scopeIds(table: ChildTable, slug: string): Promise<string[] | "all"> {
+async function scopeIds(db: SupabaseClient, table: ChildTable, slug: string): Promise<string[] | "all"> {
   if (table !== "schedule_items") return "all"; // plan_id = slug로 충분하다
-  const result = await adminClient().from("days").select("id").eq("plan_id", slug);
+  const result = await db.from("days").select("id").eq("plan_id", slug);
   const data = unwrap(result, `days(plan_id=${slug})`);
   return (data ?? []).map((d) => d.id);
 }
@@ -157,9 +165,8 @@ function scoped(q: FilterBuilder, slug: string, ids: string[] | "all") {
 }
 
 export async function insertRow(
-  table: ChildTable, slug: string, values: Record<string, unknown>,
+  db: SupabaseClient, table: ChildTable, slug: string, values: Record<string, unknown>,
 ): Promise<string> {
-  const db = adminClient();
   // display_order는 **그 목록 안에서** 끝이다. schedule_items의 목록 단위는 일정 전체가
   // 아니라 하루다 — 일정 전체로 세면 2일차 첫 항목이 order=4 같은 값을 받아, 그 날
   // 목록의 0..n-1 규약(§3.4)이 깨지고 reorderRows가 덮어쓸 때까지 어긋난 채로 남는다.
@@ -184,10 +191,10 @@ export async function insertRow(
 }
 
 export async function updateRow(
-  table: ChildTable, slug: string, id: string, values: Record<string, unknown>,
+  db: SupabaseClient, table: ChildTable, slug: string, id: string, values: Record<string, unknown>,
 ): Promise<boolean> {
-  const ids = await scopeIds(table, slug);
-  const result = await scoped(adminClient().from(table).update(values), slug, ids)
+  const ids = await scopeIds(db, table, slug);
+  const result = await scoped(db.from(table).update(values), slug, ids)
     .eq("id", id)
     .select("id");
   const data = unwrap(result, `${table} update(id=${id})`);
@@ -196,9 +203,9 @@ export async function updateRow(
   return (data?.length ?? 0) > 0;
 }
 
-export async function deleteRow(table: ChildTable, slug: string, id: string): Promise<boolean> {
-  const ids = await scopeIds(table, slug);
-  const result = await scoped(adminClient().from(table).delete(), slug, ids)
+export async function deleteRow(db: SupabaseClient, table: ChildTable, slug: string, id: string): Promise<boolean> {
+  const ids = await scopeIds(db, table, slug);
+  const result = await scoped(db.from(table).delete(), slug, ids)
     .eq("id", id)
     .select("id");
   const data = unwrap(result, `${table} delete(id=${id})`);
@@ -223,9 +230,8 @@ export async function deleteRow(table: ChildTable, slug: string, id: string): Pr
  * 한 번의 왕복 시간). 정직하게 남긴다 — 고치려면 display_order만 건드리는 부분
  * upsert나 버전 컬럼이 필요하고, 둘 다 이 범위의 설계 결정이 아니다.
  */
-export async function reorderRows(table: ChildTable, slug: string, ids: string[]): Promise<boolean> {
-  const db = adminClient();
-  const scope = await scopeIds(table, slug);
+export async function reorderRows(db: SupabaseClient, table: ChildTable, slug: string, ids: string[]): Promise<boolean> {
+  const scope = await scopeIds(db, table, slug);
   const query = db.from(table).select("*").in("id", ids);
   const selectResult = await (scope === "all" ? query.eq("plan_id", slug) : query.in("day_id", scope));
   const rows = unwrap(selectResult, `${table} select(reorder 대상)`);
@@ -240,8 +246,8 @@ export async function reorderRows(table: ChildTable, slug: string, ids: string[]
   return true;
 }
 
-export async function updatePlanRow(slug: string, values: Record<string, unknown>): Promise<boolean> {
-  const result = await adminClient()
+export async function updatePlanRow(db: SupabaseClient, slug: string, values: Record<string, unknown>): Promise<boolean> {
+  const result = await db
     .from("plans")
     .update({ ...values, updated_at: new Date().toISOString() })
     .eq("slug", slug)
@@ -260,8 +266,7 @@ export async function updatePlanRow(slug: string, values: Record<string, unknown
  * 각 단계를 unwrap한다 — 예전엔 무조건 true를 돌려줘서, 중간에 하나가 실패해도
  * saveBasicInfo가 "저장됐다"고 말했다(정작 날짜는 안 바뀐 채로).
  */
-export async function syncDayRows(slug: string, dates: string[]): Promise<boolean> {
-  const db = adminClient();
+export async function syncDayRows(db: SupabaseClient, slug: string, dates: string[]): Promise<boolean> {
   const existingResult = await db.from("days").select("id, day_number").eq("plan_id", slug);
   const existing = unwrap(existingResult, `days(plan_id=${slug})`);
   const have = new Map((existing ?? []).map((d) => [d.day_number, d.id]));
@@ -283,9 +288,10 @@ export async function syncDayRows(slug: string, dates: string[]): Promise<boolea
  * 세 번 나눠 읽으면 그 사이 상태가 바뀔 수 있고 왕복도 세 배다.
  */
 export async function getPlanMeta(
+  db: SupabaseClient,
   slug: string,
 ): Promise<{ status: PlanStatus; expiresAt: string | null; passwordHash: string | null } | undefined> {
-  const result = await adminClient()
+  const result = await db
     .from("plans")
     .select("status, expires_at, password_hash")
     .eq("slug", slug)
@@ -296,8 +302,8 @@ export async function getPlanMeta(
 }
 
 /** 편집기 페이지가 쓰는 상태 조회. 뷰어는 getPlanMeta를 쓴다(만료·해시를 같이 봐야 한다). */
-export async function getPlanStatus(slug: string): Promise<PlanStatus | undefined> {
-  return (await getPlanMeta(slug))?.status;
+export async function getPlanStatus(db: SupabaseClient, slug: string): Promise<PlanStatus | undefined> {
+  return (await getPlanMeta(db, slug))?.status;
 }
 
 export function setCoverBlob(slug: string, bytes: Uint8Array, contentType: string): void {

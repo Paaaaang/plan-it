@@ -11,6 +11,7 @@
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { adminClient } from "@/lib/supabase/admin";
 import { getPlan, getPlanStatus } from "@/lib/store/plans";
 import { EditorShell } from "@/components/editor/editor-shell";
 import { SectionShell } from "@/components/editor/section-shell";
@@ -26,10 +27,12 @@ export const metadata: Metadata = {
 export default async function EditPlanPage(props: PageProps<"/dashboard/plans/[id]/edit">) {
   const { id } = await props.params;
 
-  const plan = await getPlan(id);
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  const db = adminClient();
+  const plan = await getPlan(db, id);
   if (!plan) notFound();
   // 스토어에 일정이 있으면 상태도 있다. 없다면 아직 공개된 적 없는 것으로 본다.
-  const status = (await getPlanStatus(id)) ?? "draft";
+  const status = (await getPlanStatus(db, id)) ?? "draft";
 
   return (
     <EditorShell plan={plan} status={status}>

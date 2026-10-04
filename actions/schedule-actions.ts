@@ -29,6 +29,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { adminClient } from "@/lib/supabase/admin";
 import { getPlan, insertRow, updateRow, deleteRow, reorderRows, findDayId, placeExists } from "@/lib/store/plans";
 import {
   validateTime,
@@ -65,13 +66,15 @@ function checkInput(input: ItemInput): { ok: true; value: ItemFields } | { ok: f
 
 export async function addItem(slug: string, dayNumber: number, input: ItemInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  const db = adminClient();
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  const dayId = await findDayId(slug, dayNumber);
+  const dayId = await findDayId(db, slug, dayNumber);
   if (!dayId) return { ok: false, message: "해당 날짜를 찾을 수 없어요." };
 
-  await insertRow("schedule_items", slug, {
+  await insertRow(db, "schedule_items", slug, {
     day_id: dayId,
     start_time: checked.value.startTime,
     duration_min: checked.value.durationMin,
@@ -85,11 +88,12 @@ export async function addItem(slug: string, dayNumber: number, input: ItemInput)
 
 export async function updateItem(slug: string, itemId: string, input: ItemInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
   if (
-    !(await updateRow("schedule_items", slug, itemId, {
+    !(await updateRow(adminClient(), "schedule_items", slug, itemId, {
       start_time: checked.value.startTime,
       duration_min: checked.value.durationMin,
       activity_name: checked.value.activityName,
@@ -105,7 +109,8 @@ export async function updateItem(slug: string, itemId: string, input: ItemInput)
 
 export async function deleteItem(slug: string, itemId: string): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  if (!(await deleteRow("schedule_items", slug, itemId))) {
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  if (!(await deleteRow(adminClient(), "schedule_items", slug, itemId))) {
     return { ok: false, message: "일정 항목을 찾을 수 없어요." };
   }
 
@@ -115,7 +120,9 @@ export async function deleteItem(slug: string, itemId: string): Promise<ActionRe
 
 export async function reorderItems(slug: string, dayNumber: number, ids: string[]): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = await getPlan(slug);
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  const db = adminClient();
+  const plan = await getPlan(db, slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
 
   const day = plan.days.find((d) => d.dayNumber === dayNumber);
@@ -124,7 +131,7 @@ export async function reorderItems(slug: string, dayNumber: number, ids: string[
   const next = reorderByIds(day.items, ids);
   if (!next.ok) return { ok: false, message: next.message };
 
-  if (!(await reorderRows("schedule_items", slug, ids))) {
+  if (!(await reorderRows(db, "schedule_items", slug, ids))) {
     return { ok: false, message: "순서를 저장하지 못했어요." };
   }
 
@@ -135,12 +142,14 @@ export async function reorderItems(slug: string, dayNumber: number, ids: string[
 /** placeId가 null이면 연결을 끊는다. */
 export async function linkPlace(slug: string, itemId: string, placeId: string | null): Promise<ActionResult> {
   // TODO(auth): 소유자 확인.
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  const db = adminClient();
   if (placeId !== null) {
     // 남의 일정 장소를 연결하지 못하게 막는다. FK만으로는 "존재하는 장소"까지만 보장된다.
-    if (!(await placeExists(slug, placeId))) return { ok: false, message: "장소를 찾을 수 없어요.", field: "placeId" };
+    if (!(await placeExists(db, slug, placeId))) return { ok: false, message: "장소를 찾을 수 없어요.", field: "placeId" };
   }
 
-  if (!(await updateRow("schedule_items", slug, itemId, { place_id: placeId }))) {
+  if (!(await updateRow(db, "schedule_items", slug, itemId, { place_id: placeId }))) {
     return { ok: false, message: "일정 항목을 찾을 수 없어요." };
   }
 

@@ -26,6 +26,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { adminClient } from "@/lib/supabase/admin";
 import { getPlan, insertRow, updateRow, deleteRow } from "@/lib/store/plans";
 import { validateTitle, validateText, validateTags } from "@/lib/editor/validate";
 import type { ActionResult, PlaceInput } from "@/types/editor";
@@ -57,10 +58,11 @@ function checkInput(input: PlaceInput): { ok: true; value: PlaceFields } | { ok:
 
 export async function addPlace(slug: string, input: PlaceInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  await insertRow("places", slug, {
+  await insertRow(adminClient(), "places", slug, {
     name: checked.value.name,
     address: checked.value.address,
     memo: checked.value.memo,
@@ -74,11 +76,12 @@ export async function addPlace(slug: string, input: PlaceInput): Promise<ActionR
 
 export async function updatePlace(slug: string, id: string, input: PlaceInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
   if (
-    !(await updateRow("places", slug, id, {
+    !(await updateRow(adminClient(), "places", slug, id, {
       name: checked.value.name,
       address: checked.value.address,
       memo: checked.value.memo,
@@ -95,7 +98,8 @@ export async function updatePlace(slug: string, id: string, input: PlaceInput): 
 
 export async function deletePlace(slug: string, id: string): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  if (!(await deleteRow("places", slug, id))) {
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  if (!(await deleteRow(adminClient(), "places", slug, id))) {
     return { ok: false, message: "장소를 찾을 수 없어요." };
   }
 
@@ -105,13 +109,15 @@ export async function deletePlace(slug: string, id: string): Promise<ActionResul
 
 export async function togglePin(slug: string, id: string): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = await getPlan(slug);
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  const db = adminClient();
+  const plan = await getPlan(db, slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
 
   const cur = plan.places.find((p) => p.id === id);
   if (!cur) return { ok: false, message: "장소를 찾을 수 없어요." };
 
-  if (!(await updateRow("places", slug, id, { is_pinned: !cur.isPinned }))) {
+  if (!(await updateRow(db, "places", slug, id, { is_pinned: !cur.isPinned }))) {
     return { ok: false, message: "장소를 찾을 수 없어요." };
   }
 

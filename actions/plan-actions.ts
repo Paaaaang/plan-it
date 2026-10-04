@@ -28,6 +28,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { adminClient } from "@/lib/supabase/admin";
 import { getPlan, updatePlanRow, syncDayRows, setCoverBlob } from "@/lib/store/plans";
 import { addDays, diffDays } from "@/lib/utils/date";
 import {
@@ -71,7 +72,9 @@ function syncDays(days: ViewerDay[], start: string, end: string): ActionResult<V
 
 export async function saveBasicInfo(slug: string, input: BasicInfoInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = await getPlan(slug);
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  const db = adminClient();
+  const plan = await getPlan(db, slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
   // 타입은 컴파일 시점의 약속일 뿐이다. `'use server'` export는 누구나 POST할 수 있다.
   if (!input || typeof input !== "object") return { ok: false, message: "입력을 확인해 주세요." };
@@ -113,7 +116,7 @@ export async function saveBasicInfo(slug: string, input: BasicInfoInput): Promis
   }
 
   if (
-    !(await updatePlanRow(slug, {
+    !(await updatePlanRow(db, slug, {
       title: title.value,
       start_date: start.value,
       end_date: end.value,
@@ -124,7 +127,7 @@ export async function saveBasicInfo(slug: string, input: BasicInfoInput): Promis
     return { ok: false, message: "저장하지 못했어요." };
   }
 
-  if (dates && !(await syncDayRows(slug, dates))) {
+  if (dates && !(await syncDayRows(db, slug, dates))) {
     return { ok: false, message: "일차를 저장하지 못했어요." };
   }
 
@@ -134,10 +137,11 @@ export async function saveBasicInfo(slug: string, input: BasicInfoInput): Promis
 
 export async function setStatus(slug: string, status: string): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
   const checked = validateStatus(status);
   if (!checked.ok) return { ok: false, message: checked.message, field: "status" };
 
-  if (!(await updatePlanRow(slug, { status: checked.value }))) {
+  if (!(await updatePlanRow(adminClient(), slug, { status: checked.value }))) {
     return { ok: false, message: "일정을 찾을 수 없어요." };
   }
 
@@ -169,7 +173,9 @@ const COVER_TYPES = new Map<string, string[]>([
  */
 export async function setCover(slug: string, form: FormData): Promise<ActionResult<string>> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = await getPlan(slug);
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  const db = adminClient();
+  const plan = await getPlan(db, slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
 
   const file = form.get("file");
@@ -197,7 +203,7 @@ export async function setCover(slug: string, form: FormData): Promise<ActionResu
   const cover = validateCoverUrl(path);
   if (!cover.ok) return { ok: false, message: cover.message, field: "coverImageUrl" };
 
-  if (!(await updatePlanRow(slug, { cover_image_url: cover.value }))) {
+  if (!(await updatePlanRow(db, slug, { cover_image_url: cover.value }))) {
     return { ok: false, message: "저장하지 못했어요.", field: "coverImageUrl" };
   }
 

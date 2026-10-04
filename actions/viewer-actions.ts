@@ -29,6 +29,7 @@
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { adminClient } from "@/lib/supabase/admin";
 import { getPlan as getStoredPlan, getPlanMeta } from "@/lib/store/plans";
 import { verifyPasswordHash } from "@/lib/viewer/password";
 import { attempts, WINDOW_MS, sweepAttempts, remainingFor } from "@/lib/viewer/attempts";
@@ -80,7 +81,7 @@ export async function getBySlug(slug: string): Promise<ViewerResult> {
   }
 
   // 상태·만료·해시를 한 번에 읽는다. 없는 slug는 여기서 끝난다.
-  const meta = await getPlanMeta(slug);
+  const meta = await getPlanMeta(adminClient(), slug);
   if (!meta) return { status: "notFound" };
 
   // 만료가 먼저다 — 만료된 링크는 공개였든 비공개였든 같은 화면을 본다.
@@ -93,7 +94,7 @@ export async function getBySlug(slug: string): Promise<ViewerResult> {
   if (meta.status === "draft") return { status: "notFound" };
   if (meta.status === "private" && !(await isUnlocked(slug))) return { status: "locked", slug };
 
-  const plan = await getStoredPlan(slug);
+  const plan = await getStoredPlan(adminClient(), slug);
   return plan ? { status: "ok", plan } : { status: "notFound" };
 }
 
@@ -109,7 +110,7 @@ export async function verifyPassword(
   // 비공개가 아니면 검증할 것이 없다. 이 가드가 없으면 존재하지 않는 slug마다
   // attempts에 항목이 생겨 공격자 입력만으로 Map이 무한히 자란다.
   // (열람 가능 여부는 이미 GET /p/[slug]가 드러내므로 새로 새는 정보는 없다.)
-  const meta = await getPlanMeta(slug);
+  const meta = await getPlanMeta(adminClient(), slug);
   if (meta?.status !== "private") return { ok: false, remaining: 0 };
   if (typeof password !== "string" || password.length === 0 || password.length > 64) {
     return { ok: false, remaining: remainingFor(slug) };

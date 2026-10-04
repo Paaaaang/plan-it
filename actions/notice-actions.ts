@@ -25,6 +25,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { adminClient } from "@/lib/supabase/admin";
 import { getPlan, insertRow, updateRow, deleteRow, reorderRows } from "@/lib/store/plans";
 import { validateTitle, validateText, reorderByIds } from "@/lib/editor/validate";
 import type { ActionResult, NoticeInput } from "@/types/editor";
@@ -41,10 +42,11 @@ function checkInput(input: NoticeInput): { ok: true; value: Omit<ViewerNotice, "
 
 export async function addNotice(slug: string, input: NoticeInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
-  await insertRow("notices", slug, { title: checked.value.title, body: checked.value.body });
+  await insertRow(adminClient(), "notices", slug, { title: checked.value.title, body: checked.value.body });
 
   revalidatePath(`/p/${slug}`);
   return { ok: true, data: undefined };
@@ -52,11 +54,12 @@ export async function addNotice(slug: string, input: NoticeInput): Promise<Actio
 
 export async function updateNotice(slug: string, id: string, input: NoticeInput): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
   const checked = checkInput(input);
   if (!checked.ok) return checked;
 
   // 행이 없으면 false — "없는 공지"와 "남의 일정 공지"가 같은 답을 준다.
-  if (!(await updateRow("notices", slug, id, { title: checked.value.title, body: checked.value.body }))) {
+  if (!(await updateRow(adminClient(), "notices", slug, id, { title: checked.value.title, body: checked.value.body }))) {
     return { ok: false, message: "공지를 찾을 수 없어요." };
   }
 
@@ -66,7 +69,8 @@ export async function updateNotice(slug: string, id: string, input: NoticeInput)
 
 export async function deleteNotice(slug: string, id: string): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  if (!(await deleteRow("notices", slug, id))) {
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  if (!(await deleteRow(adminClient(), "notices", slug, id))) {
     return { ok: false, message: "공지를 찾을 수 없어요." };
   }
 
@@ -76,14 +80,16 @@ export async function deleteNotice(slug: string, id: string): Promise<ActionResu
 
 export async function reorderNotices(slug: string, ids: string[]): Promise<ActionResult> {
   // TODO(auth): 소유자 확인. proxy.ts가 스텁이라 지금은 아무나 부를 수 있다.
-  const plan = await getPlan(slug);
+  // TODO(auth): Task 6에서 createServerClient()로 바꾼다.
+  const db = adminClient();
+  const plan = await getPlan(db, slug);
   if (!plan) return { ok: false, message: "일정을 찾을 수 없어요." };
 
   // 검증은 그대로 쓴다 — 길이·중복·미지의 id를 여기서 거른다.
   const next = reorderByIds(plan.notices, ids);
   if (!next.ok) return { ok: false, message: next.message };
 
-  if (!(await reorderRows("notices", slug, ids))) {
+  if (!(await reorderRows(db, "notices", slug, ids))) {
     return { ok: false, message: "순서를 저장하지 못했어요." };
   }
 
