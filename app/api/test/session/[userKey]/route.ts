@@ -33,9 +33,14 @@ export async function POST(_req: Request, ctx: RouteContext<"/api/test/session/[
 
   const admin = adminClient();
 
-  // owner는 seed가 이미 만들었다. other는 처음 호출될 때 만든다.
+  // owner는 seed가 이미 만들었다. other는 처음 호출될 때 만든다 — 두 번째 호출부터는
+  // "이미 있다"(email_exists)가 정상 진행 상태다. 그 외 에러(쿼터·GoTrue 다운·스키마
+  // 문제처럼 seedOwnerSql()에서 실제로 겪은 것)를 삼키면 안 된다 — 삼키면 아래
+  // generateLink가 기존 사용자를 찾아 204를 돌려주는 것처럼 보여도 "방금 만든 계정"과
+  // "방금 실패해서 예전 상태 그대로인 계정"을 구분할 길이 없어진다.
   if (!user.id) {
-    await admin.auth.admin.createUser({ email: user.email, email_confirm: true });
+    const { error: createError } = await admin.auth.admin.createUser({ email: user.email, email_confirm: true });
+    if (createError && createError.code !== "email_exists") return new Response(null, { status: 500 });
   }
 
   const { data, error } = await admin.auth.admin.generateLink({
