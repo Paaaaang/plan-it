@@ -26,9 +26,20 @@ export default defineConfig({
   },
 
   // planner/admin = 데스크톱, viewer = 모바일. 두 뷰포트만 본다.
+  // setup이 시드 소유자 세션을 한 번 저장하고(auth.setup.ts), desktop/mobile은 그걸
+  // 재사용한다 — 262개 대부분이 매번 로그인 왕복을 타면 그 자체가 또 다른 전역 상태다.
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile', use: { ...devices['iPhone 14'] } },
+    { name: 'setup', testMatch: /auth\.setup\.ts/ },
+    {
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'], storageState: 'tests/.auth/owner.json' },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'mobile',
+      use: { ...devices['iPhone 14'], storageState: 'tests/.auth/owner.json' },
+      dependencies: ['setup'],
+    },
   ],
 
   webServer: {

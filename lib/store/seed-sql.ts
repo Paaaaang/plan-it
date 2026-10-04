@@ -22,9 +22,15 @@ export const SEED_OWNER_EMAIL = "seed-owner@plan-it.test";
  */
 export function seedOwnerSql(): string {
   return [
-    `insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)`,
+    `insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data,`,
+    `                        confirmation_token, recovery_token, email_change_token_new, email_change)`,
     `values ('${SEED_OWNER_ID}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',`,
-    `        '${SEED_OWNER_EMAIL}', now(), now(), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"name":"시드 기획자"}'::jsonb)`,
+    `        '${SEED_OWNER_EMAIL}', now(), now(), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"name":"시드 기획자"}'::jsonb,`,
+    // 이 네 컬럼은 디폴트가 없어 안 채우면 NULL이다. GoTrue 쪽 Go 구조체는 non-null
+    // string으로 스캔해서(5단계에서 "Scan error ... converting NULL to string" 500으로
+    // 실제로 터졌다) admin API(generateLink 등)가 이 사용자를 조회하는 순간 죽는다.
+    `        '', '', '', ''`,
+    `)`,
     `on conflict (id) do nothing;`,
   ].join("\n");
 }
