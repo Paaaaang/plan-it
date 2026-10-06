@@ -62,6 +62,9 @@ npx supabase start   # 최초 1회는 이미지를 받느라 느리다. 끝나�
 `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `SUPABASE_SERVICE_ROLE_KEY`.
 이 세 값은 로컬 컨테이너에만 통하는 고정 개발용 값이다(Supabase 공개 문서에 실린 데모 키) —
 원격 프로젝트 키를 여기 넣지 않는다. `VIEWER_SECRET`은 아무 문자열이나 넣어도 개발에는 지장 없다.
+Supabase 대시보드(Auth → Providers → Kakao)에 카카오 앱 키를 등록하지 않으면 로그인 버튼이
+에러를 던진다 — 콘솔·로그인 화면을 만지려면 먼저 등록한다. (`KAKAO_CLIENT_ID`는 이것과 별개로
+`proxy.ts`의 프로덕션 안전밸브가 보는 앱 env다 — 로컬 개발에는 영향 없다.)
 
 ---
 
@@ -104,7 +107,7 @@ npx supabase start   # 최초 1회는 이미지를 받느라 느리다. 끝나�
 색   --blue-500 (Planit Blue #3182F6), --grey-*, --red/green/amber-*
       의미 alias: --fill-* --text-* --border-* --surface-* --overlay-*
 타입  --display ~ --caption (15단계), Pretendard Variable
-간격  --space-1~20 (4px ladder), --screen-padding --row-gap --pair-gap
+간격  토큰 없음 — Tailwind 스페이싱 유틸리티(`p-*` `gap-*` `m-*` 등 4px 래더)를 그대로 쓴다
 곡률  --radius-xs ~ --radius-full (9단계)
 그림자 --shadow-1~3, --shadow-toast, --shadow-sheet
 모션  --ease --ease-out / --dur-fast(120) --dur-base(200) --dur-slow(320)

@@ -43,7 +43,9 @@ plan-it/
 │   │
 │   ├── api/                                # 🌐 라우트 핸들러
 │   │   ├── cover/[slug]/[v]/route.ts       #    업로드된 커버 바이트 ([v]는 캐시 무효화 조각 — 쿼리면 next/image가 막는다)
-│   │   └── test/reseed/[slug]/route.ts     #    E2E 픽스처 되돌리기 (프로덕션에선 404)
+│   │   └── test/
+│   │       ├── reseed/[slug]/route.ts      #    E2E 픽스처 되돌리기 (프로덕션에선 404)
+│   │       └── session/[userKey]/route.ts  #    E2E 세션 발급 — owner/other 두 정체성뿐 (프로덕션에선 404)
 │   │
 │   ├── globals.css                         # 전역 스타일 — DS 토큰 통합 (색상/타이포/스페이싱/라디우스/모션)
 │   ├── icon.png                            # 파비콘 이미지
@@ -115,11 +117,14 @@ plan-it/
 │       └── announcement-form.tsx           #    공지/업데이트 작성 폼
 │
 ├── lib/                                    # 라이브러리 및 유틸리티
+│   ├── auth/                                # 🔐 인가의 단일 지점 (Data Access Layer)
+│   │   └── dal.ts                          #    getSessionUserId(액션용) · verifySession(페이지용, 비로그인 /login 리다이렉트)
+│   │
 │   ├── supabase/                           # 🗄️ Supabase 클라이언트
 │   │   ├── client.ts                       #    브라우저 클라이언트 (Client Component)
-│   │   ├── server.ts                       #    서버 클라이언트 (Server Component/Action)
+│   │   ├── server.ts                       #    서버 클라이언트 (Server Component/Action) — RLS가 owner_id를 강제
 │   │   ├── session.ts                      #    Proxy용 세션 갱신 클라이언트
-│   │   └── admin.ts                        #    관리자/서비스 롤 클라이언트
+│   │   └── admin.ts                        #    관리자/서비스 롤 클라이언트 (RLS 우회 — 공개 뷰어·E2E 세션 발급이 쓴다)
 │   │
 │   ├── viewer/                             # 👁️ 공개 뷰어 순수 로직
 │   │   ├── rail.ts                         #    레일 진행도·항목 상태 계산
@@ -205,7 +210,10 @@ plan-it/
 │   ├── migrations/                          #    프로덕션 스키마만 (`supabase db push`가 그대로 원격에 적용)
 │   │   ├── 20260920000000_initial_schema.sql
 │   │   ├── 20260920000001_enable_rls.sql    #    RLS 기본 거부 스위치(정책은 2단계)
-│   │   └── 20260920000002_plans_id_is_slug.sql  #  plans.id = slug 전제를 제약으로 못박는다(1단계 한정)
+│   │   ├── 20260920000002_plans_id_is_slug.sql  #  plans.id = slug 전제를 제약으로 못박는다(1단계 한정)
+│   │   ├── 20261004000000_owner_uuid.sql    #    plans.owner_id → uuid (FK auth.users)로 이행
+│   │   ├── 20261004000001_profiles_auth_fk.sql  #  profiles.id → auth.users FK + 가입 트리거
+│   │   └── 20261004000002_rls_policies.sql  #    owner_id = auth.uid() 정책 7테이블(plans·profiles·notices·places·transport_info·days·schedule_items)
 │   └── seed.sql                             #    생성물. `npm run seed:gen`이 매번 다시 씀 — .gitignore, 커밋 안 함
 │
 ├── scripts/                                  # 🔧 개발용 스크립트
