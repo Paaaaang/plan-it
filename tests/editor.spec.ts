@@ -10,7 +10,7 @@ import type { Locator, Page } from '@playwright/test';
 test.skip(({ isMobile }) => isMobile, '편집기는 데스크톱 서페이스다.');
 
 /**
- * 테스트 격리 — 스토어는 Postgres다(lib/store/plans.ts). 세 겹으로 막는다:
+ * 테스트 격리 — 스토어는 Postgres다(src/server/store/plans.ts). 세 겹으로 막는다:
  *
  *  1. **각 테스트는 시작할 때 자기 slug를 씨앗부터 다시 세운다**(`reseed`). 끝에서
  *     되돌리는 방식으로는 부족했다: 되돌리기에 닿기 전에 넘어지면 그 값이 **다음 실행까지**
@@ -28,7 +28,7 @@ test.describe.configure({ mode: 'serial' });
 
 /**
  * slug를 픽스처 씨앗 값으로 되돌린다(`POST /api/test/reseed/[slug]` — 프로덕션엔 없는 문).
- * Playwright는 브라우저 쪽에서 돌아 서버 프로세스의 `reseedPlan()`(lib/store/plans.ts)을
+ * Playwright는 브라우저 쪽에서 돌아 서버 프로세스의 `reseedPlan()`(src/server/store/plans.ts)을
  * 직접 부를 수 없어 라우트로 뚫었고, DB 전체가 아니라 그 slug 한 행만 되돌리는 이유는
  * mobile 뷰어 스펙이 같은 dev 서버·같은 DB를 병렬로 쓰기 때문이다.
  */
@@ -455,7 +455,7 @@ test.describe('정렬', () => {
 
   /**
    * 서버 거부. 낡은 목록을 들고 있는 클라이언트를 흉내낸다 — 보내는 id 하나를 없는 id로
-   * 바꾸면 `reorderByIds`가 집합 불일치로 거부한다(lib/editor/validate.ts).
+   * 바꾸면 `reorderByIds`가 집합 불일치로 거부한다(src/shared/editor/validate.ts).
    * 화면은 낙관적으로 이미 바뀌어 있으므로 **되돌리고 이유를 보여줘야** 한다.
    */
   test('서버가 거부하면 순서를 되돌리고 이유를 보여준다', async ({ page }) => {

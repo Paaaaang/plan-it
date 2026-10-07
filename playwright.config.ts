@@ -13,7 +13,7 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    // 뷰어 레일은 "오늘"을 KST로 정의한다(lib/fixtures/viewer.ts의 dayOffset과 짝).
+    // 뷰어 레일은 "오늘"을 KST로 정의한다(src/shared/fixtures/viewer.ts의 dayOffset과 짝).
     // CI 러너는 UTC라 못박지 않으면 자정 부근에서 날짜가 어긋나 레일 테스트가 흔들린다.
     timezoneId: 'Asia/Seoul',
     // 네이티브 위젯(<input type="date">)의 표기는 문서 lang이 아니라 **브라우저 로캘**을

@@ -284,12 +284,12 @@ test.describe('장소 시트', () => {
 /**
  * 비밀번호 게이트 · 오류/만료 화면.
  *
- * 테스트 격리 — 시도 카운터는 프로세스 메모리다(lib/viewer/attempts.ts).
+ * 테스트 격리 — 시도 카운터는 프로세스 메모리다(src/server/viewer/attempts.ts).
  * desktop·mobile 두 프로젝트가 같은 dev 서버를 병렬로 때리고 CI는 재시도까지 한다.
  * 카운터를 건드리는 테스트가 고정 slug를 쓰면 "4번"이 실행 순서에 따라 3번·2번이 된다.
  * → **틀리는 테스트는 매번 reseed로 secret-party를 되돌려 카운터를 같이 지운다**
  *   (reseedPlan이 resetAttempts도 부른다). 비공개 판정은 slug 접두사가 아니라
- *   `plans.status='private'` 컬럼 하나다(`SEED_PASSWORDS`(lib/store/seed-sql.ts)가
+ *   `plans.status='private'` 컬럼 하나다(`SEED_PASSWORDS`(src/server/store/seed-sql.ts)가
  *   seed 시점에 이 slug에 평문 비밀번호를 매핑해 scrypt 해시로 찍는다). 나머지
  *   테스트는 secret-party를 쓴다 —
  *   읽기만 하거나(게이트 노출) 성공해서 카운터를 지운다. 둘 다 카운터를 올리지 않는다.
@@ -345,7 +345,7 @@ test.describe('비밀번호 게이트 · 오류', () => {
     // 런타임으로는 "꺼져 있음"까지만 잴 수 있다. 켜지는 조건은 코드 경로로 확인한다.
     expect(cookie!.secure, '개발(http)에서는 secure가 꺼져 있다').toBe(false);
     // Playwright는 프로젝트 루트에서 실행된다(playwright.config.ts 위치).
-    const source = readFileSync('actions/viewer-actions.ts', 'utf8');
+    const source = readFileSync('src/server/actions/viewer-actions.ts', 'utf8');
     expect(source, 'secure가 프로덕션에서 켜지는 코드 경로').toMatch(
       /secure:\s*process\.env\.NODE_ENV\s*===\s*["']production["']/,
     );

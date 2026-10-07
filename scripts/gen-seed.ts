@@ -1,7 +1,7 @@
 /**
  * @file 픽스처 → supabase/seed.sql
  *
- * `lib/fixtures/viewer.ts`가 씨앗의 **유일한 원천**이다. 소비자가 둘인데
+ * `src/shared/fixtures/viewer.ts`가 씨앗의 **유일한 원천**이다. 소비자가 둘인데
  * 경로가 다르다: `reseed` 라우트는 같은 TS 객체를 런타임에 INSERT하고,
  * `supabase db reset`은 Node를 거치지 않고 seed.sql만 읽는다.
  *
@@ -21,8 +21,8 @@
 import { writeFileSync } from "node:fs";
 // 상대 경로 + .ts 확장자다, `@/`가 아니다 — 이 스크립트 자체가 `node --experimental-strip-types`로
 // 직접 실행되고(package.json의 seed:gen), plain node는 tsconfig paths를 못 푼다.
-import { allFixturePlans } from "../lib/fixtures/viewer.ts";
-import { planInsertSql, SEED_OWNER_ID, EXEC_SQL_FUNCTION_SQL, seedOwnerSql } from "../lib/store/seed-sql.ts";
+import { allFixturePlans } from "../src/shared/fixtures/viewer.ts";
+import { planInsertSql, SEED_OWNER_ID, EXEC_SQL_FUNCTION_SQL, seedOwnerSql } from "../src/server/store/seed-sql.ts";
 
 const sql = [
   "-- 생성물이다. 손으로 고치지 않는다. `npm run db:reset`이 매번 다시 만든다(커밋 대상 아님).",

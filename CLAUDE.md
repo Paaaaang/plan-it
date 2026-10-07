@@ -11,7 +11,7 @@
 |---|---|---|
 | Next.js | **16.2.6** | App Router. API·규약·파일 구조가 네가 아는 것과 다를 수 있다 |
 | React | 19.2.4 | Server Components 기본 |
-| Tailwind | v4 | `@theme inline`. **`tailwind.config.js` 없음** — 토큰은 `app/globals.css`에 |
+| Tailwind | v4 | `@theme inline`. **`tailwind.config.js` 없음** — 토큰은 `src/app/globals.css`에 |
 | TypeScript | 5.x | strict |
 | DB | Supabase | MCP로 접근 (`.mcp.json`) |
 
@@ -21,17 +21,25 @@ deprecation 경고를 무시하지 않는다. 기억에 의존해서 Next 15 이
 ### 디렉터리
 
 ```
-app/          라우트. (auth) (console) (admin) 그룹 + p/[slug] 공개 뷰어
-actions/      Server Actions — DB·비밀 접근은 전부 여기서
-components/   ui/ landing/ dashboard/ viewer/ admin/
-hooks/        클라이언트 훅
-types/        도메인 타입
-lib/          유틸
-tests/        Playwright E2E
-proxy.ts     인증 게이트 (Next 16: middleware → proxy)
+src/
+  app/          라우트. (auth) (console) (admin) 그룹 + p/[slug] 공개 뷰어
+  proxy.ts     인증 게이트 (Next 16: middleware → proxy). app/과 같은 층(src/)에 있어야 한다
+  client/       브라우저 전용 ('use client' 경계 안쪽)
+    components/   ui/ landing/ dashboard/ editor/ viewer/ admin/
+    hooks/        클라이언트 훅
+  server/       서버 전용 — Server Component에서 import하면 안 되는 건 다 여기
+    actions/      Server Actions — DB·비밀 접근은 전부 여기서
+    store/ supabase/ auth/  DB 경계 · Supabase 클라이언트 · 인가
+  shared/       서버·클라이언트 둘 다 안전한 순수 함수·타입만
+    types/        도메인 타입
+    editor/validate.ts  fixtures/  utils/date.ts
+tests/        Playwright E2E (루트 고정)
 planit-design-system/  Claude Design 핸드오프 번들 (원본 — 수정 금지)
 docs/         PRD·기능명세·유저플로우·DS 매핑 (git 제외)
 ```
+
+`@/*`는 `src/*`로 묶인다(tsconfig). 새 파일을 어디 둘지 애매하면: `'use client'`에서 import하면
+안 되면 `server/`, Server Component에서 import하면 안 되면 `client/`, 둘 다 안전하면 `shared/`.
 
 파일 단위 상세는 `PROJECT_STRUCTURE.md`. **구조를 바꿨으면 이 파일도 같이 고친다.**
 
@@ -97,11 +105,11 @@ Supabase 대시보드(Auth → Providers → Kakao)에 카카오 앱 키를 등�
 착수 전 반드시 읽는다: `planit-design-system/project/readme.md` → 관련 `tokens/` → 관련 `components/`.
 현재 포팅 현황은 `docs/design-system-mapping.md`에서 확인 — **이미 포팅된 컴포넌트를 다시 만들지 않는다.**
 
-`planit-design-system/` 은 원본 핸드오프 번들이다. **수정하지 않는다.** 프로덕션 코드는 `components/`·`app/globals.css`에만 쓴다.
+`planit-design-system/` 은 원본 핸드오프 번들이다. **수정하지 않는다.** 프로덕션 코드는 `src/client/components/`·`src/app/globals.css`에만 쓴다.
 
 ### 4-2. 토큰
 
-하드코딩 색상·간격·radius·shadow **금지**. 전부 `app/globals.css`의 CSS 변수를 쓴다.
+하드코딩 색상·간격·radius·shadow **금지**. 전부 `src/app/globals.css`의 CSS 변수를 쓴다.
 
 ```
 색   --blue-500 (Planit Blue #3182F6), --grey-*, --red/green/amber-*
@@ -144,8 +152,8 @@ UI를 바꿨으면 눈으로 확인하기 전까지 끝난 게 아니다.
 - **입력 검증**: 사용자 입력은 서버(Server Action)에서 타입·길이·형식을 검증한다. 클라이언트 검증은 UX용일 뿐이다.
 - **인젝션**: SQL은 파라미터 바인딩. `dangerouslySetInnerHTML` 지양(불가피하면 DOMPurify). 쉘 명령에 사용자 입력 직접 전달 금지.
 - **인증 토큰**: `httpOnly` + `secure` 쿠키. `localStorage` 금지.
-- **Server/Client 분리**: DB·API 키 접근은 Server Component 또는 `actions/`에서만. `'use client'` 파일에 노출 금지.
-- **공개 뷰어(`app/p/[slug]`)**: 로그인 없이 접근되는 경로다. 기획자 전용 데이터가 응답에 섞이지 않는지 매번 확인한다.
+- **Server/Client 분리**: DB·API 키 접근은 Server Component 또는 `src/server/actions/`에서만. `'use client'` 파일에 노출 금지.
+- **공개 뷰어(`src/app/p/[slug]`)**: 로그인 없이 접근되는 경로다. 기획자 전용 데이터가 응답에 섞이지 않는지 매번 확인한다.
 
 ### 의존성
 - 새 패키지 설치 후 `npm audit`.

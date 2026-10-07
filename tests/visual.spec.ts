@@ -102,7 +102,7 @@ test.describe('공개 뷰어', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.clock.setFixedTime(fixedNow());
     if (opts.dark) {
-      // 테마는 쿠키가 단일 소스다(lib/theme.ts). 서버가 <html data-theme="dark">로 그리게 하면
+      // 테마는 쿠키가 단일 소스다(src/server/theme.ts). 서버가 <html data-theme="dark">로 그리게 하면
       // 클라이언트에서 속성을 갈아끼울 때 생기는 색 전환 중간값이 스냅샷에 안 잡힌다.
       await page.context().addCookies([{ name: 'planit-theme', value: 'dark', url: BASE_URL }]);
     }

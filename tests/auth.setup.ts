@@ -1,5 +1,5 @@
 import { test as setup, expect } from '@playwright/test';
-import { SEED_OWNER_ID } from '../lib/store/seed-sql';
+import { SEED_OWNER_ID } from '../src/server/store/seed-sql';
 import { accessTokenFromCookies, subFromAccessToken } from './support/sb-cookie';
 
 /**

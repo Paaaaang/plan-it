@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { assemblePlan, type PlanRowSet } from '../lib/store/rows';
+import { assemblePlan, type PlanRowSet } from '../src/server/store/rows';
 
 /**
  * 조립 변환은 화면 없이 판정할 수 있는 유일한 조각이다. 나머지는 E2E가 본다.
