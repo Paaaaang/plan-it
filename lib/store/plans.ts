@@ -142,7 +142,9 @@ export async function placeExists(db: SupabaseClient, slug: string, placeId: str
  *
  * `schedule_items`는 plan_id가 없다(days를 거친다). 그래서 이 함수가 테이블마다
  * 다른 조건을 만든다 — 부르는 쪽이 그걸 알면 한 군데서 빠뜨리는 순간 남의 일정 행을
- * 고칠 수 있다. 2단계에서 여기에 `AND owner_id = auth.uid()`가 붙는다.
+ * 고칠 수 있다. `AND owner_id = auth.uid()`는 여기 안 붙는다 — 이제 소유권은 앱이
+ * 아니라 RLS가 지킨다(`supabase/migrations/20261004000002_rls_policies.sql`). 이 함수가
+ * 들고 다니는 `db`가 사용자 JWT 클라이언트라면 그 필터는 이미 걸려 있다.
  */
 async function scopeIds(db: SupabaseClient, table: ChildTable, slug: string): Promise<string[] | "all"> {
   if (table !== "schedule_items") return "all"; // plan_id = slug로 충분하다

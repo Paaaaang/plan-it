@@ -6,10 +6,16 @@
  *
  * @security 서버 사이드에서만 사용. 절대 클라이언트에 노출 금지.
  *
- * @connects
- *  - actions/viewer-actions.ts     → getBySlug (서비스 롤로 slug + status 조건 조회)
- *  - actions/analytics-actions.ts  → logEvent (서비스 롤로 이벤트 기록)
- *  - actions/admin-actions.ts      → 관리자 전용 작업
+ * @connects — 실제로 **부르는** 곳 다섯 자리뿐이다(그렙 확인). 콘솔 액션(plan·notice·
+ * place·schedule·transport)은 전부 lib/supabase/server.ts(사용자 JWT)를 쓰고, 이 파일을
+ * import조차 하지 않는다 — eslint.config.mjs의 no-restricted-imports가 그걸 고정한다.
+ *  - actions/viewer-actions.ts                     → 공개 뷰어. 로그인이 없어 auth.uid()가 없다
+ *  - app/api/cover/[slug]/[v]/route.ts              → 공개 커버. 뷰어와 같은 문(status 검사)
+ *  - app/api/test/session/[userKey]/route.ts        → 테스트 전용. admin API가 서비스 롤을 요구한다
+ *  - lib/store/plans.ts (reseedPlan)                → 테스트 전용. RLS 우회가 목적이다
+ *
+ *  actions/admin-actions.ts·actions/analytics-actions.ts는 본문 0줄인 문서 스텁이다 —
+ *  관리자 콘솔(2c)이 실제로 구현되면 그때 소비자가 된다.
  *
  * @env SUPABASE_SERVICE_ROLE_KEY (서버 전용, NEXT_PUBLIC_ 아님)
  *

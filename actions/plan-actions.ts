@@ -73,8 +73,6 @@ function syncDays(days: ViewerDay[], start: string, end: string): ActionResult<V
 }
 
 export async function saveBasicInfo(slug: string, input: BasicInfoInput): Promise<ActionResult> {
-  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
-  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
   if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
 
   const db = await createServerClient();
@@ -140,8 +138,6 @@ export async function saveBasicInfo(slug: string, input: BasicInfoInput): Promis
 }
 
 export async function setStatus(slug: string, status: string): Promise<ActionResult> {
-  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
-  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
   if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
 
   const db = await createServerClient();
@@ -179,8 +175,6 @@ const COVER_TYPES = new Map<string, string[]>([
  * **MIME·크기·확장자 검증은 지금도 서버에서 한다.** 그건 저장 위치와 무관한 보안 사항이다.
  */
 export async function setCover(slug: string, form: FormData): Promise<ActionResult<string>> {
-  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
-  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
   if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
 
   const db = await createServerClient();

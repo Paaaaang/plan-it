@@ -59,8 +59,6 @@ function checkInput(input: PlaceInput): { ok: true; value: PlaceFields } | { ok:
 }
 
 export async function addPlace(slug: string, input: PlaceInput): Promise<ActionResult> {
-  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
-  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
   if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
 
   const db = await createServerClient();
@@ -80,8 +78,6 @@ export async function addPlace(slug: string, input: PlaceInput): Promise<ActionR
 }
 
 export async function updatePlace(slug: string, id: string, input: PlaceInput): Promise<ActionResult> {
-  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
-  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
   if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
 
   const db = await createServerClient();
@@ -105,8 +101,6 @@ export async function updatePlace(slug: string, id: string, input: PlaceInput): 
 }
 
 export async function deletePlace(slug: string, id: string): Promise<ActionResult> {
-  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
-  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
   if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
 
   const db = await createServerClient();
@@ -119,8 +113,6 @@ export async function deletePlace(slug: string, id: string): Promise<ActionResul
 }
 
 export async function togglePin(slug: string, id: string): Promise<ActionResult> {
-  // 액션은 redirect하지 않는다 — 폼이 조용히 사라지는 것으로 보인다. ActionResult로 답한다.
-  // 'use server' export는 누구나 POST할 수 있어서, 페이지가 확인했다는 것이 보증이 되지 않는다.
   if (!(await getSessionUserId())) return { ok: false, message: "로그인이 필요해요." };
 
   const db = await createServerClient();

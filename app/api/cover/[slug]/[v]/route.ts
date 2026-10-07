@@ -30,12 +30,17 @@
  */
 
 import { adminClient } from "@/lib/supabase/admin";
-import { getCoverBlob, getPlanStatus } from "@/lib/store/plans";
+import { getCoverBlob, getPlanMeta } from "@/lib/store/plans";
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/cover/[slug]/[v]">) {
   const { slug } = await ctx.params;
+  const meta = await getPlanMeta(adminClient(), slug);
   // 없는 일정과 못 보는 일정이 같은 답을 준다 — 404와 403이 갈리면 존재가 새어 나간다.
-  if ((await getPlanStatus(adminClient(), slug)) !== "public") return new Response(null, { status: 404 });
+  // status만 보면 만료된 공개 일정의 커버가 계속 나간다 — 뷰어(getBySlug)는 만료를
+  // status보다 먼저 보는데 이 라우트가 그 순서를 안 지키면 "뷰어는 막혔지만 커버는
+  // 받아 간다"는 틈이 생긴다. 같은 문이어야 한다.
+  const expired = meta?.expiresAt != null && new Date(meta.expiresAt) <= new Date();
+  if (!meta || meta.status !== "public" || expired) return new Response(null, { status: 404 });
 
   const cover = getCoverBlob(slug);
   if (!cover) return new Response(null, { status: 404 });

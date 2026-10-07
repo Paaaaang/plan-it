@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import type { Page, APIRequestContext } from '@playwright/test';
+import { accessTokenFromCookies } from './support/sb-cookie';
 
 test.skip(({ isMobile }) => isMobile, '콘솔은 데스크톱 서페이스다.');
 
@@ -38,17 +39,15 @@ const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 
 /**
- * `sb-*` 쿠키에서 액세스 토큰 전체를 꺼낸다. `tests/auth.setup.ts`의 `sessionUserId()`와
- * 같은 디코딩이지만 거기는 `sub`만 보고 여기는 그 JWT 자체가 필요하다 — PostgREST 호출의
- * Authorization 헤더로 그대로 쓴다.
+ * `sb-*` 쿠키에서 액세스 토큰 전체를 꺼낸다. 디코딩은 `support/sb-cookie.ts`가 한다 —
+ * `tests/auth.setup.ts`의 `sessionUserId()`는 거기서 `sub`만 더 꺼내고, 여기는 그 JWT
+ * 자체가 필요하다(PostgREST 호출의 Authorization 헤더로 그대로 쓴다).
  */
 async function accessToken(page: Page): Promise<string> {
   const cookies = await page.context().cookies();
-  const sb = cookies.find((c) => c.name.startsWith('sb-'));
-  if (!sb) throw new Error('세션 쿠키가 없다 — 먼저 /api/test/session/*를 호출했는가?');
-  const raw = decodeURIComponent(sb.value).replace(/^base64-/, '');
-  const { access_token } = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
-  return access_token as string;
+  const token = accessTokenFromCookies(cookies);
+  if (!token) throw new Error('세션 쿠키가 없다 — 먼저 /api/test/session/*를 호출했는가?');
+  return token;
 }
 
 /** 주어진 JWT(또는 anon 키 그 자체)로 PostgREST에 PATCH를 보내고 갱신된 행 배열을 돌려준다.
@@ -69,6 +68,10 @@ async function patchAsUser(
     },
     data: body,
   });
+  // 지금 RLS가 거부한 쓰기는 "200 + 빈 배열"로 온다(걸러진 행이 0개일 뿐이라 에러가
+  // 아니다). 정책이 나중에 403을 돌려주도록 더 엄해져도 — 그건 보안이 나아진 것이다 —
+  // 이 헬퍼가 그것 때문에 깨지면 안 된다. 403도 "거부됐다"는 유효한 결과로 받는다.
+  if (res.status() === 403) return [];
   expect(res.ok(), `PostgREST 응답이 비정상이다: ${res.status()}`).toBe(true);
   return (await res.json()) as unknown[];
 }
@@ -117,6 +120,19 @@ test.describe('비로그인', () => {
    * RLS 그 자체로 직접 확인한다.
    */
   test('로그인 없이 DB API를 직접 때려도 공지를 고칠 수 없다 (anon, RLS)', async ({ request }) => {
+    // n-n1은 '소유권 격리' describe와 editor.spec.ts의 공지 삭제 테스트도 건드리는 행이다
+    // (둘 다 fullyParallel). 여기서 reseed를 또 하나 더하면 같은 slug를 reseed하는 호출이
+    // 겹치는 창이 넓어질 뿐이다 — 실제로 해 보니 동시에 두 reseed가 겹치면 delete+insert가
+    // "duplicate key" 에러로 깨진다(reseedPlan이 그 동시성까지는 안전하지 않다). 그래서
+    // reseed 대신 owner 토큰으로 "지금 그 행이 있다"만 직접 확인한다 — 이 request 컨텍스트
+    // 안에서만 쓰는 세션이라 비로그인 describe의 storageState(쿠키 없음)는 그대로다.
+    const sessionRes = await request.post('/api/test/session/owner');
+    expect(sessionRes.status(), 'owner 세션 발급').toBe(204);
+    const ownerToken = accessTokenFromCookies((await request.storageState()).cookies);
+    if (!ownerToken) throw new Error('owner 세션 쿠키가 없다');
+    const before = await getAsUser(request, 'notices', 'n-n1', ownerToken);
+    expect(before, '대상 행이 있어야 비교가 의미 있다').toBeDefined();
+
     const rows = await patchAsUser(request, 'notices', 'n-n1', { title: '익명 해킹 시도' }, SUPABASE_ANON_KEY);
     expect(rows, 'anon 쓰기는 0행이어야 한다').toHaveLength(0);
   });
@@ -150,6 +166,9 @@ test.describe('소유권 격리', () => {
   test('다른 기획자는 남의 일정 행을 DB API로 직접 고칠 수 없다 (RLS)', async ({ page, request }) => {
     const ownerToken = await accessToken(page);
     const before = await getAsUser(request, 'plans', 'editor-notice', ownerToken);
+    // before가 undefined면 after도 undefined일 뿐이라 아래 toBe 비교가 "둘 다 없다"로
+    // 공허하게 통과한다 — 비교가 뭔가를 증명하려면 비교 대상이 실제로 있어야 한다.
+    expect(before, '대상 행이 있어야 비교가 의미 있다').toBeDefined();
 
     const switched = await page.request.post('/api/test/session/other');
     expect(switched.status()).toBe(204);
@@ -170,6 +189,7 @@ test.describe('소유권 격리', () => {
   test('다른 기획자는 남의 공지(자식 행)를 DB API로 직접 고칠 수 없다 (RLS)', async ({ page, request }) => {
     const ownerToken = await accessToken(page);
     const before = await getAsUser(request, 'notices', 'n-n1', ownerToken);
+    expect(before, '대상 행이 있어야 비교가 의미 있다').toBeDefined();
 
     const switched = await page.request.post('/api/test/session/other');
     expect(switched.status()).toBe(204);
@@ -187,5 +207,37 @@ test.describe('세션', () => {
   test('로그인 상태로 /login에 가면 대시보드로 보낸다', async ({ page }) => {
     await page.goto('/login');
     await expect(page).toHaveURL(/\/dashboard/);
+  });
+});
+
+test.describe('위조 세션', () => {
+  /**
+   * proxy는 쿠키 "유무"만 본다(§1-3 머리말) — 이름이 sb-로 시작하기만 하면 그 값이
+   * 뭐든 /login으로 안 보낸다. 그래서 편집기 페이지의 verifySession()을 지워도 proxy의
+   * 다른 리다이렉트가 가려 전 스위트가 초록으로 남는 간극이 있었다(§2 "DAL 단독 커버
+   * 없음"). 이 테스트는 그 간극을 단독으로 잡는다: 형식만 맞는 위조 쿠키로 proxy는
+   * 통과시키되, DAL의 verifySession() → getUser()가 진짜 세션인지 Supabase에 확인하고
+   * /login으로 리다이렉트를 건다.
+   *
+   * 브라우저로 끝까지 따라가지 않고 `maxRedirects: 0`으로 **첫 응답만** 본다. 끝까지
+   * 따라가면 proxy의 "이미 로그인됨 && pathname === '/login'" 분기가 **같은 위조
+   * 쿠키**를 또 보고 /login을 다시 /dashboard로 튕긴다 — 그건 proxy가 쿠키 유무만
+   * 보는 낙관적 검사라는, 이미 알고 있는 별개의 사실이고(§1-3) 이 테스트가 묻는 질문
+   * ("DAL이 EDIT 요청 자체를 막는가")과 무관하다. 그 2차 바운스에 가려 첫 리다이렉트의
+   * 목적지를 못 보는 쪽이 오히려 이 테스트의 의도를 놓친다.
+   */
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('위조 세션 쿠키는 proxy를 통과하지만 DAL이 단독으로 /login을 돌려보낸다', async ({ request }) => {
+    const res = await request.get(EDIT, {
+      headers: { Cookie: 'sb-test-auth-token=base64-bogus' },
+      maxRedirects: 0,
+    });
+    expect([301, 302, 303, 307, 308]).toContain(res.status());
+    const location = res.headers()['location'];
+    expect(location, 'Location 헤더가 있어야 한다').toBeTruthy();
+    // 상대 경로("/login")로 올 수도 있어 base를 준다 — 절대 URL이면 base는 무시되고
+    // pathname만 보므로 base의 origin 자체는 어차피 안 쓴다.
+    expect(new URL(location!, 'http://localhost').pathname).toBe('/login');
   });
 });

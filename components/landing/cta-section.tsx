@@ -5,6 +5,6 @@
  *
  * @connects
  *  - hooks/use-auth.ts             → 로그인 상태 확인
- *  - app/(auth)/signup/page.tsx    → 시작하기 링크
- *  - app/(auth)/login/page.tsx     → 로그인 링크
+ *  - app/(auth)/login/page.tsx     → 시작하기·로그인 둘 다 같은 카카오 로그인으로 보낸다
+ *                                     (signup 라우트는 renewal/auth에서 지워졌다)
  */

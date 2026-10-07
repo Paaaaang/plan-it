@@ -7,7 +7,8 @@ import { createHash } from "node:crypto";
 import type { ViewerPlan } from "../../types/viewer.ts";
 import { hashPassword } from "../viewer/password.ts";
 
-/** 1단계의 고정 소유자. 2단계에서 auth.uid()로 갈아끼운다. */
+/** 시드 소유자의 uuid. `auth.users`에 실제로 존재하는 행이라 `owner_id`가 거짓 FK가
+ *  아니고, RLS의 `auth.uid() = owner_id` 비교가 이 값과 실제로 맞아떨어진다. */
 export const SEED_OWNER_ID = "00000000-0000-4000-8000-000000000001";
 
 /** 시드 소유자의 이메일. E2E가 이 계정으로 로그인한다. */

@@ -6,9 +6,16 @@
  * @usage Server Component, actions/*.ts 에서 import하여 사용
  *
  * @connects
- *  - actions/plan-actions.ts      → 일정 CRUD (owner_id = auth.uid() RLS)
- *  - actions/viewer-actions.ts    → 뷰어 데이터 조회 (서비스 롤 또는 제한적 쿼리)
- *  - app/(console)/layout.tsx     → 세션 확인
+ *  - lib/auth/dal.ts  → getSessionUserId()/verifySession() — 인가 판정의 단일 지점이
+ *                        여기 클라이언트로 getUser()를 검증한다
+ *  - actions/{plan,notice,place,schedule,transport,auth}-actions.ts → 사용자 JWT로
+ *    쓴다. RLS가 owner_id = auth.uid()를 지킨다
+ *  - app/(console)/dashboard/plans/[id]/edit/page.tsx, app/auth/callback/route.ts,
+ *    app/api/test/session/[userKey]/route.ts
+ *
+ *  (viewer-actions.ts는 **여기가 아니라** lib/supabase/admin.ts를 쓴다 — 로그인이
+ *  없어 auth.uid()가 없다. app/(console)/layout.tsx는 supabase를 전혀 import하지
+ *  않는다 — 세션 확인은 각 페이지의 verifySession()이 한다.)
  *
  * @env NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
  */

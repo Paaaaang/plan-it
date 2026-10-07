@@ -1,5 +1,6 @@
 import { test as setup, expect } from '@playwright/test';
 import { SEED_OWNER_ID } from '../lib/store/seed-sql';
+import { accessTokenFromCookies, subFromAccessToken } from './support/sb-cookie';
 
 /**
  * 시드 소유자로 로그인해 세션을 저장한다. 262개 대부분이 이걸 재사용하므로
@@ -22,17 +23,13 @@ setup('시드 소유자 세션을 저장한다', async ({ page }) => {
 });
 
 /**
- * @supabase/ssr가 심는 `sb-*` 쿠키에서 액세스 토큰의 sub만 꺼낸다. 값은 base64
- * JSON({access_token, ...})이고 토큰 자체는 점(.)으로 나뉜 JWT다 — 우리가 보는 건
- * 가운데 payload뿐이고, 꺼내는 것도 사용자 id 하나뿐이다(토큰을 통째로 들고 있지 않는다).
+ * @supabase/ssr가 심는 `sb-*` 쿠키에서 액세스 토큰의 sub만 꺼낸다. 디코딩 자체는
+ * `support/sb-cookie.ts`로 뺐다 — 우리가 보는 건 가운데 payload뿐이고, 꺼내는 것도
+ * 사용자 id 하나뿐이다(토큰을 통째로 들고 있지 않는다).
  */
 function sessionUserId(cookies: { name: string; value: string }[]): string | undefined {
-  const sb = cookies.find((c) => c.name.startsWith('sb-'));
-  if (!sb) return undefined;
-  const raw = decodeURIComponent(sb.value).replace(/^base64-/, '');
-  const { access_token } = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
-  const payload = JSON.parse(Buffer.from(access_token.split('.')[1], 'base64').toString('utf8'));
-  return payload.sub as string | undefined;
+  const token = accessTokenFromCookies(cookies);
+  return token ? subFromAccessToken(token) : undefined;
 }
 
 /**

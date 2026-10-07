@@ -6,9 +6,10 @@
  * @usage Client Component ('use client')에서 import하여 사용
  *
  * @connects
- *  - app/(auth)/login/page.tsx   → 소셜 로그인 시
- *  - hooks/use-auth.ts           → 클라이언트 사이드 인증 상태 구독
- *  - hooks/use-plan.ts           → 실시간 구독 (필요 시)
+ *  - components/auth/kakao-button.tsx → 실제 소비자. 소셜 로그인 버튼이 직접 부른다
+ *                                        (app/(auth)/login/page.tsx는 이 컴포넌트를
+ *                                        렌더할 뿐 자신은 이 클라이언트를 import하지 않는다)
+ *  - hooks/use-auth.ts, hooks/use-plan.ts → 본문 0줄 문서 스텁. 아직 아무도 안 부른다
  *
  * @env NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
  */

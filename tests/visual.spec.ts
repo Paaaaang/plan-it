@@ -264,7 +264,11 @@ test.describe('편집기', () => {
 });
 
 test.describe('로그인', () => {
-  test.skip(({ isMobile }) => isMobile, '콘솔은 데스크톱이 기본이다.');
+  // /login은 콘솔이 아니고 카카오 로그인은 오히려 모바일이 주력이다 — "콘솔은 데스크톱이
+  // 기본"이라는 이유는 이 화면에 안 맞는다. 데스크톱만 찍는 진짜 이유는 베이스라인
+  // 스냅샷이 지금 desktop 전용이라는 것뿐이다. mobile 기준 이미지를 새로 만드는 건
+  // --update-snapshots가 필요해 이번 수정 범위 밖이다.
+  test.skip(({ isMobile }) => isMobile, '로그인 베이스라인 스냅샷이 desktop 전용이에요.');
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test('라이트', async ({ page }) => {

@@ -8,7 +8,8 @@
  *
  * @connects
  *  - hooks/use-auth.ts             → 로그인 상태 확인 (CTA 분기)
- *  - app/(auth)/login/page.tsx     → 로그인 CTA 링크
- *  - app/(auth)/signup/page.tsx    → 시작하기 CTA 링크
+ *  - app/(auth)/login/page.tsx     → 로그인 CTA 링크. 가입이 따로 없다 — "시작하기"도
+ *                                     같은 카카오 로그인으로 보낸다(signup 라우트는
+ *                                     renewal/auth에서 지워졌다)
  *  - app/(console)/dashboard/      → 대시보드 CTA 링크 (로그인 시)
  */
