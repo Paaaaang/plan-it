@@ -27,7 +27,7 @@ src/
   client/       브라우저 전용 ('use client' 경계 안쪽)
     components/   ui/ landing/ dashboard/ editor/ viewer/ admin/
     hooks/        클라이언트 훅
-  server/       서버 전용 — Server Component에서 import하면 안 되는 건 다 여기
+  server/       서버 전용 — `'use client'` 파일에서 import하면 안 되는 건 다 여기
     actions/      Server Actions — DB·비밀 접근은 전부 여기서
     store/ supabase/ auth/  DB 경계 · Supabase 클라이언트 · 인가
   shared/       서버·클라이언트 둘 다 안전한 순수 함수·타입만
