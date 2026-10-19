@@ -1018,6 +1018,14 @@ test.describe('미리보기', () => {
     await page.keyboard.press('Escape');
     await expect(sheet).toBeHidden();
   });
+
+  test('편집기 미리보기에는 랜딩 링크가 없다 — 기획자 클릭이 바이럴 지표를 오염시키지 않는다', async ({ page }) => {
+    await page.goto(TT);
+    const pv = page.getByTestId('editor-preview');
+    // 링크 부재만 보면 미리보기가 아직 안 뜬 순간에도 0이라 통과한다. 먼저 뷰어가 그려졌는지 확인한다.
+    await expect(pv.getByRole('heading', { name: '타임테이블 데모' })).toBeVisible();
+    await expect(pv.getByRole('link', { name: '나도 플랜잇으로 모임 만들기' })).toHaveCount(0);
+  });
 });
 
 /**

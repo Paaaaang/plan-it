@@ -30,7 +30,7 @@ const TABS = [
   { value: "places", label: "장소" },
 ];
 
-export function ViewerShell({ plan }: { plan: ViewerPlan }) {
+export function ViewerShell({ plan, showLandingLink = false }: { plan: ViewerPlan; showLandingLink?: boolean }) {
   const [tab, setTab] = useState("timetable");
   const [dayIndex, setDayIndex] = useState(0);
   const [openPlace, setOpenPlace] = useState<ViewerPlace | null>(null);
@@ -89,12 +89,14 @@ export function ViewerShell({ plan }: { plan: ViewerPlan }) {
       )}
 
       {/* 바이럴 루프 — 랜딩 명세 §9-1 viewer_to_landing_click. 기획자 데이터는 싣지 않는다. */}
-      <Link
-        href="/?utm_source=viewer&utm_medium=share_link"
-        className="mx-5 mt-10 block text-center text-caption text-tertiary underline-offset-2 hover:underline"
-      >
-        나도 플랜잇으로 모임 만들기
-      </Link>
+      {showLandingLink && (
+        <Link
+          href="/?utm_source=viewer&utm_medium=share_link"
+          className="mx-5 mt-10 block text-center text-caption text-tertiary underline-offset-2 hover:underline"
+        >
+          나도 플랜잇으로 모임 만들기
+        </Link>
+      )}
 
       {/* 하단 고정 CTA. 위에 배경색 페이드를 깔아 스크롤 내용과 분리한다 (스펙 §5.1). */}
       <div

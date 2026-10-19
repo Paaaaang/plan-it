@@ -77,5 +77,5 @@ export default async function ViewerPage(props: PageProps<"/p/[slug]">) {
     );
   }
 
-  return <ViewerShell plan={result.plan} />;
+  return <ViewerShell plan={result.plan} showLandingLink />;
 }
