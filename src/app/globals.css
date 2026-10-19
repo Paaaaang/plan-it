@@ -266,6 +266,51 @@
 }
 
 /* ============================================================
+   랜딩 전용 — 미드나잇 블루 오로라 (docs/landing-tone-and-manner.md §2)
+   랜딩은 테마와 무관한 다크 고정이라 다크 블록에서 재정의하지 않는다.
+   ============================================================ */
+:root {
+  --landing-void:    #060B1F;
+  --landing-cosmos:  #0F1838;
+  --landing-nebula:  #19234E;
+  --landing-border:  #2A3464;
+
+  --aurora-blue:     #4A6FFF;
+  --aurora-cyan:     #6EEBF2;
+  --aurora-lavender: #B9B3FF;
+  --aurora-mist:     #8EE0FF;
+
+  --landing-starlight: #E8EEFF;
+  --landing-moonlight: #A8B3D4;
+  --landing-dust:      #6F7999;
+
+  /* 코랄은 기존 아이덴티티의 별칭 — 값을 따로 두면 언젠가 어긋난다 */
+  --landing-coral:      var(--coral-500);
+  --landing-coral-glow: var(--coral-300);
+
+  --landing-fs-display: clamp(44px, 7vw, 76px);
+  --landing-fs-h2:      clamp(28px, 3.8vw, 44px);
+  --landing-fs-body:    16px;
+
+  --landing-glow-blue:        0 0 24px color-mix(in srgb, var(--aurora-blue) 40%, transparent),
+                              0 10px 28px -8px color-mix(in srgb, var(--aurora-blue) 50%, transparent);
+  --landing-glow-blue-hover:  0 0 32px color-mix(in srgb, var(--aurora-blue) 60%, transparent),
+                              0 14px 36px -8px color-mix(in srgb, var(--aurora-lavender) 60%, transparent);
+  --landing-glow-coral:       0 0 32px color-mix(in srgb, var(--landing-coral) 40%, transparent),
+                              0 14px 36px -8px color-mix(in srgb, var(--landing-coral) 40%, transparent);
+  --landing-glow-coral-hover: 0 0 44px color-mix(in srgb, var(--landing-coral-glow) 60%, transparent),
+                              0 18px 44px -8px color-mix(in srgb, var(--landing-coral) 60%, transparent);
+  --landing-glow-phone:       0 0 60px color-mix(in srgb, var(--aurora-blue) 35%, transparent),
+                              0 30px 60px -20px color-mix(in srgb, var(--landing-void) 70%, transparent),
+                              inset 0 1px 0 color-mix(in srgb, var(--aurora-lavender) 15%, transparent);
+  --landing-glow-star:        0 0 6px var(--landing-starlight),
+                              0 0 12px color-mix(in srgb, var(--aurora-lavender) 50%, transparent);
+  --landing-glow-live:        0 0 8px var(--landing-coral-glow);
+
+  --dur-aurora: 12000ms;
+}
+
+/* ============================================================
    3. Tailwind 매핑 — 유틸리티로 노출한다.
    ============================================================ */
 @theme inline {
@@ -299,6 +344,24 @@
   --color-danger:         var(--danger);
   --color-danger-weak:    var(--danger-weak);
   --color-on-danger-weak: var(--text-on-danger-weak);
+
+  /* 랜딩 전용 (다크 고정) */
+  --color-landing-border:    var(--landing-border);
+  --color-landing-starlight: var(--landing-starlight);
+  --color-landing-moonlight: var(--landing-moonlight);
+  --color-landing-dust:      var(--landing-dust);
+  --color-aurora-cyan:       var(--aurora-cyan);
+  --color-aurora-mist:       var(--aurora-mist);
+
+  --text-landing-display:                 var(--landing-fs-display);
+  --text-landing-display--line-height:    1.06;
+  --text-landing-display--letter-spacing: -0.03em;
+  --text-landing-h2:                      var(--landing-fs-h2);
+  --text-landing-h2--line-height:         1.15;
+  --text-landing-h2--letter-spacing:      -0.025em;
+  --text-landing-body:                    var(--landing-fs-body);
+  --text-landing-body--line-height:       1.65;
+  --text-landing-body--letter-spacing:    -0.005em;
 
   /* Tailwind v4는 --text-<name>--line-height / --letter-spacing 짝을 인식한다.
      크기만 매핑하면 행간·자간을 컴포넌트마다 손으로 붙이게 되고 곧 어긋난다. */
