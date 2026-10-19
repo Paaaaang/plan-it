@@ -48,7 +48,7 @@ async function liveCount(): Promise<number | null> {
 function Wordmark() {
   return (
     <span className="flex items-center gap-2 text-title-2 font-extrabold tracking-tight text-landing-starlight">
-      <Image src="/logos/Logo_White.png" alt="" width={32} height={32} />
+      <Image src="/logos/Logo_White.png" alt="" width={44} height={44} />
       플랜잇
     </span>
   );

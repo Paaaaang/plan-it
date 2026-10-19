@@ -1,6 +1,6 @@
 # 플랜잇 (Plan-it)
 
-로그인 없는 여행 일정 공유 웹앱. 기획자가 일정을 만들고 링크로 공유하면, 뷰어는 로그인 없이 본다.
+로그인 없는 모임 일정 공유 웹앱(여행 포함). 기획자가 일정을 만들고 링크로 공유하면, 뷰어는 로그인 없이 본다.
 서페이스 3개: `planner`(데스크톱 대시보드) · `viewer`(모바일) · `admin`(KPI 콘솔).
 
 ---
@@ -9,7 +9,7 @@
 
 | 항목 | 버전 | 주의 |
 |---|---|---|
-| Next.js | **16.2.6** | App Router. API·규약·파일 구조가 네가 아는 것과 다를 수 있다 |
+| Next.js | **16.3.3** | App Router. API·규약·파일 구조가 네가 아는 것과 다를 수 있다 |
 | React | 19.2.4 | Server Components 기본 |
 | Tailwind | v4 | `@theme inline`. **`tailwind.config.js` 없음** — 토큰은 `src/app/globals.css`에 |
 | TypeScript | 5.x | strict |
@@ -112,7 +112,7 @@ Supabase 대시보드(Auth → Providers → Kakao)에 카카오 앱 키를 등�
 하드코딩 색상·간격·radius·shadow **금지**. 전부 `src/app/globals.css`의 CSS 변수를 쓴다.
 
 ```
-색   --blue-500 (Planit Blue #3182F6), --grey-*, --red/green/amber-*
+색   --coral-500 (브랜드 #FF6B4A), --neutral-*, --green/amber/rose-* · 랜딩 전용 --landing-* --aurora-* (다크 고정)
       의미 alias: --fill-* --text-* --border-* --surface-* --overlay-*
 타입  --display ~ --caption (15단계), Pretendard Variable
 간격  토큰 없음 — Tailwind 스페이싱 유틸리티(`p-*` `gap-*` `m-*` 등 4px 래더)를 그대로 쓴다
