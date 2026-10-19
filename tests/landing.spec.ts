@@ -37,6 +37,50 @@ test.describe('랜딩 — 비로그인', () => {
     const name = await page.getByTestId('aurora').evaluate((el) => getComputedStyle(el).animationName);
     expect(name).toBe('none');
   });
+
+  test('nav 앵커가 섹션으로 간다', async ({ page }) => {
+    await page.goto('/');
+    for (const id of ['how', 'cases']) {
+      await expect(page.locator(`#${id}`)).toHaveCount(1);
+    }
+    await expect(page.getByRole('heading', { level: 2, name: '세 단계면 끝나요.' })).toBeAttached();
+    await expect(page.getByRole('heading', { level: 2, name: '이런 모임에 써요.' })).toBeAttached();
+  });
+
+  test('하단 CTA도 로그인으로 간다', async ({ page }) => {
+    await page.goto('/');
+    const ctas = page.getByRole('link', { name: '내 모임 만들기' });
+    await expect(ctas).toHaveCount(2);
+    await expect(ctas.last()).toHaveAttribute('href', '/login');
+  });
+
+  test('코랄은 3곳 이하다 (명세 §2-4)', async ({ page }) => {
+    await page.goto('/');
+    const n = await page.getByTestId('landing').evaluate((root) =>
+      [root, ...root.querySelectorAll('*')].filter((el) => {
+        const s = getComputedStyle(el);
+        return [s.backgroundColor, s.backgroundImage, s.color, s.borderColor].some((v) => v.includes('255, 107, 74'));
+      }).length,
+    );
+    expect(n).toBeLessThanOrEqual(3);
+  });
+
+  test('가로 스크롤이 생기지 않는다', async ({ page }) => {
+    await page.goto('/');
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test('지어낸 지표가 없다 — 조회수 문구 금지', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('landing')).not.toContainText('조회');
+  });
+
+  test('카드는 아이콘과 제목뿐이다 — 제목을 풀어 쓰는 본문 금지 (명세 §7-1)', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('#value li p')).toHaveCount(0);
+    await expect(page.locator('#how li > p:not([data-mini])')).toHaveCount(0);
+  });
 });
 
 test('로그인 상태에서 히어로 CTA를 누르면 대시보드로 간다 (F-LAND-6)', async ({ page }) => {

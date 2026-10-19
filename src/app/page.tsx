@@ -10,7 +10,11 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
+import { CtaSection } from "@/client/components/landing/cta-section";
+import { Features } from "@/client/components/landing/features";
 import { Hero } from "@/client/components/landing/hero";
+import { HowItWorks } from "@/client/components/landing/how-it-works";
+import { UseCases } from "@/client/components/landing/use-cases";
 import styles from "@/client/components/landing/landing.module.css";
 import { countLivePlans } from "@/server/store/plans";
 import { adminClient } from "@/server/supabase/admin";
@@ -70,6 +74,10 @@ export default async function Home() {
 
       <main>
         <Hero liveCount={count} />
+        <Features />
+        <HowItWorks />
+        <UseCases />
+        <CtaSection />
       </main>
 
       <footer className="border-t border-landing-border pb-15 pt-10">

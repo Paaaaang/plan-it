@@ -68,7 +68,7 @@ plan-it/
 │   │   │   ├── ui/                          #    공통 UI 컴포넌트 (badge·bottom-sheet·button·card·chip·
 │   │   │   │                                #    date-field·dialog·icon·loader·segmented-control·tabs·
 │   │   │   │                                #    text-field·theme-toggle·toast·field-shell)
-│   │   │   ├── landing/                     #    랜딩페이지 (hero·features·sample-viewer·announcements-banner·cta-section)
+│   │   │   ├── landing/                     #    랜딩페이지 (hero·sample-viewer·features·how-it-works·use-cases·cta-section·landing.module.css · 미구현 스텁 announcements-banner)
 │   │   │   ├── dashboard/                   #    대시보드 (plan-list·plan-list-item·split-view·plan-preview·
 │   │   │   │                                #    status-badge·share-link·create-plan-button)
 │   │   │   ├── editor/                      #    편집기 섹션 컴포넌트 (editor-shell·top-bar·section-shell·
@@ -203,7 +203,7 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
 - **`p/[slug]/`** — 공개 뷰어. 모바일 퍼스트 480px. generateMetadata로 OG 태그 지원. ✅ 보일러플레이트 완료.
 - **`p/layout.tsx`** — 뷰어 라우트 레이아웃. 화면 높이(`min-h-dvh`)와 `html { scroll-padding-bottom }`을
   여기서 준다. 셸이 문서 전역을 건드리면 3단계 편집기 미리보기가 호스트 화면을 바꾼다. ✅ 구현 완료.
-- **`page.tsx`** — 랜딩페이지. 서비스 소개·가치 제안·CTA.
+- **`page.tsx`** — 공개 랜딩(다크 전용). 섹션 조립 + 라이브 숫자(`countLivePlans`, `unstable_cache` 5분, 실패 시 숫자 숨김).
 - **`layout.tsx`** — 루트 레이아웃. `<html lang="ko">`, Pretendard 폰트 (CSS `@font-face`), 플랜잇 SEO 메타데이터. ✅ 구현 완료.
 - **`globals.css`** — **planit-design-system 토큰 통합**: 색상(Brand Blue + Grey + Semantic), 타이포(Pretendard ramp), 스페이싱(4px ladder), 라디우스(xs~full), 엘리베이션(shadow 1~3), 모션(ease/dur). Tailwind v4 `@theme inline` 연동. ✅ 구현 완료.
 
@@ -220,7 +220,7 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
   - `bottom-sheet.tsx` — 모바일 시트: grabber handle, slide-up, safe-area padding
   - `toast.tsx` — grey-900 surface, success/danger icon, floating 모드
   - `icon.tsx` — Lucide 래퍼 (lucide-react 설치 후 교체 필요)
-- **`landing/`** — 랜딩페이지 전용. 히어로, 기능 소개, 샘플 뷰어, CTA.
+- **`landing/`** — 공개 랜딩(`/`) 전용, 전부 서버 컴포넌트. 다크 전용 "미드나잇 블루 오로라" — 토큰은 `globals.css`의 `--landing-*`·`--aurora-*`, 칠·모션은 `landing.module.css`. 명세는 `docs/landing-tone-and-manner.md`. `announcements-banner.tsx`는 `announcements` 테이블이 생길 때까지 문서 스텁.
 - **`dashboard/`** — 대시보드 전용. 일정 목록, 스플릿뷰, 미리보기, 상태 배지, 공유 링크.
 - **`editor/`** — 편집기. PRD의 4개 섹션 컴포넌트로 세분화:
   - `basic-info-section.tsx` + `cover-uploader.tsx` — 기본 정보 (제목·기간·유형·인원, 커버 사진)
