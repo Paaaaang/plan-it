@@ -194,6 +194,12 @@ test.describe('공개 뷰어', () => {
       `스크롤포트 하단 여백 ${scrollPad}px ≥ CTA 높이 ${atBottom.ctaH}px`,
     ).toBeGreaterThanOrEqual(atBottom.ctaH);
   });
+
+  test('뷰어 하단에서 랜딩으로 가는 링크가 viewer UTM을 단다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+    await expect(page.getByRole('link', { name: '나도 플랜잇으로 모임 만들기' }))
+      .toHaveAttribute('href', '/?utm_source=viewer&utm_medium=share_link');
+  });
 });
 
 test.describe('장소 시트', () => {

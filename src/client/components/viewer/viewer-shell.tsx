@@ -13,6 +13,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import Link from "next/link";
 import { CoverHeader } from "@/client/components/viewer/cover-header";
 import { NoticeBar } from "@/client/components/viewer/notice-bar";
 import { PlaceList } from "@/client/components/viewer/place-list";
@@ -86,6 +87,14 @@ export function ViewerShell({ plan }: { plan: ViewerPlan }) {
           <PlaceList places={plan.places} onOpenPlace={handleOpenPlace} />
         </div>
       )}
+
+      {/* 바이럴 루프 — 랜딩 명세 §9-1 viewer_to_landing_click. 기획자 데이터는 싣지 않는다. */}
+      <Link
+        href="/?utm_source=viewer&utm_medium=share_link"
+        className="mx-5 mt-10 block text-center text-caption text-tertiary underline-offset-2 hover:underline"
+      >
+        나도 플랜잇으로 모임 만들기
+      </Link>
 
       {/* 하단 고정 CTA. 위에 배경색 페이드를 깔아 스크롤 내용과 분리한다 (스펙 §5.1). */}
       <div

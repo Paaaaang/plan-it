@@ -68,7 +68,7 @@ export default async function ViewerPage(props: PageProps<"/p/[slug]">) {
         description="이 일정은 더 이상 열리지 않아요. 공유해준 분에게 새 링크를 받아보세요."
       >
         <Link
-          href="/"
+          href="/?utm_source=viewer&utm_medium=expired"
           className="mt-2 rounded-btn bg-neutral-fill px-4 py-2.5 text-label font-bold text-primary"
         >
           플랜잇 둘러보기
