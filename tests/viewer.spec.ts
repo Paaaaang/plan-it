@@ -31,6 +31,55 @@ test.describe('공개 뷰어', () => {
     await expect(button).toHaveAttribute('aria-expanded', 'true');
   });
 
+  test('공지는 경고가 아니라 하늘빛 알림판이다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+    const bar = page.getByTestId('notice-bar');
+    await expect(bar).toContainText('📢');
+    await expect(bar).toContainText('공지');
+    for (const theme of ['light', 'dark'] as const) {
+      await page.evaluate((v) => document.documentElement.setAttribute('data-theme', v), theme);
+      const c = await bar.evaluate((el) => {
+        const probe = document.createElement('span');
+        el.appendChild(probe);
+        const tok = (n: string) => { probe.style.color = `var(${n})`; return getComputedStyle(probe).color; };
+        const t = { bg: tok('--notice-bg'), label: tok('--notice-label'), warn: tok('--fill-brand-weak') };
+        probe.remove();
+        const label = [...el.querySelectorAll('span')].find((s) => s.textContent === '공지')!;
+        return { ...t, barBg: getComputedStyle(el).backgroundColor, labelColor: getComputedStyle(label).color };
+      });
+      expect(c.barBg, `${theme}: 바탕은 --notice-bg`).toBe(c.bg);
+      expect(c.labelColor, `${theme}: '공지' 글자는 --notice-label`).toBe(c.label);
+      expect(c.barBg, `${theme}: 코랄 약색(경고처럼 보이던 바탕)이 아니다`).not.toBe(c.warn);
+    }
+  });
+
+  test('접힌 공지 목록은 보이지도 읽히지도 않는다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+    const bar = page.getByTestId('notice-bar');
+    await expect(bar.getByRole('heading', { name: '준비물' })).toHaveCount(0);
+    await bar.getByRole('button').click();
+    await expect(bar.getByRole('heading', { name: '준비물' })).toBeVisible();
+  });
+
+  test('.theme-dark 안은 사용자 테마가 라이트여도 다크 토큰이다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+    const [outside, inside] = await page.evaluate(() => {
+      const make = (dark: boolean) => {
+        const d = document.createElement('div');
+        if (dark) d.className = 'theme-dark';
+        d.style.background = 'var(--bg)';
+        document.body.appendChild(d);
+        const c = getComputedStyle(d).backgroundColor;
+        d.remove();
+        return c;
+      };
+      return [make(false), make(true)];
+    });
+    expect(outside).toBe('rgb(242, 244, 248)'); // --neutral-100
+    expect(inside).toBe('rgb(16, 18, 25)'); // --dark-bg
+  });
+
   test('일차 칩으로 날짜를 바꾸면 타임라인이 바뀐다', async ({ page }) => {
     await page.goto('/p/jeju-workshop-2026');
     await expect(page.getByTestId('timeline-row')).toHaveCount(4);

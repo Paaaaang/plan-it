@@ -112,6 +112,11 @@
   --dark-rail-past:   #FF8163;
   --dark-rail-melt:   #8C5A48;
   --dark-rail-future: #2E3541;
+
+  /* 공지 — 경고가 아니라 알림판. 하늘빛 (랜딩 명세 §3-2) */
+  --dark-notice-bg:     #19202B;
+  --dark-notice-border: #232F3E;
+  --dark-notice-label:  #88BBEE;
 }
 
 /* ============================================================
@@ -148,6 +153,11 @@
   --rail-past:   var(--coral-500);
   --rail-melt:   var(--coral-200);
   --rail-future: var(--neutral-200);
+
+  /* 공지 — 경고(코랄 약색)가 아니라 알림판(하늘빛). 라벨은 바탕 위 5.4:1 (랜딩 명세 §3-2) */
+  --notice-bg:     #EEF5FC;
+  --notice-border: #D6E6F6;
+  --notice-label:  #2F65A0;
 
   --success:      var(--green-500);
   --success-weak: var(--green-50);
@@ -199,6 +209,10 @@
     --rail-melt:   var(--dark-rail-melt);
     --rail-future: var(--dark-rail-future);
 
+    --notice-bg:     var(--dark-notice-bg);
+    --notice-border: var(--dark-notice-border);
+    --notice-label:  var(--dark-notice-label);
+
     --success:      var(--green-300);
     --success-weak: var(--green-950);
     --text-on-success-weak: var(--green-300);
@@ -217,8 +231,10 @@
   }
 }
 
-/* 사용자가 다크를 명시했을 때 — 시스템이 라이트여도 이긴다 */
-:root[data-theme="dark"] {
+/* 사용자가 다크를 명시했을 때 — 시스템이 라이트여도 이긴다.
+   .theme-dark: 어느 요소에 붙여도 그 아래는 제품 다크 토큰(랜딩 폰 화면 — 랜딩 명세 §3-3) */
+:root[data-theme="dark"],
+.theme-dark {
   color-scheme: dark;
 
   --bg:              var(--dark-bg);
@@ -247,6 +263,10 @@
   --rail-past:   var(--dark-rail-past);
   --rail-melt:   var(--dark-rail-melt);
   --rail-future: var(--dark-rail-future);
+
+  --notice-bg:     var(--dark-notice-bg);
+  --notice-border: var(--dark-notice-border);
+  --notice-label:  var(--dark-notice-label);
 
   --success:      var(--green-300);
   --success-weak: var(--green-950);
@@ -344,6 +364,9 @@
   --color-danger:         var(--danger);
   --color-danger-weak:    var(--danger-weak);
   --color-on-danger-weak: var(--text-on-danger-weak);
+  --color-notice:         var(--notice-bg);
+  --color-notice-border:  var(--notice-border);
+  --color-notice-label:   var(--notice-label);
 
   /* 랜딩 전용 (다크 고정) */
   --color-landing-border:    var(--landing-border);
