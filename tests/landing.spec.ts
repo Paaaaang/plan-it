@@ -88,6 +88,12 @@ async function scrollToStory(page: Page, S: number) {
   }, S);
 }
 
+/** 수화가 끝날 때까지 기다린다 — 이야기 루프가 첫 프레임에 단계마다 data-active를 단다(수화 뒤에만 돈다).
+ *  그 전에 넣은 입력·클릭은 React가 받지 못해 사라진다(부하가 큰 병렬 실행에서 실제로 났다) */
+async function hydrated(page: Page) {
+  await expect(page.locator('[data-story-step][data-active]').first()).toBeAttached({ timeout: 15_000 });
+}
+
 test.describe('랜딩 여정', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
   const phone = (page: Page) => page.getByTestId('story-phone');
@@ -151,6 +157,7 @@ test.describe('랜딩 여정', () => {
 
   test('만들어 보기: 입력이 미리보기 폰에 바로 반영된다', async ({ page }) => {
     await page.goto('/#try');
+    await hydrated(page);
     const tp = page.getByTestId('try-phone');
     const name = page.getByLabel('모임 이름');
     await name.fill('우리 동아리 MT');
@@ -177,6 +184,7 @@ test.describe('랜딩 여정', () => {
       } catch { /* 이 엔진에선 바꿀 수 없다 — 아래 판정은 그대로 유효하다 */ }
     });
     await page.goto('/#try');
+    await hydrated(page);
     const copy = page.getByRole('button', { name: '링크 복사' });
     await expect(copy).toHaveAttribute('data-nudge', 'true');
     await copy.click();
@@ -196,6 +204,7 @@ test.describe('랜딩 여정', () => {
 
   test('쓰임 카드를 누르면 그 일정이 여정 폰에 열리고 맨 위로 간다', async ({ page }) => {
     await page.goto('/#cases');
+    await hydrated(page);
     await page.getByRole('button', { name: '가평 1박 MT 일정을 위쪽 폰에서 열기' }).click();
     await expect.poll(() => page.evaluate(() => scrollY), { timeout: 10_000 }).toBeLessThan(5);
     await expect(phone(page).getByTestId('cover')).toContainText('가평 1박 MT');
