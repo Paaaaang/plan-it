@@ -1,5 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+/** 일차 넘기기는 모든 일차를 가로로 깔아 둔다 — 지금 보이는 일차만 센다 */
+const currentDay = (page: Page) => page.locator('[data-testid="day-page"][data-current="true"]');
 
 test.describe('공개 뷰어', () => {
   test('커버·공지·탭·타임라인이 보인다', async ({ page }) => {
@@ -8,7 +12,7 @@ test.describe('공개 뷰어', () => {
     await expect(page.getByTestId('cover')).toHaveAttribute('data-cover', 'photo');
     await expect(page.getByTestId('notice-bar')).toBeVisible();
     await expect(page.getByRole('tab', { name: '타임테이블' })).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByTestId('timeline-row')).toHaveCount(4);
+    await expect(currentDay(page).getByTestId('timeline-row')).toHaveCount(4);
   });
 
   test('공지 바는 접힘이 기본이고 탭하면 목록으로 펼쳐진다', async ({ page }) => {
@@ -80,16 +84,29 @@ test.describe('공개 뷰어', () => {
     expect(inside).toBe('rgb(16, 18, 25)'); // --dark-bg
   });
 
-  test('일차 칩으로 날짜를 바꾸면 타임라인이 바뀐다', async ({ page }) => {
+  test('일차 점을 누르면 그 일차로 넘어가고 잠깐 몇일차인지 뜬다', async ({ page }) => {
     await page.goto('/p/jeju-workshop-2026');
-    await expect(page.getByTestId('timeline-row')).toHaveCount(4);
+    await expect(currentDay(page).getByTestId('timeline-row')).toHaveCount(4);
     await page.getByRole('button', { name: '2일차', exact: true }).click();
-    await expect(page.getByTestId('timeline-row')).toHaveCount(3);
+    await expect(currentDay(page).getByTestId('timeline-row')).toHaveCount(3);
+    await expect(page.getByRole('button', { name: '2일차', exact: true })).toHaveAttribute('aria-current', 'true');
+    await expect(page.getByTestId('day-hud')).toContainText('2일차');
   });
 
-  test('하루짜리 일정에는 일차 칩이 없다', async ({ page }) => {
+  test('옆으로 밀어 넘기면 머리줄 날짜가 바뀌고 HUD는 멈추면 사라진다', async ({ page }) => {
+    await page.goto('/p/jeju-workshop-2026');
+    const head = page.locator('[data-part="dayhead"]');
+    const day1 = await head.textContent();
+    await page.getByTestId('day-track').evaluate((el) => el.scrollTo({ left: el.clientWidth, behavior: 'instant' }));
+    await expect(head).not.toHaveText(day1!);
+    await expect(head).toContainText('3개 일정');
+    await expect(page.getByTestId('day-hud')).toHaveAttribute('data-on', 'true');
+    await expect(page.getByTestId('day-hud')).toHaveAttribute('data-on', 'false', { timeout: 3_000 });
+  });
+
+  test('하루짜리 일정에는 일차 점이 없다', async ({ page }) => {
     await page.goto('/p/team-offsite');
-    await expect(page.getByTestId('day-chips')).toHaveCount(0);
+    await expect(page.getByTestId('day-dots')).toHaveCount(0);
     await expect(page.getByTestId('cover')).toHaveAttribute('data-cover', 'fallback');
   });
 
@@ -155,7 +172,7 @@ test.describe('공개 뷰어', () => {
    */
   test('레일 그라데이션은 오늘에만 코랄 정지점을 갖는다', async ({ page }) => {
     await page.goto('/p/jeju-workshop-2026');
-    const rail = page.getByTestId('progress-rail');
+    const rail = currentDay(page).getByTestId('progress-rail');
 
     const read = () =>
       rail.evaluate((el) => {
@@ -193,12 +210,14 @@ test.describe('공개 뷰어', () => {
 
       // 3일차는 미래다 — 그라데이션 자체가 없고 전부 --rail-future 한 색이다.
       await page.getByRole('button', { name: '3일차', exact: true }).click();
+      await expect(currentDay(page)).toHaveAttribute('data-day-page', '2');
       const future = await read();
       expect(future.image, `${theme}: 미래 날짜에는 그라데이션이 없다`).toBe('none');
       expect(future.color, `${theme}: 미래 날짜는 --rail-future 단색`).toBe(future.t.future);
       expect(future.image, `${theme}: 미래 날짜에 코랄이 남으면 안 된다`).not.toContain(today.t.past);
 
       await page.getByRole('button', { name: '1일차', exact: true }).click();
+      await expect(currentDay(page)).toHaveAttribute('data-day-page', '0');
     }
   });
 
@@ -210,7 +229,7 @@ test.describe('공개 뷰어', () => {
   test('하단 CTA가 마지막 항목을 가리지 않는다', async ({ page }) => {
     await page.goto('/p/jeju-workshop-2026');
     const cta = page.getByTestId('viewer-cta');
-    const lastRow = page.getByTestId('timeline-row').last();
+    const lastRow = currentDay(page).getByTestId('timeline-row').last();
     await expect(cta).toBeVisible();
 
     async function measure() {
@@ -374,14 +393,14 @@ test.describe('비밀번호 게이트 · 오류', () => {
     await page.goto('/p/secret-party');
     await page.getByLabel('비밀번호').fill('1234');
     await page.getByRole('button', { name: '확인' }).click();
-    await expect(page.getByTestId('timeline')).toBeVisible();
+    await expect(currentDay(page).getByTestId('timeline')).toBeVisible();
   });
 
   test('잠금 해제 쿠키는 httpOnly이고 그 일정 경로 밖으로 나가지 않는다', async ({ page, context }) => {
     await page.goto('/p/secret-party');
     await page.getByLabel('비밀번호').fill('1234');
     await page.getByRole('button', { name: '확인' }).click();
-    await expect(page.getByTestId('timeline')).toBeVisible();
+    await expect(currentDay(page).getByTestId('timeline')).toBeVisible();
 
     const jar = await context.cookies();
     const cookie = jar.find((c) => c.name === 'planit_unlock_secret-party');

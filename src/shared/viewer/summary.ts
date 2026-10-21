@@ -28,9 +28,9 @@ export function periodLabel(startDate: string, endDate: string): string {
   return `${days - 1}박 ${days}일`;
 }
 
-/** "10.24 목 · 4개 일정" */
-export function dateLine(date: string, itemCount: number): string {
-  return `${short(date)} · ${itemCount}개 일정`;
+/** "10.24 목" — 일차 머리줄·HUD (랜딩 명세 §8-2) */
+export function dayLabel(date: string): string {
+  return short(date);
 }
 
 /** "10.24 목 – 10.26 토 · 디자인팀 12명" */

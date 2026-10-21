@@ -990,7 +990,7 @@ test.describe('미리보기', () => {
     const pv = page.getByTestId('editor-preview');
     await expect(pv.getByRole('heading', { name: '타임테이블 데모' })).toBeVisible();
     // 1일차 3개 — 편집기 목록과 같은 데이터를 뷰어 모양으로 그린다.
-    await expect(pv.getByTestId('timeline-row')).toHaveCount(3);
+    await expect(pv.locator('[data-testid="day-page"][data-current="true"]').getByTestId('timeline-row')).toHaveCount(3);
     await expect(pv.getByTestId('viewer-cta')).toBeVisible();
   });
 

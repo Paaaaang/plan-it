@@ -4,9 +4,8 @@
  *              탭/일차/시트 상태를 여기서만 갖는다.
  *
  * @connects
- *  - src/client/components/viewer/cover-header.tsx · notice-bar.tsx · timeline.tsx · place-list.tsx · place-sheet.tsx
- *  - src/client/components/ui/tabs.tsx · chip.tsx
- *  - src/shared/viewer/summary.ts → dateLine
+ *  - src/client/components/viewer/cover-header.tsx · notice-bar.tsx · day-pager.tsx · timeline.tsx · place-list.tsx · place-sheet.tsx
+ *  - src/client/components/ui/tabs.tsx
  *  - src/shared/viewer/links.ts   → nextPlace, kakaoDirectionsUrl
  */
 
@@ -14,15 +13,14 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
+import { DayPager } from "@/client/components/viewer/day-pager";
 import { CoverHeader } from "@/client/components/viewer/cover-header";
 import { NoticeBar } from "@/client/components/viewer/notice-bar";
 import { PlaceList } from "@/client/components/viewer/place-list";
 import { PlaceSheet } from "@/client/components/viewer/place-sheet";
 import { Timeline } from "@/client/components/viewer/timeline";
-import { Chip } from "@/client/components/ui/chip";
 import { Tabs } from "@/client/components/ui/tabs";
 import { kakaoDirectionsUrl, nextPlace } from "@/shared/viewer/links";
-import { dateLine } from "@/shared/viewer/summary";
 import type { ViewerPlace, ViewerPlan } from "@/shared/types/viewer";
 
 const TABS = [
@@ -47,7 +45,6 @@ export function ViewerShell({ plan, showLandingLink = false }: { plan: ViewerPla
   ];
 
   const day = plan.days[dayIndex] ?? plan.days[0];
-  const multiDay = plan.days.length > 1;
 
   function handleOpenPlace(place: ViewerPlace) {
     setOpenPlace(place);
@@ -66,21 +63,12 @@ export function ViewerShell({ plan, showLandingLink = false }: { plan: ViewerPla
 
       {tab === "timetable" ? (
         <div id={timetablePanelId} role="tabpanel" aria-labelledby={timetableTabId} tabIndex={0}>
-          {multiDay && (
-            <div className="flex gap-[7px] px-5 pb-3 pt-3" data-testid="day-chips">
-              {plan.days.map((d, i) => (
-                <Chip key={d.dayNumber} interactive selected={i === dayIndex} onClick={() => setDayIndex(i)}>
-                  {d.dayNumber}일차
-                </Chip>
-              ))}
-            </div>
-          )}
-          {day && (
-            <p className={["px-5 pb-3 text-caption font-semibold text-tertiary", multiDay ? "" : "pt-3"].join(" ")}>
-              {dateLine(day.date, day.items.length)}
-            </p>
-          )}
-          {day && <Timeline day={day} onOpenPlace={handleOpenPlace} />}
+          <DayPager
+            days={plan.days}
+            initialIndex={dayIndex}
+            onIndexChange={setDayIndex}
+            renderDay={(d) => <Timeline day={d} onOpenPlace={handleOpenPlace} />}
+          />
         </div>
       ) : (
         <div id={placesPanelId} role="tabpanel" aria-labelledby={placesTabId} tabIndex={0} className="pt-4">

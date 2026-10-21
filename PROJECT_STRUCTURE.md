@@ -75,8 +75,8 @@ plan-it/
 │   │   │   │                                #    sortable-list·basic-info-section·cover-uploader·notice-section·
 │   │   │   │                                #    timetable-section·place-section·transport-section·
 │   │   │   │                                #    transport-item-form·preview-pane)
-│   │   │   ├── viewer/                      #    공개 뷰어 (viewer-shell·cover-header·notice-bar·timeline·
-│   │   │   │                                #    timeline-item·progress-rail·place-list·place-sheet·
+│   │   │   ├── viewer/                      #    공개 뷰어 (viewer-shell·cover-header·notice-bar·day-pager·
+│   │   │   │                                #    timeline·timeline-item·progress-rail·place-list·place-sheet·
 │   │   │   │                                #    password-gate·status-screen)
 │   │   │   └── admin/                       #    관리자 콘솔 (admin-sidebar·kpi-widget·moderation-queue·
 │   │   │                                    #    moderation-detail·announcement-list·announcement-form)
