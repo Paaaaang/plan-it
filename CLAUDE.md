@@ -112,7 +112,7 @@ Supabase 대시보드(Auth → Providers → Kakao)에 카카오 앱 키를 등�
 하드코딩 색상·간격·radius·shadow **금지**. 전부 `src/app/globals.css`의 CSS 변수를 쓴다.
 
 ```
-색   --coral-500 (브랜드 #FF6B4A), --neutral-*, --green/amber/rose-* · 랜딩 전용 --landing-* --aurora-* (다크 고정)
+색   --coral-500 (브랜드 #FF6B4A), --neutral-*, --green/amber/rose-* · 랜딩 전용 --landing-* (다크 고정) · 공지 --notice-* · 다크 강제 .theme-dark
       의미 alias: --fill-* --text-* --border-* --surface-* --overlay-*
 타입  --display ~ --caption (15단계), Pretendard Variable
 간격  토큰 없음 — Tailwind 스페이싱 유틸리티(`p-*` `gap-*` `m-*` 등 4px 래더)를 그대로 쓴다

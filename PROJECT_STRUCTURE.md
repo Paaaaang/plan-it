@@ -68,7 +68,7 @@ plan-it/
 │   │   │   ├── ui/                          #    공통 UI 컴포넌트 (badge·bottom-sheet·button·card·chip·
 │   │   │   │                                #    date-field·dialog·icon·loader·segmented-control·tabs·
 │   │   │   │                                #    text-field·theme-toggle·toast·field-shell)
-│   │   │   ├── landing/                     #    랜딩페이지 (hero·sample-viewer·features·how-it-works·use-cases·cta-section·landing.module.css · 미구현 스텁 announcements-banner)
+│   │   │   ├── landing/                     #    랜딩(v8): landing-story(여정·슬롯·만들어 보기·쓰임) · run-story(스크롤 이야기) · story-phone · viewer-preview · try-section · case-cards · landing-video(s) · landing.module.css · 미구현 스텁 announcements-banner
 │   │   │   ├── dashboard/                   #    대시보드 (plan-list·plan-list-item·split-view·plan-preview·
 │   │   │   │                                #    status-badge·share-link·create-plan-button)
 │   │   │   ├── editor/                      #    편집기 섹션 컴포넌트 (editor-shell·top-bar·section-shell·
@@ -128,14 +128,15 @@ plan-it/
 │       │   └── editor.ts                    #    ActionResult · 편집기 입력 타입 · PlanStatus
 │       │       # plan·notice·schedule·place·transport·user·analytics·moderation·announcement.ts —
 │       │       # 전부 0-export 문서 스텁(미구현 기능 설계도). actions/admin·analytics·transport,
-│       │       # components/landing·admin·dashboard, hooks/use-auth·use-plan·use-toast·
+│       │       # components/landing/announcements-banner·admin·dashboard, hooks/use-auth·use-plan·use-toast·
 │       │       # use-bottom-sheet·use-media-query 와 같은 계열이라 삭제하지 않고 그대로 옮겼다.
 │       │
 │       ├── editor/validate.ts               #    옛 lib/editor/validate.ts. 입력 검증 — Server Action이 쓰고, 클라이언트도 UX용으로 부를 수 있다
 │       ├── fixtures/viewer.ts               #    옛 lib/fixtures/viewer.ts. 뷰어 씨앗 데이터 (상대 경로 + .ts 확장자 유지)
+│       ├── fixtures/landing.ts              #    랜딩 예시 일정 (여정·만들어 보기·쓰임 카드가 쓰는 뷰어 DTO)
 │       ├── utils/date.ts                    #    옛 lib/utils/date.ts. 날짜 산술 ("YYYY-MM-DD" 더하기·빼기)
 │       └── viewer/                          #    공개 뷰어 중 순수 로직
-│           ├── rail.ts                      #    항목 상태 계산 (레일 위치는 client/viewer/rail-geometry가 점을 재서)
+│           ├── rail.ts                      #    항목 상태 계산 (레일 위치는 src/client/components/viewer/rail-geometry.ts가 점을 재서)
 │           ├── summary.ts                   #    공지 요약·기간/날짜 문구 (서버 페이지 + 클라이언트 컴포넌트 양쪽이 쓴다)
 │           └── links.ts                     #    카카오맵·네이버지도 딥링크
 │
@@ -203,7 +204,7 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
 - **`p/[slug]/`** — 공개 뷰어. 모바일 퍼스트 480px. generateMetadata로 OG 태그 지원. ✅ 보일러플레이트 완료.
 - **`p/layout.tsx`** — 뷰어 라우트 레이아웃. 화면 높이(`min-h-dvh`)와 `html { scroll-padding-bottom }`을
   여기서 준다. 셸이 문서 전역을 건드리면 3단계 편집기 미리보기가 호스트 화면을 바꾼다. ✅ 구현 완료.
-- **`page.tsx`** — 공개 랜딩(다크 전용). 섹션 조립 + 라이브 숫자(`countLivePlans`, `unstable_cache` 5분, 실패 시 숫자 숨김).
+- **`page.tsx`** — 공개 랜딩(다크 고정 v8). 헤더·LandingStory·마지막 CTA·푸터. 손글씨 글꼴(next/font) 로드.
 - **`layout.tsx`** — 루트 레이아웃. `<html lang="ko">`, Pretendard 폰트 (CSS `@font-face`), 플랜잇 SEO 메타데이터. ✅ 구현 완료.
 - **`globals.css`** — **planit-design-system 토큰 통합**: 색상(Brand Blue + Grey + Semantic), 타이포(Pretendard ramp), 스페이싱(4px ladder), 라디우스(xs~full), 엘리베이션(shadow 1~3), 모션(ease/dur). Tailwind v4 `@theme inline` 연동. ✅ 구현 완료.
 
@@ -220,7 +221,7 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
   - `bottom-sheet.tsx` — 모바일 시트: grabber handle, slide-up, safe-area padding
   - `toast.tsx` — grey-900 surface, success/danger icon, floating 모드
   - `icon.tsx` — Lucide 래퍼 (lucide-react 설치 후 교체 필요)
-- **`landing/`** — 공개 랜딩(`/`) 전용, 전부 서버 컴포넌트. 다크 전용 "미드나잇 블루 오로라" — 토큰은 `globals.css`의 `--landing-*`·`--aurora-*`, 칠·모션은 `landing.module.css`. 명세는 `docs/landing-tone-and-manner.md`. `announcements-banner.tsx`는 `announcements` 테이블이 생길 때까지 문서 스텁.
+- **`landing/`** — 공개 랜딩(`/`) 전용, 다크 고정 v8. `page.tsx`(서버)가 헤더·마지막 CTA·푸터를 그리고, 클라이언트 경계 `landing-story.tsx` 하나가 여정·폰 슬롯·만들어 보기·쓰임을 묶는다(착지와 쓰임 카드가 서로의 상태를 쓴다). 폰 슬롯은 sticky 무대 밖에 `position: fixed`로 둔 형제 요소다(포털 아님). 스크롤 이야기는 `run-story.ts`의 rAF 루프 하나가 transform·opacity·CSS 변수만 바꾸고, 착지·공지 펼침(S 1.08에 열려 1.92에 닫히는 불리언 — 열림은 NoticeBar 자신의 전환)·'지금' 줄만 React 상태로 올린다. 폰 속은 실제 뷰어 부품(`viewer-preview.tsx`, `.theme-dark`). 배경 영상 주소는 `landing-videos.ts` 한 곳(⚠️ Orbis 영상 — 출시 전 교체)이고, `landing-video.tsx`가 화면에 들어올 때만 받아 재생한다(`preload="none"` + IntersectionObserver, 모션 줄이기면 재생 안 함). `.root`는 `line-height: normal`(시안과 같게). 토큰은 `globals.css`의 `--landing-*`, 예시 데이터는 `src/shared/fixtures/landing.ts`. 명세는 `docs/superpowers/specs/2026-10-20-landing-renewal-design.md`. `announcements-banner.tsx`는 `announcements` 테이블이 생길 때까지 문서 스텁.
 - **`dashboard/`** — 대시보드 전용. 일정 목록, 스플릿뷰, 미리보기, 상태 배지, 공유 링크.
 - **`editor/`** — 편집기. PRD의 4개 섹션 컴포넌트로 세분화:
   - `basic-info-section.tsx` + `cover-uploader.tsx` — 기본 정보 (제목·기간·유형·인원, 커버 사진)
@@ -229,7 +230,7 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
   - `timetable-section.tsx` — 타임테이블 (일차 칩, 항목 인라인 편집, 장소 연결 BottomSheet). 헤더 카운트에 고른 일차가 들어가서 **자기 SectionShell을 직접 그린다**
   - `place-section.tsx` — 장소 (인라인 편집, 고정 토글, 삭제 시 끊기는 연결 수 안내). 드래그 정렬이 없다 — 순서는 고정 여부와 타임테이블이 정한다
   - `preview-pane.tsx` — 참가자가 보는 화면. **뷰어 셸을 그대로 쓴다**(스펙 §5.2). 1024px 미만에서는 셸이 이 판을 BottomSheet로 내린다
-- **`viewer/`** — 공개 뷰어 전용. 셸, 커버, 공지 바, 타임라인(레일·항목), 장소 목록·상세 시트, 비밀번호 게이트.
+- **`viewer/`** — 공개 뷰어 전용. 셸, 커버, 공지 바(하늘빛 알림판), 일차 페이저(`day-pager.tsx` — 날짜 + 점 + 가로 스냅 + HUD), 타임라인(레일·항목 — `rail-geometry.ts`가 점 중심을 재서 레일을 그린다), 장소 목록·상세 시트, 비밀번호 게이트.
 - **`admin/`** — 관리자 콘솔. KPI 위젯, 모더레이션, 공지 관리.
 
 ### 3. `src/client/` · `src/server/` · `src/shared/` (옛 `lib/`)
@@ -284,7 +285,7 @@ import하면 안 되면 `server/`, Server Component에서 import하면 안 되�
 React 커스텀 훅 중 실제로 구현된 세 개 — `use-editor-plan.ts`(저장 상태) · `use-editor-action.ts`
 (섹션 액션 공용) · `use-now.ts`(뷰어 "현재 시각"). `use-auth.ts`·`use-plan.ts`·`use-toast.ts`·
 `use-bottom-sheet.ts`·`use-media-query.ts`는 0-export 문서 스텁(미구현 기능 설계도) —
-`components/dashboard/*`·`components/landing/*` 같은 계열이라 삭제하지 않고 그대로 옮겼다.
+`components/dashboard/*`·`components/landing/announcements-banner.tsx` 같은 계열이라 삭제하지 않고 그대로 옮겼다.
 
 ### 5. `src/shared/types/` (타입 정의, 옛 `types/`)
 
