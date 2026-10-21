@@ -12,8 +12,9 @@
   color-scheme: dark;
   word-break: keep-all;
 }
-.root a { color: inherit; text-decoration: none; }
-.root :focus-visible { outline: 2px solid var(--landing-aurora); outline-offset: 3px; border-radius: 8px; }
+/* :where()로 특이도 0 — 아래 .btnCoral 같은 클래스가 글자색·모서리를 정하게 둔다 */
+:where(.root) a { color: inherit; text-decoration: none; }
+:where(.root) :focus-visible { outline: 2px solid var(--landing-aurora); outline-offset: 3px; border-radius: 8px; }
 
 /* 화면 전체 질감 덮개 (Orbis 규칙: lighten) */
 .texture {

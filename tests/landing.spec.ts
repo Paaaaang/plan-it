@@ -27,6 +27,21 @@ test.describe('랜딩 — 비로그인', () => {
     await expect(page.getByRole('link', { name: '내 모임 만들기' }).last()).toHaveAttribute('href', '/login');
   });
 
+  test('CTA 글자는 어두운 색이다 — 크림 글자는 코랄 위에서 대비 미달', async ({ page }) => {
+    await page.goto('/');
+    const cta = page.getByRole('link', { name: '내 모임 만들기' }).last();
+    const { color, ink } = await cta.evaluate((el) => {
+      // 토큰은 하드코딩하지 않고 페이지에서 풀어 본다 — 값이 바뀌어도 같은 약속을 잰다
+      const probe = document.createElement('i');
+      probe.style.color = 'var(--ink-on-coral)';
+      document.body.append(probe);
+      const ink = getComputedStyle(probe).color;
+      probe.remove();
+      return { color: getComputedStyle(el).color, ink };
+    });
+    expect(color).toBe(ink);
+  });
+
   test('가로 스크롤이 생기지 않는다', async ({ page }) => {
     await page.goto('/');
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
