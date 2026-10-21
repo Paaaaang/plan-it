@@ -167,9 +167,13 @@ test.describe('공개 뷰어', () => {
    * 레일은 이 제품에서 가장 특징적인 요소다(스펙 §4.6). 줄 높이가 제각각이라 비율로 그리면
    * 코랄 끝이 점에서 어긋난다(사용자 지적 2026-10-21) — 그래서 점 중심을 재서 그린다.
    * 판정: 회색은 첫 점 중심~마지막 점 중심, 코랄은 첫 점 중심~마지막 '지남/지금' 점 중심(없으면 0).
-   * 시각에 따라 '지금'이 없을 수 있으니(1일차 첫 일정 전) 불변식으로 판정한다.
+   * 시계를 오늘(KST) 13:20에 고정한다 — 실제 시각에 따라 '지금'이 없으면(10:30 전) 코랄 길이 0만 재고
+   * 코랄-점 정렬(사용자가 지적한 버그)은 아예 확인하지 못한다. 13:20이면 1일차는 10:30=past ·
+   * 12:00=current · 나머지 future라 코랄은 12:00 점 중심에서 끝나야 한다.
    */
   test('레일은 점 중심을 잇고, 코랄은 지금 점 중심에서 끝난다', async ({ page }) => {
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+    await page.clock.setFixedTime(new Date(`${today}T13:20:00+09:00`));
     await page.goto('/p/jeju-workshop-2026');
     const tl = currentDay(page).getByTestId('timeline');
 
@@ -184,8 +188,9 @@ test.describe('공개 뷰어', () => {
         const fill = root.querySelector('[data-testid="progress-rail-fill"]')!.getBoundingClientRect();
         const near = (a: number, b: number) => Math.abs(a - b) <= 1;
         return {
-          ok: near(rail.top, dots[0]) && near(rail.bottom, dots[dots.length - 1]) &&
-            (f < 0 ? fill.height <= 0.5 : near(fill.top, dots[0]) && near(fill.bottom, dots[f])),
+          // f >= 0: useNow의 첫 틱 전(전부 future)에는 통과하지 못하게 한다
+          ok: f >= 0 && near(rail.top, dots[0]) && near(rail.bottom, dots[dots.length - 1]) &&
+            near(fill.top, dots[0]) && near(fill.bottom, dots[f]),
           detail: { dots, f, rail: [rail.top, rail.bottom], fill: [fill.top, fill.bottom] },
         };
       });
@@ -210,6 +215,7 @@ test.describe('공개 뷰어', () => {
 
     // 3일차는 미래다 — 코랄이 없다
     await page.getByRole('button', { name: '3일차', exact: true }).click();
+    await expect(currentDay(page)).toHaveAttribute('data-day-page', '2');
     await expect
       .poll(() => currentDay(page).getByTestId('progress-rail-fill').evaluate((el) => el.getBoundingClientRect().height))
       .toBeLessThanOrEqual(0.5);
