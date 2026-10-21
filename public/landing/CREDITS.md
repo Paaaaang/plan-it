@@ -9,3 +9,5 @@
 | `seoul-alley-neon.jpg` | 한국 골목 네온 간판 거리 | photo-1517154421773-0529f29ea451 |
 | `mountain-lake.jpg` | 설산과 호수 | photo-1464822759023-fed622ff2c3b |
 | `cafe-terrace.jpg` | 카페 테라스 테이블 | photo-1445116572660-236099ec97a0 |
+
+- cover-night.jpg — 플랜잇 자체 제작(랜딩 시안 v8 커버 그라데이션을 렌더). 저작권 문제 없음.

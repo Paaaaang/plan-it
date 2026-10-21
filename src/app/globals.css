@@ -286,48 +286,47 @@
 }
 
 /* ============================================================
-   랜딩 전용 — 미드나잇 블루 오로라 (docs/landing-tone-and-manner.md §2)
+   랜딩 전용 — v8 (docs/superpowers/specs/2026-10-20-landing-renewal-design.md §3-1)
    랜딩은 테마와 무관한 다크 고정이라 다크 블록에서 재정의하지 않는다.
+   반투명은 color-mix로 이 값들에서 만든다. 행동 색은 제품 다크 브랜드(--dark-fill-brand)를 쓴다.
    ============================================================ */
 :root {
-  --landing-void:    #060B1F;
-  --landing-cosmos:  #0F1838;
-  --landing-nebula:  #19234E;
-  --landing-border:  #2A3464;
+  --landing-space:    #010828;
+  --landing-cream:    #EFF4FF;
+  --landing-mute:     #9AA6CF;
+  --landing-aurora:   #88BBEE;
+  --landing-indigo:   #4466AA;
+  --landing-lavender: #8888BB;
 
-  --aurora-blue:     #4A6FFF;
-  --aurora-cyan:     #6EEBF2;
-  --aurora-lavender: #B9B3FF;
-  --aurora-mist:     #8EE0FF;
+  /* 단톡방 링크 카드·예시 커버 */
+  --landing-cover-a:  #1B2A66;
+  --landing-cover-b:  #0B1236;
 
-  --landing-starlight: #E8EEFF;
-  --landing-moonlight: #A8B3D4;
-  --landing-dust:      #6F7999;
+  /* 단톡방 */
+  --landing-chat-bg:    #12151D;
+  --landing-bubble:     #262B36;
+  --landing-chat-input: #1C2029;
 
-  /* 코랄은 기존 아이덴티티의 별칭 — 값을 따로 두면 언젠가 어긋난다 */
-  --landing-coral:      var(--coral-500);
-  --landing-coral-glow: var(--coral-300);
+  /* 지도 */
+  --landing-map-bg:     #0B1222;
+  --landing-map-land:   #141D33;
+  --landing-map-land-2: #18233D;
+  --landing-map-land-3: #1C2946;
+  --landing-map-road:   #22304F;
+  --landing-map-road-2: #1E2B48;
 
-  --landing-fs-display: clamp(44px, 7vw, 76px);
-  --landing-fs-h2:      clamp(28px, 3.8vw, 44px);
-  --landing-fs-body:    16px;
+  /* 참가자 아바타 — 데모 이름(민·지·현·수·윤)의 바탕 */
+  --landing-av-1: #FFB48A;
+  --landing-av-2: #FFD36E;
+  --landing-av-3: #8FE3C8;
+  --landing-av-4: #C3B2FF;
+  --landing-av-5: #9CCBFF;
+}
 
-  --landing-glow-blue:        0 0 24px color-mix(in srgb, var(--aurora-blue) 40%, transparent),
-                              0 10px 28px -8px color-mix(in srgb, var(--aurora-blue) 50%, transparent);
-  --landing-glow-blue-hover:  0 0 32px color-mix(in srgb, var(--aurora-blue) 60%, transparent),
-                              0 14px 36px -8px color-mix(in srgb, var(--aurora-lavender) 60%, transparent);
-  --landing-glow-coral:       0 0 32px color-mix(in srgb, var(--landing-coral) 40%, transparent),
-                              0 14px 36px -8px color-mix(in srgb, var(--landing-coral) 40%, transparent);
-  --landing-glow-coral-hover: 0 0 44px color-mix(in srgb, var(--landing-coral-glow) 60%, transparent),
-                              0 18px 44px -8px color-mix(in srgb, var(--landing-coral) 60%, transparent);
-  --landing-glow-phone:       0 0 60px color-mix(in srgb, var(--aurora-blue) 35%, transparent),
-                              0 30px 60px -20px color-mix(in srgb, var(--landing-void) 70%, transparent),
-                              inset 0 1px 0 color-mix(in srgb, var(--aurora-lavender) 15%, transparent);
-  --landing-glow-star:        0 0 6px var(--landing-starlight),
-                              0 0 12px color-mix(in srgb, var(--aurora-lavender) 50%, transparent);
-  --landing-glow-live:        0 0 8px var(--landing-coral-glow);
-
-  --dur-aurora: 12000ms;
+/* 랜딩에선 오버스크롤·스크롤바 바탕도 우주색 — 사용자 테마가 라이트여도 */
+html:has([data-landing]) {
+  background: var(--landing-space);
+  color-scheme: dark;
 }
 
 /* ============================================================
@@ -367,24 +366,6 @@
   --color-notice:         var(--notice-bg);
   --color-notice-border:  var(--notice-border);
   --color-notice-label:   var(--notice-label);
-
-  /* 랜딩 전용 (다크 고정) */
-  --color-landing-border:    var(--landing-border);
-  --color-landing-starlight: var(--landing-starlight);
-  --color-landing-moonlight: var(--landing-moonlight);
-  --color-landing-dust:      var(--landing-dust);
-  --color-aurora-cyan:       var(--aurora-cyan);
-  --color-aurora-mist:       var(--aurora-mist);
-
-  --text-landing-display:                 var(--landing-fs-display);
-  --text-landing-display--line-height:    1.06;
-  --text-landing-display--letter-spacing: -0.03em;
-  --text-landing-h2:                      var(--landing-fs-h2);
-  --text-landing-h2--line-height:         1.15;
-  --text-landing-h2--letter-spacing:      -0.025em;
-  --text-landing-body:                    var(--landing-fs-body);
-  --text-landing-body--line-height:       1.65;
-  --text-landing-body--letter-spacing:    -0.005em;
 
   /* Tailwind v4는 --text-<name>--line-height / --letter-spacing 짝을 인식한다.
      크기만 매핑하면 행간·자간을 컴포넌트마다 손으로 붙이게 되고 곧 어긋난다. */

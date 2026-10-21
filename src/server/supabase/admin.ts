@@ -6,14 +6,13 @@
  *
  * @security 서버 사이드에서만 사용. 절대 클라이언트에 노출 금지.
  *
- * @connects — 실제로 **부르는** 곳 여섯 자리뿐이다(그렙 확인). 콘솔 액션(plan·notice·
+ * @connects — 실제로 **부르는** 곳 네 자리뿐이다(그렙 확인). 콘솔 액션(plan·notice·
  * place·schedule·transport)은 전부 src/server/supabase/server.ts(사용자 JWT)를 쓰고, 이 파일을
  * import조차 하지 않는다 — eslint.config.mjs의 no-restricted-imports가 그걸 고정한다.
  *  - src/server/actions/viewer-actions.ts                     → 공개 뷰어. 로그인이 없어 auth.uid()가 없다
  *  - app/api/cover/[slug]/[v]/route.ts              → 공개 커버. 뷰어와 같은 문(status 검사)
  *  - app/api/test/session/[userKey]/route.ts        → 테스트 전용. admin API가 서비스 롤을 요구한다
  *  - src/server/store/plans.ts (reseedPlan)                → 테스트 전용. RLS 우회가 목적이다
- *  - src/app/page.tsx (countLivePlans)                → 랜딩 라이브 숫자. head:true count만 읽는다
  *
  *  src/server/actions/admin-actions.ts·src/server/actions/analytics-actions.ts는 본문 0줄인 문서 스텁이다 —
  *  관리자 콘솔(2c)이 실제로 구현되면 그때 소비자가 된다.

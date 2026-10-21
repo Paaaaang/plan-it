@@ -342,20 +342,3 @@ export async function reseedPlan(slug: string): Promise<boolean> {
   resetAttempts(slug);
   return true;
 }
-
-/**
- * 랜딩 히어로의 라이브 숫자 — 지금 링크로 열리는(공개 + 만료 전) 일정 수.
- *
- * `head: true`라 행은 한 줄도 오지 않고 count만 온다. 공개 랜딩 응답에 기획자 데이터가
- * 섞일 길이 구조적으로 없다. 기준 시각은 호출 시점이다 — 캐시(page.tsx)가 5분이라
- * 만료 경계의 오차도 5분 안이다.
- */
-export async function countLivePlans(db: SupabaseClient): Promise<number> {
-  const result = await db
-    .from("plans")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "public")
-    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
-  if (result.error) throw new Error(`Supabase 조회 실패 — plans live count: ${result.error.message}`);
-  return result.count ?? 0;
-}

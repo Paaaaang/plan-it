@@ -1,228 +1,97 @@
-/*
- * 랜딩 칠·글로우·모션 — 미드나잇 블루 오로라.
- * 명세: docs/landing-tone-and-manner.md · 토큰: src/app/globals.css의 --landing-* / --aurora-*
- *
- * 레이아웃·간격·글자 크기는 TSX의 Tailwind 유틸리티로 쓴다. 여기엔 유틸리티로 못 쓰는
- * 그라데이션·글로우·모션만 둔다. 색은 전부 토큰이고, 투명도는 color-mix로 낸다.
- * 폰 목업·카드 안쪽 같은 일러스트 치수는 시안 픽셀값 그대로다.
- */
+/* 랜딩 — v8 확정안 (docs/superpowers/specs/2026-10-20-landing-renewal-design.md)
+   다크 고정. 색은 globals.css의 --landing-* 와 제품 다크 토큰(--dark-*)뿐, 반투명은 color-mix.
+   치수·타이밍은 시안(docs/design/prototypes/landing-renewal-v8.html) 값 그대로다. */
 
 .root {
-  color-scheme: dark;
-  min-height: 100dvh;
-  background: var(--landing-void);
-  color: var(--landing-starlight);
-  word-break: keep-all;
-  overflow-wrap: break-word;
-  overflow-x: clip;
-}
-/* 전역 포커스 링은 코랄(--fill-brand)이다 — 랜딩에선 코랄 예산을 지키려고 시안으로 바꾼다 */
-.root :focus-visible { outline-color: var(--aurora-cyan); }
-
-.section { position: relative; padding-block: clamp(80px, 10vh, 140px); }
-
-/* --- nav --- */
-.nav {
-  background: color-mix(in srgb, var(--landing-void) 75%, transparent);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border-bottom: 1px solid color-mix(in srgb, var(--landing-border) 40%, transparent);
-}
-.navLogin {
-  border: 1px solid var(--landing-border);
-  border-radius: var(--r-btn);
-  color: var(--landing-starlight);
-  transition: border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
-}
-.navLogin:hover {
-  border-color: var(--aurora-blue);
-  background: color-mix(in srgb, var(--aurora-blue) 8%, transparent);
-}
-
-/* --- hero --- */
-.hero {
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse at 20% -10%, color-mix(in srgb, var(--aurora-lavender) 35%, transparent) 0%, transparent 45%),
-    radial-gradient(ellipse at 85% 120%, color-mix(in srgb, var(--aurora-cyan) 25%, transparent) 0%, transparent 50%),
-    radial-gradient(ellipse at 60% 40%, color-mix(in srgb, var(--aurora-blue) 30%, transparent) 0%, transparent 55%),
-    var(--landing-void);
-}
-.aurora { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0.6; }
-.starfield {
-  position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0.9;
-  background-image:
-    radial-gradient(1.2px 1.2px at 12% 18%, var(--landing-starlight) 50%, transparent 51%),
-    radial-gradient(1px 1px at 32% 42%, color-mix(in srgb, var(--landing-starlight) 70%, transparent) 50%, transparent 51%),
-    radial-gradient(1.4px 1.4px at 68% 22%, var(--landing-starlight) 50%, transparent 51%),
-    radial-gradient(1px 1px at 85% 55%, color-mix(in srgb, var(--landing-starlight) 60%, transparent) 50%, transparent 51%),
-    radial-gradient(1.1px 1.1px at 48% 72%, color-mix(in srgb, var(--landing-starlight) 80%, transparent) 50%, transparent 51%),
-    radial-gradient(1.3px 1.3px at 92% 15%, color-mix(in srgb, var(--landing-starlight) 75%, transparent) 50%, transparent 51%),
-    radial-gradient(1px 1px at 22% 65%, color-mix(in srgb, var(--landing-starlight) 50%, transparent) 50%, transparent 51%);
-}
-.star {
-  position: absolute; width: 2px; height: 2px;
-  border-radius: var(--r-full);
-  background: var(--landing-starlight);
-  box-shadow: var(--landing-glow-star);
-}
-.star:nth-child(1) { top: 18%; left: 15%; }
-.star:nth-child(2) { top: 32%; left: 72%; width: 1.5px; height: 1.5px; }
-.star:nth-child(3) { top: 55%; left: 42%; }
-.star:nth-child(4) { top: 68%; left: 82%; width: 2.5px; height: 2.5px; }
-.star:nth-child(5) { top: 22%; left: 58%; }
-
-.eyebrow {
-  border: 1px solid color-mix(in srgb, var(--aurora-cyan) 30%, transparent);
-  border-radius: var(--r-full);
-  background: color-mix(in srgb, var(--aurora-cyan) 6%, transparent);
-}
-.live {
-  width: 6px; height: 6px;
-  border-radius: var(--r-full);
-  background: var(--landing-coral);
-  box-shadow: var(--landing-glow-live);
-}
-/* 그라데이션 텍스트는 랜딩에서 여기 한 곳뿐이다(명세 §3) */
-.title {
-  background: linear-gradient(100deg, var(--aurora-mist) 0%, var(--aurora-lavender) 48%, var(--aurora-cyan) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-}
-
-/* --- CTA --- 글자색은 어두운 쪽이다: 흰 글자는 AA 대비 미달(명세 §2-6) */
-.cta {
-  display: inline-flex; align-items: center;
-  border-radius: var(--r-btn);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  transition:
-    transform var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
-}
-.ctaPrimary {
-  color: var(--landing-void);
-  background: linear-gradient(135deg, var(--aurora-blue) 0%, color-mix(in srgb, var(--aurora-blue) 50%, var(--aurora-lavender)) 50%, var(--aurora-lavender) 100%);
-  box-shadow: var(--landing-glow-blue);
-}
-.ctaPrimary:hover { box-shadow: var(--landing-glow-blue-hover); transform: translateY(-1px); }
-.ctaGhost { color: var(--landing-starlight); border: 1px solid var(--landing-border); }
-.ctaGhost:hover { color: var(--aurora-cyan); border-color: var(--aurora-cyan); }
-.ctaCoral {
-  color: var(--ink-on-coral);
-  background: linear-gradient(135deg, var(--landing-coral) 0%, var(--landing-coral-glow) 100%);
-  box-shadow: var(--landing-glow-coral);
-}
-.ctaCoral:hover { box-shadow: var(--landing-glow-coral-hover); transform: translateY(-2px); }
-
-/* --- 뷰어 목업 (일러스트) --- */
-.phone {
+  --soft: cubic-bezier(.22, .8, .26, 1);
   position: relative;
-  aspect-ratio: 9 / 18;
-  background: var(--landing-nebula);
-  border: 1px solid var(--landing-border);
-  border-radius: var(--r-sheet);
-  box-shadow: var(--landing-glow-phone);
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: var(--landing-space);
+  color: var(--landing-cream);
+  color-scheme: dark;
+  word-break: keep-all;
 }
-.phone::before {
-  content: ""; position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-  width: 60px; height: 5px; border-radius: var(--r-full);
-  background: color-mix(in srgb, var(--landing-void) 60%, transparent);
+.root a { color: inherit; text-decoration: none; }
+.root :focus-visible { outline: 2px solid var(--landing-aurora); outline-offset: 3px; border-radius: 8px; }
+
+/* 화면 전체 질감 덮개 (Orbis 규칙: lighten) */
+.texture {
+  position: fixed; inset: 0; z-index: 50; pointer-events: none; mix-blend-mode: lighten; opacity: .5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .6 0 0 0 0 .75 1.4 0 0 0 -.95'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-.phoneCover {
-  border-radius: var(--r-field);
-  color: var(--landing-starlight);
-  text-shadow: 0 1px 4px color-mix(in srgb, var(--landing-void) 50%, transparent);
+
+/* liquid glass — 투명 + 블러 + 위아래로 빛나는 테두리 */
+.glass {
+  position: relative;
+  background: color-mix(in srgb, var(--landing-cream) 3%, transparent);
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+  box-shadow: inset 0 1px 1px color-mix(in srgb, var(--landing-cream) 12%, transparent);
+}
+.glass::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.4px; pointer-events: none;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--landing-cream) 45%, transparent),
+    color-mix(in srgb, var(--landing-cream) 12%, transparent) 20%, transparent 40%, transparent 60%,
+    color-mix(in srgb, var(--landing-cream) 12%, transparent) 80%,
+    color-mix(in srgb, var(--landing-cream) 40%, transparent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.wrap {
+  max-width: 1400px; margin-inline: auto;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+.hand { font-family: var(--font-hand), cursive; color: var(--landing-aurora); font-weight: 400; transform: rotate(-3deg); display: inline-block; }
+
+.btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px; padding: 15px 22px; border-radius: 14px; transition: transform .15s, background-color .15s; }
+.btnCoral { background: var(--dark-fill-brand); color: var(--ink-on-coral); box-shadow: 0 10px 30px -8px color-mix(in srgb, var(--dark-fill-brand) 55%, transparent); }
+.btnCoral:hover { transform: translateY(-1px); }
+.btnGhost { color: var(--landing-cream); }
+.btnGhost:hover { background: color-mix(in srgb, var(--landing-cream) 6%, transparent); }
+
+.bgVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.shade {
+  position: absolute; inset: 0;
   background:
-    radial-gradient(circle at 70% 30%, color-mix(in srgb, var(--aurora-cyan) 35%, transparent) 0%, transparent 60%),
-    linear-gradient(135deg, var(--aurora-blue), var(--aurora-lavender));
-}
-.phoneTab {
-  border-radius: var(--r-xs);
-  color: var(--landing-moonlight);
-  background: color-mix(in srgb, var(--landing-border) 40%, transparent);
-}
-.phoneTabOn { color: var(--landing-void); background: var(--aurora-mist); }
-.phoneItem {
-  border-radius: var(--r-xs);
-  border: 1px solid color-mix(in srgb, var(--landing-border) 60%, transparent);
-  background: color-mix(in srgb, var(--landing-border) 30%, transparent);
+    linear-gradient(90deg, color-mix(in srgb, var(--landing-space) 82%, transparent) 0%, color-mix(in srgb, var(--landing-space) 45%, transparent) 45%, color-mix(in srgb, var(--landing-space) 10%, transparent) 70%),
+    linear-gradient(0deg, color-mix(in srgb, var(--landing-space) 70%, transparent), transparent 40%);
 }
 
-/* --- 핵심 가치 --- 호버는 테두리만(호버마다 다른 모션 금지, 명세 §6-3) */
-.valueCard {
-  position: relative; overflow: hidden;
-  background: linear-gradient(180deg, var(--landing-nebula) 0%, var(--landing-cosmos) 100%);
-  border: 1px solid var(--landing-border);
-  border-radius: var(--r-card);
-  transition: border-color var(--dur-base) var(--ease-out);
-}
-.valueCard:hover { border-color: color-mix(in srgb, var(--aurora-lavender) 30%, transparent); }
-.valueIcon {
-  display: grid; place-items: center;
-  color: var(--aurora-cyan);
-  border-radius: var(--r-field);
-  border: 1px solid color-mix(in srgb, var(--aurora-lavender) 25%, transparent);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--aurora-blue) 20%, transparent), color-mix(in srgb, var(--aurora-lavender) 15%, transparent));
-}
+/* ---------- 헤더 (위에 얹힘, 고정 아님) ---------- */
+.top { position: absolute; z-index: 20; top: 0; left: 0; right: 0; padding-top: calc(env(safe-area-inset-top, 0px) + 22px); }
+.topInner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.wordmark { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 20px; letter-spacing: -.03em; color: var(--landing-cream); }
+.nav { display: none; border-radius: 999px; padding: 14px 30px; }
+.nav ul { display: flex; gap: 30px; margin: 0; padding: 0; list-style: none; font-size: 14px; font-weight: 600; }
+.nav a:hover { color: var(--landing-aurora); }
+.login { border-radius: 12px; padding: 10px 16px; font-size: 14px; font-weight: 700; }
+@media (min-width: 960px) { .nav { display: block; } }
 
-/* --- 작동 방식 --- */
-.how { background: var(--landing-cosmos); border-block: 1px solid var(--landing-border); }
-.step::before {
-  content: ""; position: absolute; top: 36px; right: -10px;
-  width: 20px; height: 1px; background: var(--landing-border);
-}
-.step:last-child::before { display: none; }
-@media (width < 48rem) { .step::before { display: none; } }
-.mini {
-  background: var(--landing-nebula);
-  border: 1px solid var(--landing-border);
-  border-radius: var(--r-control);
-}
+/* ---------- 섹션 머리 (만들어 보기·쓰임 공통) ---------- */
+.sechead { display: grid; gap: 10px; margin-bottom: 44px; max-width: 760px; }
+.sechead h2 { margin: 0; font-weight: 900; letter-spacing: -.04em; line-height: 1.08; font-size: clamp(34px, 4.6vw, 64px); text-wrap: balance; }
+.sechead .hand { font-size: clamp(26px, 2.6vw, 36px); }
 
-/* --- 쓰임 예시 --- 톤은 카드마다 --case-* 로 바꾼다. 코랄은 쓰지 않는다(D7) */
-.case {
-  position: relative; overflow: hidden;
-  aspect-ratio: 3 / 4;
-  background: var(--landing-nebula);
-  border: 1px solid var(--landing-border);
-  border-radius: var(--r-pop);
+/* ---------- 마지막 CTA ---------- */
+.final { position: relative; overflow: hidden; border-radius: 32px 32px 0 0; min-height: 640px; display: grid; }
+.finalShade {
+  position: absolute; inset: 0;
+  background: linear-gradient(270deg, color-mix(in srgb, var(--landing-space) 90%, transparent) 0%, color-mix(in srgb, var(--landing-space) 50%, transparent) 45%, color-mix(in srgb, var(--landing-space) 15%, transparent) 75%);
 }
-.case::before {
-  content: ""; position: absolute; inset: 0; opacity: 0.35;
-  background: radial-gradient(circle at var(--case-at), var(--case-tone), transparent 60%), var(--landing-nebula);
-}
-.case > * { position: relative; }
-.caseBlue     { --case-tone: var(--aurora-blue);     --case-at: 70% 30%; }
-.caseLavender { --case-tone: var(--aurora-lavender); --case-at: 30% 70%; }
-.caseCyan     { --case-tone: var(--aurora-cyan);     --case-at: 50% 50%; }
-.caseMist     { --case-tone: var(--aurora-mist);     --case-at: 70% 70%; }
-.caseTag { background: color-mix(in srgb, var(--landing-void) 60%, transparent); border-radius: var(--r-full); }
+.finalInner { position: relative; z-index: 5; display: grid; justify-items: end; align-content: center; text-align: right; gap: 22px; width: 100%; padding-block: 80px; }
+.finalHand { font-size: clamp(28px, 3vw, 42px); }
+.finalTitle { margin: 0; font-weight: 900; letter-spacing: -.045em; line-height: 1.04; font-size: clamp(40px, 5.6vw, 84px); }
+.finalSub { margin: 0; color: var(--landing-mute); font-size: 16px; }
 
-/* --- 하단 CTA --- */
-.finalCta { overflow: hidden; }
-.finalCta::before {
-  content: ""; position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--landing-coral) 15%, transparent) 0%, transparent 60%),
-    radial-gradient(ellipse at 30% 20%, color-mix(in srgb, var(--aurora-lavender) 20%, transparent) 0%, transparent 50%);
-}
+.footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding-block: 36px 48px; color: var(--landing-mute); font-size: 13px; }
+.footer p { margin: 0; }
 
-/* --- 모션 --- 전부 no-preference 안에서만. reduce면 단일 프레임으로 멈춘다(명세 §6-4) */
-@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
-@keyframes twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-@keyframes drift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-20px, 8px); } }
-
-@media (prefers-reduced-motion: no-preference) {
-  .live { animation: pulse 1.5s ease-in-out infinite; }
-  .star { animation: twinkle 4s ease-in-out infinite; }
-  .star:nth-child(2) { animation-delay: 0.8s; }
-  .star:nth-child(3) { animation-delay: 1.6s; }
-  .star:nth-child(4) { animation-delay: 2.4s; }
-  .star:nth-child(5) { animation-delay: 3.2s; }
-  .aurora { animation: drift var(--dur-aurora) ease-in-out infinite; }
+/* 모션 줄이기: 랜딩 안의 모든 애니메이션을 멈춘다(전역 규칙은 0.01ms로 줄이기만 해서 이름이 남는다) */
+@media (prefers-reduced-motion: reduce) {
+  .root *, .root *::before, .root *::after { animation: none !important; transition-duration: 0s !important; transition-delay: 0s !important; }
 }
