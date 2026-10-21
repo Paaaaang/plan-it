@@ -164,61 +164,55 @@ test.describe('공개 뷰어', () => {
   });
 
   /**
-   * 레일은 이 제품에서 가장 특징적인 요소다(스펙 §4.6). 그런데 색이 통째로 회색이 돼도
-   * `backgroundImage`에 'gradient'라는 글자만 확인하면 통과한다 — 실제로 그렇게 통과했다.
-   * 그래서 **정지점 색을 뽑아** 코랄(--rail-past)이 실제로 들어 있는지 잰다.
-   * rgb 문자열을 박지 않고 그 자리에서 토큰을 풀어 비교한다 — 값이 테마마다 다르다.
-   * 시각 회귀는 CI에서 skip되므로 이 판정은 여기(CI에서도 도는 곳)에 있어야 한다.
+   * 레일은 이 제품에서 가장 특징적인 요소다(스펙 §4.6). 줄 높이가 제각각이라 비율로 그리면
+   * 코랄 끝이 점에서 어긋난다(사용자 지적 2026-10-21) — 그래서 점 중심을 재서 그린다.
+   * 판정: 회색은 첫 점 중심~마지막 점 중심, 코랄은 첫 점 중심~마지막 '지남/지금' 점 중심(없으면 0).
+   * 시각에 따라 '지금'이 없을 수 있으니(1일차 첫 일정 전) 불변식으로 판정한다.
    */
-  test('레일 그라데이션은 오늘에만 코랄 정지점을 갖는다', async ({ page }) => {
+  test('레일은 점 중심을 잇고, 코랄은 지금 점 중심에서 끝난다', async ({ page }) => {
     await page.goto('/p/jeju-workshop-2026');
-    const rail = currentDay(page).getByTestId('progress-rail');
+    const tl = currentDay(page).getByTestId('timeline');
 
-    const read = () =>
-      rail.evaluate((el) => {
-        const probe = document.createElement('span');
-        el.parentElement!.appendChild(probe);
-        const token = (name: string) => {
-          probe.style.color = `var(${name})`;
-          return getComputedStyle(probe).color;
+    const geo = () =>
+      tl.evaluate((root) => {
+        const mid = (el: Element) => { const b = el.getBoundingClientRect(); return b.top + b.height / 2; };
+        const dots = [...root.querySelectorAll('[data-testid="timeline-dot"]')].map(mid);
+        const rows = [...root.querySelectorAll<HTMLElement>('[data-testid="timeline-row"]')];
+        let f = -1;
+        rows.forEach((r, i) => { if (r.dataset.state === 'past' || r.dataset.state === 'current') f = i; });
+        const rail = root.querySelector('[data-testid="progress-rail"]')!.getBoundingClientRect();
+        const fill = root.querySelector('[data-testid="progress-rail-fill"]')!.getBoundingClientRect();
+        const near = (a: number, b: number) => Math.abs(a - b) <= 1;
+        return {
+          ok: near(rail.top, dots[0]) && near(rail.bottom, dots[dots.length - 1]) &&
+            (f < 0 ? fill.height <= 0.5 : near(fill.top, dots[0]) && near(fill.bottom, dots[f])),
+          detail: { dots, f, rail: [rail.top, rail.bottom], fill: [fill.top, fill.bottom] },
         };
-        const t = {
-          past: token('--rail-past'),
-          melt: token('--rail-melt'),
-          future: token('--rail-future'),
-        };
-        probe.remove();
-        const cs = getComputedStyle(el);
-        return { image: cs.backgroundImage, color: cs.backgroundColor, t };
       });
 
     for (const theme of ['light', 'dark'] as const) {
       await page.evaluate((v) => document.documentElement.setAttribute('data-theme', v), theme);
-
-      // useNow가 마운트 후에야 시각을 주므로(첫 페인트는 null = 회색) poll로 기다린다.
-      // timeout은 dev 서버 콜드 컴파일까지 감안한 값이다 — 기본 5초는 첫 실행에서 모자란다.
-      await expect.poll(async () => (await read()).image, { timeout: 15_000 }).toContain('gradient');
-
-      // 1일차는 오늘이다 — 지나간 구간은 코랄, 녹는 구간은 중간색, 앞으로는 회색.
-      const today = await read();
-      expect(today.t.past, `${theme}: --rail-past와 --rail-future가 같은 색이면 레일이 죽는다`).not.toBe(
-        today.t.future,
-      );
-      expect(today.image, `${theme}: --rail-past(${today.t.past}) 정지점`).toContain(today.t.past);
-      expect(today.image, `${theme}: --rail-melt(${today.t.melt}) 정지점`).toContain(today.t.melt);
-      expect(today.image, `${theme}: --rail-future(${today.t.future}) 정지점`).toContain(today.t.future);
-
-      // 3일차는 미래다 — 그라데이션 자체가 없고 전부 --rail-future 한 색이다.
-      await page.getByRole('button', { name: '3일차', exact: true }).click();
-      await expect(currentDay(page)).toHaveAttribute('data-day-page', '2');
-      const future = await read();
-      expect(future.image, `${theme}: 미래 날짜에는 그라데이션이 없다`).toBe('none');
-      expect(future.color, `${theme}: 미래 날짜는 --rail-future 단색`).toBe(future.t.future);
-      expect(future.image, `${theme}: 미래 날짜에 코랄이 남으면 안 된다`).not.toContain(today.t.past);
-
-      await page.getByRole('button', { name: '1일차', exact: true }).click();
-      await expect(currentDay(page)).toHaveAttribute('data-day-page', '0');
+      // useNow가 마운트 뒤에야 시각을 준다 — 측정이 끝날 때까지 기다린다(콜드 컴파일 감안)
+      await expect.poll(async () => (await geo()).ok, { timeout: 15_000 }).toBe(true);
+      const colors = await tl.evaluate((root) => {
+        const probe = document.createElement('span');
+        root.appendChild(probe);
+        const tok = (n: string) => { probe.style.color = `var(${n})`; return getComputedStyle(probe).color; };
+        const t = { past: tok('--rail-past'), future: tok('--rail-future') };
+        probe.remove();
+        const bg = (id: string) => getComputedStyle(root.querySelector(`[data-testid="${id}"]`)!).backgroundColor;
+        return { ...t, rail: bg('progress-rail'), fill: bg('progress-rail-fill') };
+      });
+      expect(colors.past, `${theme}: 코랄과 회색이 같으면 레일이 죽는다`).not.toBe(colors.future);
+      expect(colors.rail).toBe(colors.future);
+      expect(colors.fill).toBe(colors.past);
     }
+
+    // 3일차는 미래다 — 코랄이 없다
+    await page.getByRole('button', { name: '3일차', exact: true }).click();
+    await expect
+      .poll(() => currentDay(page).getByTestId('progress-rail-fill').evaluate((el) => el.getBoundingClientRect().height))
+      .toBeLessThanOrEqual(0.5);
   });
 
   test('없는 slug는 404다', async ({ page }) => {

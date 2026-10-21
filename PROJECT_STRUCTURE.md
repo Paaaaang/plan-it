@@ -76,8 +76,8 @@ plan-it/
 │   │   │   │                                #    timetable-section·place-section·transport-section·
 │   │   │   │                                #    transport-item-form·preview-pane)
 │   │   │   ├── viewer/                      #    공개 뷰어 (viewer-shell·cover-header·notice-bar·day-pager·
-│   │   │   │                                #    timeline·timeline-item·progress-rail·place-list·place-sheet·
-│   │   │   │                                #    password-gate·status-screen)
+│   │   │   │                                #    timeline·timeline-item·progress-rail·rail-geometry·place-list·
+│   │   │   │                                #    place-sheet·password-gate·status-screen)
 │   │   │   └── admin/                       #    관리자 콘솔 (admin-sidebar·kpi-widget·moderation-queue·
 │   │   │                                    #    moderation-detail·announcement-list·announcement-form)
 │   │   │
@@ -135,7 +135,7 @@ plan-it/
 │       ├── fixtures/viewer.ts               #    옛 lib/fixtures/viewer.ts. 뷰어 씨앗 데이터 (상대 경로 + .ts 확장자 유지)
 │       ├── utils/date.ts                    #    옛 lib/utils/date.ts. 날짜 산술 ("YYYY-MM-DD" 더하기·빼기)
 │       └── viewer/                          #    공개 뷰어 중 순수 로직
-│           ├── rail.ts                      #    레일 진행도·항목 상태 계산
+│           ├── rail.ts                      #    항목 상태 계산 (레일 위치는 client/viewer/rail-geometry가 점을 재서)
 │           ├── summary.ts                   #    공지 요약·기간/날짜 문구 (서버 페이지 + 클라이언트 컴포넌트 양쪽이 쓴다)
 │           └── links.ts                     #    카카오맵·네이버지도 딥링크
 │
@@ -262,7 +262,7 @@ import하면 안 되면 `server/`, Server Component에서 import하면 안 되�
 - **`shared/utils/date.ts`** — "YYYY-MM-DD" 날짜 산술. `lib/utils/`의 나머지 네 파일
   (`cache.ts`·`format.ts`·`slug.ts`·`validation.ts`)은 0-export 문서 스텁(호출부 없음)이라 이번
   이동에서 **삭제**했다.
-- **`shared/viewer/`** — `rail.ts`(레일 진행도·항목 상태, 순수 계산) · `summary.ts`(공지 요약·기간
+- **`shared/viewer/`** — `rail.ts`(항목 상태, 순수 계산) · `summary.ts`(공지 요약·기간
   문구 — `app/p/[slug]/page.tsx`(서버)와 `components/viewer/*`(클라이언트) 양쪽이 쓴다) ·
   `links.ts`(카카오맵·네이버지도 딥링크, 순수 함수).
 
