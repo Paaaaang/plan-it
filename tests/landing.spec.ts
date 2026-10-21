@@ -60,6 +60,12 @@ test.describe('랜딩 — 비로그인', () => {
     page.on('pageerror', (e) => errors.push(e.message));
     await page.route('**/*.mp4', (route) => route.abort());
     await page.goto('/');
+    // 영상은 화면에 들어올 때만 받는다 — 끝까지 내려가며 하나씩 불러(막혀서 실패하게) 본다
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    for (let y = 0; y <= height; y += 400) {
+      await page.evaluate((y) => scrollTo(0, y), y);
+      await page.waitForTimeout(50);
+    }
     await expect(page.locator('video')).toHaveCount(0, { timeout: 10_000 }); // 오류 난 영상은 치운다
     await expect(page.getByRole('heading', { level: 2, name: /다음 모임/ })).toBeVisible();
     expect(errors).toEqual([]);
@@ -200,6 +206,20 @@ test.describe('랜딩 여정', () => {
     const copy = page.getByRole('button', { name: '링크 복사' });
     expect(await copy.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
     expect(await copy.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe('none');
+  });
+
+  test('모션 줄이기: 데스크톱 히어로 폰이 커서를 따라 기울지 않는다', async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 0) < 960, '커서 기울기는 데스크톱 히어로만(명세 §4-3)');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await hydrated(page);
+    const slot = page.getByTestId('story-slot');
+    for (const [x, y] of [[5, 5], [1275, 715], [640, 10]]) {
+      await page.mouse.move(x, y);
+      await page.waitForTimeout(300); // 커서 감쇠가 몇 프레임 돌 만큼
+      const pose = await slot.evaluate((el) => [el.style.getPropertyValue('--ry'), el.style.getPropertyValue('--rx')]);
+      expect(pose).toEqual(['-16.000deg', '0.000deg']); // 히어로 자세 A 그대로
+    }
   });
 
   test('쓰임 카드를 누르면 그 일정이 여정 폰에 열리고 맨 위로 간다', async ({ page }) => {

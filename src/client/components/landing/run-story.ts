@@ -201,7 +201,7 @@ export function runStory(els: StoryEls, hooks: StoryHooks): () => void {
     const A = wide ? { x: vw * 0.25, y: 10, ry: -16, rz: 4, s: 0.92 } : { x: 0, y: vh * 0.36, ry: 0, rz: 0, s: 0.66 };
     const B = wide ? { x: vw * 0.17, y: 0, ry: 0, rz: 0, s: 1.04 } : { x: 0, y: vh * 0.2, ry: 0, rz: 0, s: 0.74 };
     const d = wide && st.step !== null && st.step >= 0 ? DRIFT[st.step] ?? [0, 0] : [0, 0];
-    const tilt = (1 - e) * (wide ? 1 : 0);
+    const tilt = reduce ? 0 : (1 - e) * (wide ? 1 : 0); // 모션 줄이기: 커서 기울기 없음(명세 §9)
     target.x = lerp(A.x, B.x, e) + pointer.x * 10 * tilt;
     target.y = lerp(A.y, B.y, e) + pointer.y * 8 * tilt + d[1] * e;
     target.ry = lerp(A.ry, B.ry, e) + pointer.x * 8 * tilt + d[0] * e;

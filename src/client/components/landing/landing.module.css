@@ -11,6 +11,7 @@
   color: var(--landing-cream);
   color-scheme: dark;
   word-break: keep-all;
+  line-height: normal; /* 시안과 같게 — 전역(Tailwind) 1.5를 받으면 만들기 패널 등이 시안보다 커진다. 폰 속 뷰어 부품은 글자 토큰이 줄 높이를 따로 가진다 */
 }
 /* :where()로 특이도 0 — 아래 .btnCoral 같은 클래스가 글자색·모서리를 정하게 둔다 */
 :where(.root) a { color: inherit; text-decoration: none; }
@@ -180,7 +181,7 @@
 .vscroll::-webkit-scrollbar { display: none; }
 .live .vscroll { overflow-y: hidden; } /* 히어로 폰 속 스크롤은 이야기가 움직인다 — 휠·터치는 언제나 페이지로 */
 .vcta { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 20px 18px; background: linear-gradient(180deg, transparent, var(--bg) 45%); }
-.vctaBtn { display: block; padding: 13px 0; border-radius: var(--r-pop); background: var(--fill-brand); color: var(--text-on-accent); text-align: center; font-size: var(--fs-item-title); font-weight: 800; }
+.vctaBtn { display: block; padding: 13px 0; border-radius: var(--r-pop); background: var(--fill-brand); color: var(--text-on-accent); text-align: center; font-size: var(--fs-item-title); line-height: var(--lh-item-title); font-weight: 800; } /* 실제 뷰어 CTA(text-item-title)와 같은 줄 높이 */
 
 /* 흐르는 '지금' 점 — 실제 '지금' 점과 같은 크기·테두리·고리라야 줄에 닿을 때 하나로 보인다 */
 .nowDot { position: absolute; z-index: 2; left: 48px; top: 0; width: 11px; height: 11px; margin-top: -5.5px; border-radius: 50%; background: var(--fill-brand); border: 2px solid var(--fill-brand); box-shadow: 0 0 0 4px var(--accent-ring); pointer-events: none; }
