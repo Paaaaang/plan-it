@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Nanum_Pen_Script } from "next/font/google";
+import { LandingStory } from "@/client/components/landing/landing-story";
 import { LandingVideo } from "@/client/components/landing/landing-video";
 import { LANDING_VIDEOS } from "@/client/components/landing/landing-videos";
 import styles from "@/client/components/landing/landing.module.css";
@@ -59,6 +60,7 @@ export default function Home() {
       </header>
 
       <main>
+        <LandingStory />
         <section className={styles.final} aria-labelledby="h2final">
           <LandingVideo src={LANDING_VIDEOS.final} className={styles.bgVideo} />
           <div className={styles.finalShade} aria-hidden="true" />

@@ -1,4 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+// 배경 영상(외부 CDN, 6개 합 ~73MB)은 테스트에서 받지 않는다. WebKit은 autoplay 영상을 preload와 무관하게
+// 통째로 받아 load 이벤트가 10초 넘게 늦어지고, 워커가 여럿이면 goto가 30초 제한에 걸린다.
+// 영상이 없어도 페이지가 읽히는 것 자체가 명세 §9의 약속이라 이 상태로 재도 된다.
+test.beforeEach(async ({ page }) => {
+  await page.route('**/*.mp4', (route) => route.abort());
+});
 
 test.describe('랜딩 — 비로그인', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -61,5 +68,136 @@ test.describe('랜딩 — 비로그인', () => {
   test('지어낸 지표가 없다 — 조회수 문구 금지', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByTestId('landing')).not.toContainText('조회');
+  });
+});
+
+/** 이야기 위치 S로 스크롤한다(명세 §4-2): 화면 55% 선이 단계 k의 (S − k) 지점을 지나게. 히어로는 음수 */
+async function scrollToStory(page: Page, S: number) {
+  await page.evaluate((S) => {
+    const steps = [...document.querySelectorAll<HTMLElement>('[data-story-step]')];
+    const vh = innerHeight;
+    let y: number;
+    if (S < 0) {
+      const r = steps[0].getBoundingClientRect();
+      y = scrollY + r.top - vh * 0.55 + S * vh;
+    } else {
+      const k = Math.floor(S), r = steps[k].getBoundingClientRect();
+      y = scrollY + r.top + (S - k) * r.height - vh * 0.55;
+    }
+    scrollTo(0, y);
+  }, S);
+}
+
+test.describe('랜딩 여정', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  const phone = (page: Page) => page.getByTestId('story-phone');
+
+  test('히어로: 제목·CTA·예시 일정 폰', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('10분이면 네 것도.');
+    await expect(page.getByRole('link', { name: '내 모임 만들기' }).first()).toHaveAttribute('href', '/login');
+    await expect(phone(page).getByTestId('cover')).toContainText('제주 3일 모임');
+  });
+
+  test('공지 단계에서 펼쳐졌다가 다음 단계에서 접힌다', async ({ page }) => {
+    await page.goto('/');
+    await scrollToStory(page, 1.5);
+    await expect(phone(page).getByTestId('notice-bar')).toHaveAttribute('data-open', 'true', { timeout: 10_000 });
+    await scrollToStory(page, 2.5);
+    await expect(phone(page).getByTestId('notice-bar')).toHaveAttribute('data-open', 'false', { timeout: 10_000 });
+  });
+
+  test('시간이 흐르면 지금 줄이 차례로 내려가고 코랄은 점 중심에서 끝난다', async ({ page }) => {
+    await page.goto('/');
+    const current = phone(page).locator('[data-day-page="0"] [data-testid="timeline-row"][data-state="current"]');
+    await scrollToStory(page, 1.5);
+    await expect(current).toContainText('12:00', { timeout: 10_000 });
+    await scrollToStory(page, 2.95);
+    await expect(current).toContainText('18:00', { timeout: 10_000 });
+    const gap = await phone(page).locator('[data-day-page="0"] [data-testid="timeline"]').evaluate((tl) => {
+      const dot = tl.querySelector('[data-now-dot]')!.getBoundingClientRect();
+      const fill = tl.querySelector('[data-testid="progress-rail-fill"]')!.getBoundingClientRect();
+      return Math.abs(dot.top + dot.height / 2 - fill.bottom);
+    });
+    expect(gap).toBeLessThanOrEqual(1.5);
+  });
+
+  test('일차를 넘기면 머리줄이 3일차가 된다', async ({ page }) => {
+    await page.goto('/');
+    await scrollToStory(page, 3.95);
+    await expect(phone(page).locator('[data-testid="day-dots"] button[aria-current="true"]')).toHaveAttribute('aria-label', '3일차', { timeout: 10_000 });
+  });
+
+  test('길찾기 단계 끝에서 도착한다', async ({ page }) => {
+    await page.goto('/');
+    await scrollToStory(page, 4.95);
+    await expect(phone(page).getByTestId('eta')).toHaveText('도착', { timeout: 10_000 });
+  });
+
+  test('데스크톱: 여정 폰이 만들어 보기 폰 자리에 내려앉는다', async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 0) < 960, '착지는 데스크톱만(명세 §5)');
+    await page.goto('/');
+    await page.getByTestId('try-phone').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      scrollTo(0, scrollY + r.top + r.height / 2 - innerHeight / 2);
+    });
+    await expect(page.getByTestId('story-slot')).toHaveCSS('visibility', 'hidden', { timeout: 10_000 });
+    await expect(page.getByTestId('try-phone')).toHaveCSS('opacity', '1');
+    // 조금 올리면 다시 떠오르고, 날아가는 폰 속은 만들어 보기 초안이다
+    await page.evaluate(() => scrollBy(0, -innerHeight * 0.3));
+    await expect(page.getByTestId('story-slot')).toHaveCSS('visibility', 'visible', { timeout: 10_000 });
+    await expect(phone(page).getByTestId('cover')).toContainText('가을 제주 3일');
+  });
+
+  test('만들어 보기: 입력이 미리보기 폰에 바로 반영된다', async ({ page }) => {
+    await page.goto('/#try');
+    const tp = page.getByTestId('try-phone');
+    const name = page.getByLabel('모임 이름');
+    await name.fill('우리 동아리 MT');
+    await expect(tp.getByTestId('cover')).toContainText('우리 동아리 MT');
+    await page.getByRole('group', { name: '어떤 모임이에요?' }).getByRole('button', { name: 'MT·동아리' }).click();
+    await expect(tp.getByTestId('cover')).toContainText('동아리 18명');
+    await page.getByRole('group', { name: '며칠이에요?' }).getByRole('button', { name: '1박 2일' }).click();
+    await expect(tp.locator('[data-testid="day-dots"] button')).toHaveCount(2);
+    await name.fill('   ');
+    await expect(tp.getByTestId('cover')).toContainText('이름 없는 모임');
+    await expect(name).toHaveAttribute('maxlength', '24');
+    await expect(page.getByTestId('try-link')).toHaveText(/^\/p\/[0-9a-hjkmnp-tv-z]{20}$/);
+  });
+
+  test('링크 복사는 클립보드를 건드리지 않고 다섯 명이 합류하는 연출만 한다', async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __copied: boolean };
+      w.__copied = false;
+      try {
+        Object.defineProperty(navigator, 'clipboard', {
+          configurable: true,
+          value: { writeText: async () => { w.__copied = true; } },
+        });
+      } catch { /* 이 엔진에선 바꿀 수 없다 — 아래 판정은 그대로 유효하다 */ }
+    });
+    await page.goto('/#try');
+    const copy = page.getByRole('button', { name: '링크 복사' });
+    await expect(copy).toHaveAttribute('data-nudge', 'true');
+    await copy.click();
+    await expect(copy).toHaveAttribute('data-nudge', 'false');
+    await expect(page.getByText('5명이 로그인 없이 열었어요')).toBeVisible({ timeout: 6_000 });
+    expect(await page.evaluate(() => (window as unknown as { __copied: boolean }).__copied)).toBe(false);
+    await expect(page.getByText('복사했어요')).toHaveCount(0);
+  });
+
+  test('모션 줄이기: 링크 복사 강조는 멈춘 고리로 남는다', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/#try');
+    const copy = page.getByRole('button', { name: '링크 복사' });
+    expect(await copy.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+    expect(await copy.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe('none');
+  });
+
+  test('쓰임 카드를 누르면 그 일정이 여정 폰에 열리고 맨 위로 간다', async ({ page }) => {
+    await page.goto('/#cases');
+    await page.getByRole('button', { name: '가평 1박 MT 일정을 위쪽 폰에서 열기' }).click();
+    await expect.poll(() => page.evaluate(() => scrollY), { timeout: 10_000 }).toBeLessThan(5);
+    await expect(phone(page).getByTestId('cover')).toContainText('가평 1박 MT');
   });
 });
