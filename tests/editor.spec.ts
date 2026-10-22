@@ -55,6 +55,7 @@ test.describe('편집기 상단 바', () => {
   test('상태 세그먼트를 화살표 키로 옮길 수 있다', async ({ page }) => {
     await page.goto(DEMO);
     const group = page.getByRole('radiogroup', { name: '공개 상태' });
+    await hydrated(group.getByRole('radio', { name: '공개', exact: true }));
     await group.getByRole('radio', { name: '공개', exact: true }).focus();
     await page.keyboard.press('ArrowRight');
     await expect(group.getByRole('radio', { name: '비공개' })).toHaveAttribute('aria-checked', 'true');
@@ -67,6 +68,7 @@ test.describe('편집기 상단 바', () => {
   test('제목을 바꾸면 저장 상태가 바뀐다', async ({ page }) => {
     await page.goto(DEMO);
     const title = page.getByRole('textbox', { name: '일정 제목' });
+    await hydrated(title);
     await title.fill('편집 데모 2027');
     await title.blur();
     await expect(page.getByTestId('save-status')).toContainText('저장됨');
@@ -81,6 +83,7 @@ test.describe('편집기 상단 바', () => {
     // 거부되므로 스토어가 바뀌지 않는다 — jeju를 그대로 써도 안전하다.
     await page.goto(JEJU);
     const title = page.getByRole('textbox', { name: '일정 제목' });
+    await hydrated(title);
     await title.fill('   ');
     await title.blur();
     // 같은 문구가 두 곳에 뜬다 — 상단 바 저장 상태와 1번 섹션의 제목 필드.
@@ -93,6 +96,7 @@ test.describe('편집기 상단 바', () => {
     // 덮어써도 제목 입력엔 저장 안 된 공백이 아니라 마지막 저장 값이 남아야 한다.
     await page.goto(DEMO);
     const title = page.getByRole('textbox', { name: '일정 제목' });
+    await hydrated(title);
     const savedValue = await title.inputValue();
 
     await title.fill('   ');
@@ -121,12 +125,14 @@ test.describe('상태가 뷰어를 막는다', () => {
   test('임시저장으로 바꾸면 공개 링크가 닫히고, 공개로 되돌리면 다시 열린다', async ({ page }) => {
     await page.goto(DEMO);
     const group = page.getByRole('radiogroup', { name: '공개 상태' });
+    await hydrated(group.getByRole('radio', { name: '임시저장' }));
 
     await group.getByRole('radio', { name: '임시저장' }).click();
     await expect(page.getByTestId('save-status')).toContainText('저장됨');
     expect((await page.goto('/p/editor-demo'))?.status(), '임시저장 = 기획자만 본다').toBe(404);
 
     await page.goto(DEMO);
+    await hydrated(group.getByRole('radio', { name: '공개', exact: true }));
     await group.getByRole('radio', { name: '공개', exact: true }).click();
     await expect(page.getByTestId('save-status')).toContainText('저장됨');
     expect((await page.goto('/p/editor-demo'))?.status(), '공개로 되돌리면 다시 열린다').toBe(200);
@@ -192,6 +198,7 @@ test.describe('기본 정보', () => {
 
   test('종료일이 시작일보다 빠르면 서버가 거부한다', async ({ page }) => {
     await page.goto(JEJU);
+    await hydrated(page.getByLabel('종료일'));
     await page.getByLabel('종료일').fill('2020-01-01');
     await page.getByLabel('종료일').blur();
     // 오류는 그 필드에 붙는다 — 다섯 필드 중 어느 것이 틀렸는지 보여야 한다.
@@ -204,6 +211,7 @@ test.describe('기본 정보', () => {
   // Task 7(미리보기)이 붙어야 통과한다. 표시만 하고 지우지 않는다.
   test('유형을 바꾸면 미리보기 커버 뱃지가 따라 바뀐다', async ({ page }) => {
     await page.goto(BASIC);
+    await hydrated(page.getByLabel('유형'));
     await page.getByLabel('유형').fill('워크샵');
     await page.getByLabel('유형').blur();
     await expect(page.getByTestId('editor-preview').getByText('워크샵')).toBeVisible();
@@ -215,6 +223,7 @@ test.describe('기본 정보', () => {
    */
   test('폼에서 날짜를 저장한 뒤 제목을 저장해도 날짜가 되돌아가지 않는다', async ({ page }) => {
     await page.goto(BASIC);
+    await hydrated(page.getByLabel('종료일'));
     const start = await page.getByLabel('시작일').inputValue();
     const grown = addDays(start, 2);
 
@@ -228,6 +237,7 @@ test.describe('기본 정보', () => {
     await expect(page.getByTestId('save-status')).toContainText('저장됨');
 
     await page.reload();
+    await hydrated(page.getByLabel('종료일'));
     await expect(page.getByLabel('종료일'), '제목 저장이 날짜를 덮으면 안 된다').toHaveValue(grown);
     await expect(page.getByRole('textbox', { name: '일정 제목' })).toHaveValue('기본 정보 데모 2');
 
@@ -242,6 +252,7 @@ test.describe('기본 정보', () => {
    */
   test('기간을 늘리면 일차가 따라 늘고 날짜도 다시 계산된다', async ({ page }) => {
     await page.goto(BASIC);
+    await hydrated(page.getByLabel('종료일'));
     const start = await page.getByLabel('시작일').inputValue();
 
     await saveField(page, page.getByLabel('종료일'), addDays(start, 2));
@@ -252,6 +263,7 @@ test.describe('기본 정보', () => {
 
     // 시작일을 하루 밀면 (3일 → 2일 축소, 3일차는 비어 있어 허용) 남은 날의 날짜가 밀린다.
     await page.goto(BASIC);
+    await hydrated(page.getByLabel('시작일'));
     await saveField(page, page.getByLabel('시작일'), addDays(start, 1));
 
     await page.goto('/p/editor-basic');
@@ -261,12 +273,14 @@ test.describe('기본 정보', () => {
     // 되돌린다. 시작일을 먼저 당겨 기간을 늘린 뒤 종료일을 줄인다 —
     // 반대 순서면 중간에 일정이 든 날이 잘려 서버가 거부한다.
     await page.goto(BASIC);
+    await hydrated(page.getByLabel('시작일'));
     await saveField(page, page.getByLabel('시작일'), start);
     await saveField(page, page.getByLabel('종료일'), addDays(start, 1));
   });
 
   test('일정이 든 날이 사라지는 축소는 서버가 거부한다', async ({ page }) => {
     await page.goto(BASIC);
+    await hydrated(page.getByLabel('종료일'));
     const start = await page.getByLabel('시작일').inputValue();
 
     await saveField(page, page.getByLabel('종료일'), start);
@@ -301,6 +315,7 @@ test.describe('커버 업로더', () => {
     // 클라이언트는 `image/*`까지만 거른다(accept 속성과 같은 기준). GIF는 그 문을
     // 통과하지만 서버 허용 목록(JPG·PNG·WebP)에 없다 — 서버 거부가 화면에 떠야 한다.
     await page.goto(BASIC);
+    await hydrated(page.getByTestId('cover-input'));
     await page.getByTestId('cover-input').setInputFiles({
       name: 'x.gif',
       mimeType: 'image/gif',
@@ -311,6 +326,7 @@ test.describe('커버 업로더', () => {
 
   test('고른 사진이 바로 뜨고 새로고침해도 남는다', async ({ page }) => {
     await page.goto(BASIC);
+    await hydrated(page.getByTestId('cover-input'));
     await page.getByTestId('cover-input').setInputFiles({
       name: 'cover.png',
       mimeType: 'image/png',
@@ -340,6 +356,7 @@ test.describe('커버 업로더', () => {
    */
   test('올린 커버를 든 공개 뷰어가 열리고 사진이 그려진다', async ({ page }) => {
     await page.goto(BASIC);
+    await hydrated(page.getByTestId('cover-input'));
     await page.getByTestId('cover-input').setInputFiles({
       name: 'cover.png',
       mimeType: 'image/png',
@@ -366,6 +383,7 @@ test.describe('커버 업로더', () => {
    */
   test('공개가 아닌 일정의 커버는 404다', async ({ page }) => {
     await page.goto(BASIC);
+    await hydrated(page.getByTestId('cover-input'));
     await page.getByTestId('cover-input').setInputFiles({
       name: 'cover.png',
       mimeType: 'image/png',
@@ -379,6 +397,7 @@ test.describe('커버 업로더', () => {
     expect((await page.request.get(url)).status(), '공개 일정은 커버가 나간다').toBe(200);
 
     const group = page.getByRole('radiogroup', { name: '공개 상태' });
+    await hydrated(group.getByRole('radio', { name: '임시저장' }));
     for (const name of ['임시저장', '비공개']) {
       await group.getByRole('radio', { name }).click();
       await expect(page.getByTestId('save-status')).toContainText('저장됨');
@@ -425,6 +444,7 @@ test.describe('정렬', () => {
   test('그립에 초점을 두고 화살표로 순서를 바꾼다', async ({ page }) => {
     await page.goto(SORT);
     const rows = page.getByTestId('notice-row');
+    await hydrated(grip(rows.first()));
     await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     const landed = page.waitForResponse((r) => r.request().method() === 'POST');
@@ -443,6 +463,7 @@ test.describe('정렬', () => {
 
     // 새로고침해도 남는다 = 화면만 바뀐 게 아니라 서버에도 갔다.
     await page.reload();
+    await hydrated(grip(page.getByTestId('notice-row').nth(1)));
     await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue('준비물');
 
     // 되돌린다.
@@ -456,6 +477,7 @@ test.describe('정렬', () => {
   test('맨 위에서 위로는 움직이지 않는다', async ({ page }) => {
     await page.goto(SORT);
     const first = page.getByTestId('notice-row').first();
+    await hydrated(grip(first));
     const text = await noticeTitle(first).inputValue();
     await grip(first).focus();
     await page.keyboard.press('ArrowUp');
@@ -471,6 +493,7 @@ test.describe('정렬', () => {
    */
   test('서버가 거부하면 순서를 되돌리고 이유를 보여준다', async ({ page }) => {
     await page.goto(SORT);
+    await hydrated(grip(page.getByTestId('notice-row').first()));
     await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     await page.route('**/dashboard/plans/editor-sort/edit', async (route) => {
@@ -508,6 +531,7 @@ test.describe('정렬', () => {
   test('롤백이 그 사이 성공한 이동을 지우지 않는다', async ({ page }) => {
     await page.goto(SORT);
     const rows = page.getByTestId('notice-row');
+    await hydrated(grip(rows.first()));
     await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     let seen = 0;
@@ -536,6 +560,7 @@ test.describe('정렬', () => {
 
     await page.unroute('**/dashboard/plans/editor-sort/edit');
     await page.reload();
+    await hydrated(grip(rows.nth(2)));
     for (const [i, text] of expected.entries()) {
       await expect(noticeTitle(rows.nth(i)), '화면과 서버 순서가 같아야 한다').toHaveValue(text);
     }
@@ -557,6 +582,7 @@ test.describe('정렬', () => {
   test('그립을 끌어 첫 행을 맨 아래로 옮긴다', async ({ page }) => {
     await page.goto(SORT);
     const rows = page.getByTestId('notice-row');
+    await hydrated(grip(rows.first()));
     await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     const handle = (await grip(rows.first()).boundingBox())!;
@@ -575,6 +601,7 @@ test.describe('정렬', () => {
     await landed;
 
     await page.reload();
+    await hydrated(grip(rows.nth(2)));
     await expect(noticeTitle(rows.nth(2))).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     // 되돌린다 — 두 칸을 키보드로 올린다.
@@ -598,6 +625,7 @@ test.describe('정렬', () => {
   test('드래그 중에 본문을 굴려도 끌리는 행이 포인터를 따라온다', async ({ page }) => {
     await page.goto(SORT);
     const rows = page.getByTestId('notice-row');
+    await hydrated(grip(rows.first()));
     await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     const handle = (await grip(rows.first()).boundingBox())!;
@@ -629,6 +657,7 @@ test.describe('정렬', () => {
 
   test('순서 변경이 미리보기에 반영된다', async ({ page }) => {
     await page.goto(SORT);
+    await hydrated(grip(page.getByTestId('notice-row').first()));
     await grip(page.getByTestId('notice-row').first()).focus();
     await page.keyboard.press('ArrowDown');
     // 공지 요약은 각 공지의 첫 구절을 · 로 이은 것이다 (스펙 §7.6)
@@ -671,6 +700,7 @@ test.describe('공지', () => {
   test('공지를 추가하면 목록과 개수가 늘어난다', async ({ page }) => {
     await page.goto(NOTICE);
     const rows = page.getByTestId('notice-row');
+    await hydrated(page.getByRole('button', { name: '공지 추가' }));
     await expect(rows).toHaveCount(3);
     await expect(noticeSection(page)).toContainText('3개');
 
@@ -695,6 +725,7 @@ test.describe('공지', () => {
   test('공지를 지우면 확인을 먼저 받는다', async ({ page }) => {
     await page.goto(NOTICE);
     const rows = page.getByTestId('notice-row');
+    await hydrated(page.getByRole('button', { name: '공지 추가' }));
     // 픽스처 셋 중 하나를 지우면 되돌릴 때 id가 바뀐다(뒤 테스트가 id를 쓴다).
     // 그래서 지울 행을 하나 만들어 두고 그걸 지운다 — 판정(확인을 먼저 받는가)은 같다.
     let landed = posted(page);
@@ -718,9 +749,11 @@ test.describe('공지', () => {
 
   test('제목을 고치고 blur하면 저장된다', async ({ page }) => {
     await page.goto(NOTICE);
+    await hydrated(noticeTitle(page.getByTestId('notice-row').first()));
     await saveField(page, noticeTitle(page.getByTestId('notice-row').first()), '집결 시간 변경');
 
     await page.reload();
+    await hydrated(noticeTitle(page.getByTestId('notice-row').first()));
     await expect(noticeTitle(page.getByTestId('notice-row').first())).toHaveValue('집결 시간 변경');
 
     // 되돌린다.
@@ -773,6 +806,7 @@ test.describe('공지', () => {
   test('60자가 넘는 제목은 서버가 거부하고 값을 되돌린다', async ({ page }) => {
     await page.goto(NOTICE);
     const first = page.getByTestId('notice-row').first();
+    await hydrated(noticeTitle(first));
     const before = await noticeTitle(first).inputValue();
 
     await saveField(page, noticeTitle(first), '가'.repeat(61));
@@ -791,6 +825,7 @@ test.describe('공지', () => {
   test('없는 공지를 지우면 서버가 거부하고 목록이 그대로다', async ({ page }) => {
     await page.goto(NOTICE);
     const rows = page.getByTestId('notice-row');
+    await hydrated(noticeDelete(rows.first()));
     await expect(rows).toHaveCount(3);
 
     await page.route('**/dashboard/plans/editor-notice/edit', async (route) => {
@@ -821,6 +856,7 @@ test.describe('공지', () => {
   test('네트워크가 끊기면 오류를 보여주고 낙관적 순서를 되돌린다', async ({ page }) => {
     await page.goto(NOTICE);
     const rows = page.getByTestId('notice-row');
+    await hydrated(grip(rows.first()));
     await expect(noticeTitle(rows.first())).toHaveValue('집결 시간을 꼭 지켜주세요');
 
     await page.route('**/dashboard/plans/editor-notice/edit', async (route) => {
@@ -846,6 +882,7 @@ test.describe('공지', () => {
   test('네트워크가 끊기면 인라인 편집 값을 되돌린다', async ({ page }) => {
     await page.goto(NOTICE);
     const title = noticeTitle(page.getByTestId('notice-row').first());
+    await hydrated(title);
     const before = await title.inputValue();
 
     await page.route('**/dashboard/plans/editor-notice/edit', async (route) => {
@@ -885,6 +922,7 @@ test.describe('타임테이블', () => {
   test('일차 칩으로 날짜를 바꾸면 행과 카운트가 바뀐다', async ({ page }) => {
     await page.goto(TT);
     const rows = page.getByTestId('item-row');
+    await hydrated(page.getByTestId('editor-day-chips').getByRole('button', { name: '2일차' }));
     await expect(rows).toHaveCount(3);
     await expect(page.getByText('1일차 · 3개')).toBeVisible();
 
@@ -906,6 +944,7 @@ test.describe('타임테이블', () => {
   test('잘못된 시간은 서버가 거부하고 값을 되돌린다', async ({ page }) => {
     await page.goto(TT);
     const time = page.getByTestId('item-row').first().getByRole('textbox', { name: '시작 시간' });
+    await hydrated(time);
     await time.fill('99:99');
     await time.blur();
     await expect(page.getByTestId('toast')).toContainText('00:00 ~ 23:59');
@@ -916,6 +955,7 @@ test.describe('타임테이블', () => {
   test('장소 연결 시트에서 장소를 고르면 칩이 바뀐다', async ({ page }) => {
     await page.goto(TT);
     const walk = page.getByTestId('item-row').nth(2);
+    await hydrated(placeChip(walk));
     await placeChip(walk).click();
 
     const sheet = page.getByTestId('sheet-panel');
@@ -935,6 +975,7 @@ test.describe('타임테이블', () => {
   test('일정을 추가하면 행이 늘고 새 행으로 초점이 간다', async ({ page }) => {
     await page.goto(TT);
     const rows = page.getByTestId('item-row');
+    await hydrated(page.getByRole('button', { name: '일정 추가' }));
     const landed = posted(page);
     await page.getByRole('button', { name: '일정 추가' }).click();
     await landed;
@@ -946,6 +987,7 @@ test.describe('타임테이블', () => {
   test('일정을 지우면 확인을 먼저 받는다', async ({ page }) => {
     await page.goto(TT);
     const rows = page.getByTestId('item-row');
+    await hydrated(rows.first().getByRole('button', { name: /삭제/ }));
     await rows.first().getByRole('button', { name: /삭제/ }).click();
 
     await expect(page.getByTestId('dialog-panel')).toContainText('모여서 커피');
@@ -960,6 +1002,7 @@ test.describe('타임테이블', () => {
   test('그립에 초점을 두고 화살표로 순서를 바꾼다', async ({ page }) => {
     await page.goto(TT);
     const rows = page.getByTestId('item-row');
+    await hydrated(grip(rows.first()));
     const landed = posted(page);
     await grip(rows.first()).focus();
     await page.keyboard.press('ArrowDown');
@@ -981,6 +1024,7 @@ test.describe('장소', () => {
     await expect(rows.first().getByRole('textbox', { name: '장소 이름' })).toHaveValue('합정 세미나실');
 
     const pin = rows.first().getByRole('button', { name: /고정/ });
+    await hydrated(pin);
     await expect(pin).toHaveAttribute('aria-pressed', 'true');
     const landed = posted(page);
     await pin.click();
@@ -993,6 +1037,7 @@ test.describe('장소', () => {
   test('장소를 지우면 끊기는 연결이 몇 개인지 알려준다', async ({ page }) => {
     await page.goto(TT);
     const hall = page.getByTestId('place-row').first();
+    await hydrated(hall.getByRole('button', { name: /삭제/ }));
     await hall.getByRole('button', { name: /삭제/ }).click();
 
     // 세미나실은 1일차 오전 세션과 2일차 회고가 쓰고 있다.
@@ -1012,6 +1057,7 @@ test.describe('장소', () => {
   test('이름을 고치고 blur하면 저장되고 타임테이블 칩도 따라온다', async ({ page }) => {
     await page.goto(TT);
     const name = page.getByTestId('place-row').first().getByRole('textbox', { name: '장소 이름' });
+    await hydrated(name);
     const landed = posted(page);
     await name.fill('합정 대회의실');
     await name.blur();
@@ -1044,6 +1090,7 @@ test.describe('미리보기', () => {
     await page.goto(TT);
     const title = page.getByRole('textbox', { name: '일정 제목' });
     const pv = page.getByTestId('editor-preview');
+    await hydrated(title);
 
     // 저장 전이다 — 입력만 했는데도 따라와야 한다(둘이 한 편집 상태를 본다).
     await title.fill('타임테이블 데모 2027');
@@ -1053,6 +1100,7 @@ test.describe('미리보기', () => {
   test('1024px 미만에서는 미리보기가 하단 시트로 내려간다', async ({ page }) => {
     await page.setViewportSize({ width: 900, height: 800 });
     await page.goto(TT);
+    await hydrated(page.getByRole('button', { name: '미리보기' }));
     // 오른쪽 열은 CSS로 접힌다 — 미디어 쿼리를 JS로 재지 않는다(브레이크포인트 하나면 된다).
     await expect(page.getByTestId('editor-preview')).toBeHidden();
 
@@ -1156,6 +1204,7 @@ test.describe('접근성', () => {
     // 거부되므로 스토어가 바뀌지 않는다 — 읽기 전용 slug를 그대로 쓴다.
     await page.goto(JEJU);
     const title = page.getByTestId('basic-info').getByRole('textbox', { name: '제목' });
+    await hydrated(title);
     await title.fill('   ');
     await title.blur();
 
@@ -1169,6 +1218,7 @@ test.describe('접근성', () => {
   test('삭제 다이얼로그가 초점을 가져가고 닫을 때 돌려준다', async ({ page }) => {
     await page.goto(NOTICE);
     const trash = page.getByTestId('notice-row').first().getByRole('button', { name: /삭제/ });
+    await hydrated(trash);
     await trash.click();
 
     const dialog = page.getByTestId('dialog-panel');
@@ -1186,6 +1236,7 @@ test.describe('접근성', () => {
 
   test('정렬 결과가 aria-live로 읽힌다', async ({ page }) => {
     await page.goto(SORT);
+    await hydrated(grip(page.getByTestId('notice-row').first()));
     // 알림 영역은 정렬 목록마다 하나다(공지·타임테이블이 각자 SortableList를 쓴다) —
     // 하나로 합치면 두 목록의 알림이 서로를 지운다. 여기서는 공지 쪽을 본다.
     const status = page.getByTestId('notice-section').getByTestId('sort-status');
