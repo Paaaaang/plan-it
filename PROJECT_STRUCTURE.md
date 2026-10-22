@@ -68,7 +68,7 @@ plan-it/
 │   │   │   ├── ui/                          #    공통 UI 컴포넌트 (badge·bottom-sheet·button·card·chip·
 │   │   │   │                                #    date-field·dialog·icon·loader·segmented-control·tabs·
 │   │   │   │                                #    text-field·theme-toggle·toast·field-shell)
-│   │   │   ├── landing/                     #    랜딩(v8): landing-story(여정·슬롯·만들어 보기·쓰임) · run-story(스크롤 이야기) · story-phone · viewer-preview · try-section · case-cards · landing-video(s) · landing.module.css · 미구현 스텁 announcements-banner
+│   │   │   ├── landing/                     #    랜딩(v8): landing-story(여정·슬롯·만들어 보기·쓰임) · run-story(스크롤 이야기) · story-math(순수 수학) · story-phone · viewer-preview · try-section · case-cards · landing-video(s) · landing.module.css · 미구현 스텁 announcements-banner
 │   │   │   ├── dashboard/                   #    대시보드 (plan-list·plan-list-item·split-view·plan-preview·
 │   │   │   │                                #    status-badge·share-link·create-plan-button)
 │   │   │   ├── editor/                      #    편집기 섹션 컴포넌트 (editor-shell·top-bar·section-shell·
@@ -221,7 +221,7 @@ Next.js **App Router** 아키텍처의 중심 폴더입니다. **Route Groups**�
   - `bottom-sheet.tsx` — 모바일 시트: grabber handle, slide-up, safe-area padding
   - `toast.tsx` — grey-900 surface, success/danger icon, floating 모드
   - `icon.tsx` — Lucide 래퍼 (lucide-react 설치 후 교체 필요)
-- **`landing/`** — 공개 랜딩(`/`) 전용, 다크 고정 v8. `page.tsx`(서버)가 헤더·마지막 CTA·푸터를 그리고, 클라이언트 경계 `landing-story.tsx` 하나가 여정·폰 슬롯·만들어 보기·쓰임을 묶는다(착지와 쓰임 카드가 서로의 상태를 쓴다). 폰 슬롯은 sticky 무대 밖에 `position: fixed`로 둔 형제 요소다(포털 아님). 스크롤 이야기는 `run-story.ts`의 rAF 루프 하나가 transform·opacity·CSS 변수만 바꾸고, 착지·공지 펼침(S 1.08에 열려 1.92에 닫히는 불리언 — 열림은 NoticeBar 자신의 전환)·'지금' 줄만 React 상태로 올린다. 폰 속은 실제 뷰어 부품(`viewer-preview.tsx`, `.theme-dark`). 배경 영상 주소는 `landing-videos.ts` 한 곳(⚠️ Orbis 영상 — 출시 전 교체)이고, `landing-video.tsx`가 화면에 들어올 때만 받아 재생한다(`preload="none"` + IntersectionObserver, 모션 줄이기면 재생 안 함). `.root`는 `line-height: normal`(시안과 같게). 토큰은 `globals.css`의 `--landing-*`, 예시 데이터는 `src/shared/fixtures/landing.ts`. 명세는 `docs/superpowers/specs/2026-10-20-landing-renewal-design.md`. `announcements-banner.tsx`는 `announcements` 테이블이 생길 때까지 문서 스텁.
+- **`landing/`** — 공개 랜딩(`/`) 전용, 다크 고정 v8. `page.tsx`(서버)가 헤더·마지막 CTA·푸터를 그리고, 클라이언트 경계 `landing-story.tsx` 하나가 여정·폰 슬롯·만들어 보기·쓰임을 묶는다(착지와 쓰임 카드가 서로의 상태를 쓴다). 폰 슬롯은 sticky 무대 밖에 `position: fixed`로 둔 형제 요소다(포털 아님). 스크롤 이야기는 `run-story.ts`의 rAF 루프 하나가 transform·opacity·CSS 변수만 바꾸고, 착지·공지 펼침(S 1.08에 열려 1.92에 닫히는 불리언 — 열림은 NoticeBar 자신의 전환)·'지금' 줄만 React 상태로 올린다. 그 루프가 쓰는 순수 수학(`clamp`·`smooth`·`ease`·`lerp`·`storyPosition`)은 `story-math.ts`에 따로 둔다. 폰 속은 실제 뷰어 부품(`viewer-preview.tsx`, `.theme-dark`). 배경 영상 주소는 `landing-videos.ts` 한 곳(⚠️ Orbis 영상 — 출시 전 교체)이고, `landing-video.tsx`가 화면에 들어올 때만 받아 재생한다(`autoplay` 속성 없음 — `preload="none"` + IntersectionObserver가 보일 때 `play()`, 모션 줄이기면 재생 안 함). `.root`는 `line-height: normal`(시안과 같게). 토큰은 `globals.css`의 `--landing-*`, 예시 데이터는 `src/shared/fixtures/landing.ts`. 명세는 `docs/superpowers/specs/2026-10-20-landing-renewal-design.md`. `announcements-banner.tsx`는 `announcements` 테이블이 생길 때까지 문서 스텁.
 - **`dashboard/`** — 대시보드 전용. 일정 목록, 스플릿뷰, 미리보기, 상태 배지, 공유 링크.
 - **`editor/`** — 편집기. PRD의 4개 섹션 컴포넌트로 세분화:
   - `basic-info-section.tsx` + `cover-uploader.tsx` — 기본 정보 (제목·기간·유형·인원, 커버 사진)

@@ -64,7 +64,8 @@ export function runStory(els: StoryEls, hooks: StoryHooks): () => void {
   let raf = 0;
   let glideRaf = 0;
   let last = performance.now();
-  const st = { S: -0.5, prevS: -0.5, P: 0, lastP: 0, hud: 0, step: null as number | null, land: false, notice: false, cur: -1, version: "", init: false };
+  // init: 자세·S의 첫 프레임 표지(scenes보다 먼저 선다). first: scenes 안의 첫 프레임 표지 — P도 감쇠 없이 맞춘다
+  const st = { S: -0.5, prevS: -0.5, P: 0, lastP: 0, hud: 0, step: null as number | null, land: false, notice: false, cur: -1, version: "", init: false, first: true };
   const pose: Pose = { x: 0, y: 0, rx: 0, ry: 0, rz: 0, s: 1, e: 0 };
   const target: Pose = { ...pose };
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
@@ -97,7 +98,8 @@ export function runStory(els: StoryEls, hooks: StoryHooks): () => void {
 
   // 손가락 탭 물결 — 화면 좌표를 폰 화면의 배치 좌표로 되돌려 찍는다(슬롯이 축소·기울어 있어도 맞게)
   function tap(target: Element | null) {
-    if (!target) return;
+    // 모션 줄이기: 퍼지는 물결은 애니메이션이라 CSS가 멈추면 정지한 동그라미로 남는다 — 아예 찍지 않는다
+    if (!target || reduce) return;
     const sc = els.screen;
     const sr = sc.getBoundingClientRect();
     const r = target.getBoundingClientRect();
@@ -139,6 +141,8 @@ export function runStory(els: StoryEls, hooks: StoryHooks): () => void {
     if (!attract.on) return;
     attract.on = false;
     clearTimeout(attract.timer);
+    // 진행 중인 폰 속 미끄러짐도 끊는다 — 안 그러면 scenes()와 glide가 둘 다 scrollTop을 쓴다
+    cancelAnimationFrame(glideRaf);
     els.phone.dataset.demo = "";
     attract.page = 0;
   };
@@ -316,7 +320,11 @@ export function runStory(els: StoryEls, hooks: StoryHooks): () => void {
     // 4) 일차 넘기기 — 트랙을 직접 민다. 머리줄·HUD는 DayPager가 scroll 이벤트로 따라온다
     const nd = base.days;
     const Pt = clamp(S < -0.1 ? attract.page : land ? 0 : smooth(3.12, 3.42, S) + smooth(3.55, 3.85, S), 0, Math.max(0, nd - 1));
-    st.P += (Pt - st.P) * (reduce ? 1 : 1 - Math.exp(-dt * 5));
+    // 첫 프레임(새로고침·앵커 이동으로 여정 한가운데서 시작)은 감쇠 없이 바로 — 명세 §9.
+    // lastP도 같이 맞춰, 그 점프가 넘기는 방향(dir)·손가락 표시로 읽히지 않게 한다
+    st.P += (Pt - st.P) * (reduce || st.first ? 1 : 1 - Math.exp(-dt * 5));
+    if (st.first) st.lastP = st.P;
+    st.first = false;
     const P = st.P;
     const dir = P - st.lastP;
     st.lastP = P;

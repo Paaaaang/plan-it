@@ -7,8 +7,10 @@
  * @connects
  *  - src/client/components/landing/*  → 표시
  *  - src/shared/types/viewer.ts       → ViewerPlan
+ *  - src/shared/utils/date.ts         → addDays
  */
 
+import { addDays } from "@/shared/utils/date";
 import type { ViewerDay, ViewerItem, ViewerNotice, ViewerPlan } from "@/shared/types/viewer";
 
 /** "YYYY-MM-DD" + "HH:MM" → 로컬 시각. rail.ts::isSameDay도 로컬로 비교하므로 어느 시간대에서든 같은 판정 */
@@ -16,11 +18,6 @@ export function at(date: string, hhmm: string): Date {
   const [y, m, d] = date.split("-").map(Number);
   const [h, mi] = hhmm.split(":").map(Number);
   return new Date(y, m - 1, d, h, mi);
-}
-
-function addDays(date: string, n: number): string {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 }
 
 const COVER = "/landing/cover-night.jpg";
@@ -174,7 +171,8 @@ export function demoShareKey(d: Draft): string {
   for (let i = 0; out.length < 20; i++) {
     h ^= s.charCodeAt(i % s.length) + i;
     h = Math.imul(h, 16777619) >>> 0;
-    out += KEY_ABC[h & 31];
+    // 높은 5비트 — 해시의 낮은 비트는 글자의 윗비트를 못 섞어, 이름을 고쳐도 키가 그대로인 경우가 많았다
+    out += KEY_ABC[h >>> 27];
   }
   return out;
 }

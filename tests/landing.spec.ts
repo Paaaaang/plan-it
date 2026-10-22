@@ -205,7 +205,8 @@ test.describe('랜딩 여정', () => {
     await page.goto('/#try');
     const copy = page.getByRole('button', { name: '링크 복사' });
     expect(await copy.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
-    expect(await copy.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe('none');
+    // 'none'이 아닌 것만 보면 버튼 자체의 그림자(.btnCoral)로도 통과한다 — 번지지 않는 3px 고리여야 한다
+    expect(await copy.evaluate((el) => getComputedStyle(el).boxShadow)).toContain('0px 0px 0px 3px');
   });
 
   test('모션 줄이기: 데스크톱 히어로 폰이 커서를 따라 기울지 않는다', async ({ page }) => {
