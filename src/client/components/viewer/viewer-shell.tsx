@@ -80,6 +80,8 @@ export function ViewerShell({ plan, showLandingLink = false }: { plan: ViewerPla
       {showLandingLink && (
         <Link
           href="/?utm_source=viewer&utm_medium=share_link"
+          // 모든 뷰어가 프로덕션에서 랜딩(영상·무거운 번들)을 미리 받지 않게 — 누른 사람만 간다
+          prefetch={false}
           className="mx-5 mt-10 block text-center text-caption text-tertiary underline-offset-2 hover:underline"
         >
           나도 플랜잇으로 모임 만들기

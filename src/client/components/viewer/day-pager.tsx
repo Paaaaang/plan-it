@@ -4,8 +4,8 @@
  *              넘기는 동안만 "2일차 · 10.24 금"이 뜬다(랜딩 명세 §8-2, 사용자: "1일차·2일차 뜨는 거 별로,
  *              콤팩트하다가 넘길 때 몇일차인지"). 넘기기는 브라우저 기본 가로 스크롤 + scroll-snap이라
  *              손가락·트랙패드가 그대로 된다.
- *              live면 사용자 스크롤·스냅을 끄고 바깥(랜딩 스크롤 이야기)이 trackRef.scrollLeft를 움직인다 —
- *              그때도 HUD·머리줄은 같은 scroll 이벤트로 따라온다.
+ *              live면 사용자 스크롤·스냅을 끄고 바깥(랜딩 스크롤 이야기)이 트랙(data-testid="day-track")의
+ *              scrollLeft를 움직인다 — 그때도 HUD·머리줄은 같은 scroll 이벤트로 따라온다.
  *
  * @connects
  *  - src/client/components/viewer/viewer-shell.tsx      → 공개 뷰어·편집기 미리보기
@@ -15,7 +15,7 @@
 
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { dayLabel } from "@/shared/viewer/summary";
 import type { ViewerDay } from "@/shared/types/viewer";
 
@@ -28,7 +28,6 @@ export function DayPager({
   onIndexChange,
   initialIndex = 0,
   live = false,
-  trackRef,
 }: {
   days: ViewerDay[];
   renderDay: (day: ViewerDay, index: number) => ReactNode;
@@ -36,10 +35,8 @@ export function DayPager({
   /** 탭을 오가며 다시 마운트돼도 보던 일차에서 시작하게(ViewerShell이 기억한다) */
   initialIndex?: number;
   live?: boolean;
-  trackRef?: RefObject<HTMLDivElement | null>;
 }) {
-  const ownRef = useRef<HTMLDivElement>(null);
-  const track = trackRef ?? ownRef;
+  const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(initialIndex);
   const [hud, setHud] = useState({ on: false, day: initialIndex });
   const lastLeft = useRef(0);
@@ -71,8 +68,10 @@ export function DayPager({
     const dir = el.scrollLeft - lastLeft.current;
     lastLeft.current = el.scrollLeft;
 
+    // index와 견준다(at이 아니라) — 마지막 일차가 사라지면 at은 이미 near와 같아서, at과 견주면
+    // 낡은 index·바깥의 dayIndex(ViewerShell)가 그대로 남는다
     const near = Math.min(days.length - 1, Math.max(0, Math.round(pos)));
-    if (near !== at) {
+    if (near !== index) {
       setIndex(near);
       onIndexChange?.(near);
     }

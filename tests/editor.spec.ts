@@ -153,6 +153,17 @@ function shortDate(date: string): string {
 }
 
 /**
+ * 그 입력이 수화됐는지 기다린다. 수화 전에 fill하면 React가 입력 이벤트를 못 받고, 수화가 값을 되돌려
+ * 저장이 영영 떠나지 않는다(느린 dev 서버에서 `waitForResponse`가 30초를 채우던 모양).
+ * React는 수화한 DOM 노드에 `__reactProps$…`를 달아 둔다.
+ */
+async function hydrated(field: Locator): Promise<void> {
+  await expect
+    .poll(() => field.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))))
+    .toBe(true);
+}
+
+/**
  * 값을 고치고 blur한 뒤 **Server Action 응답이 닿을 때까지** 기다린다.
  *
  * 저장 상태 문구로 기다리면 안 된다: 직전 저장의 "저장됨"이 그대로 남아 있어 조건이
@@ -721,6 +732,41 @@ test.describe('공지', () => {
   });
 
   /**
+   * 긴 공지 제목(최대 60자)이 본문을 짓누르지 않는다. 제목 칸이 한 줄 너비를 다 차지하던 때는
+   * 31자쯤에서 본문이 28px(두 글자씩 줄바꿈)이 되고, 32자를 넘으면 제목이 바 밖으로 밀려 잘렸다.
+   * 같은 NoticeBar라도 폭이 달라 편집기 미리보기와 공개 뷰어(390폭) 둘 다 잰다.
+   */
+  test('긴 공지 제목은 줄바꿈되고 본문이 좁아지지 않는다', async ({ page }) => {
+    const LONG = '집결 시간을 꼭 지켜주세요 늦으면 셔틀을 놓치고 택시비는 본인 부담입니다'; // 40자
+    await page.goto(NOTICE);
+    const title = noticeTitle(page.getByTestId('notice-row').first());
+    await hydrated(title);
+    await saveField(page, title, LONG);
+
+    async function expectRoomy(bar: Locator) {
+      await bar.getByRole('button').click();
+      await expect(bar).toHaveAttribute('data-open', 'true');
+      const li = bar.locator('li').first();
+      const h = await li.getByRole('heading', { name: LONG }).boundingBox();
+      const p = await li.locator('p').boundingBox();
+      const list = await bar.locator('ul').boundingBox();
+      expect(h && p && list, '제목·본문·목록이 그려져 있어야 한다').toBeTruthy();
+      // 폭이 다른 두 자리(미리보기 ~208px, 뷰어 ~324px)를 같은 기준으로 재려고 절대값이 아니라 비율로 잰다.
+      // 목록 박스는 좌우 패딩 24px을 품고 있어 본문은 최소 목록의 0.4쯤이다. 고치기 전엔 미리보기가 7%였다
+      expect(p!.width, '본문이 한두 글자씩 끊기지 않는다').toBeGreaterThanOrEqual(list!.width * 0.4);
+      // 목록이 overflow-hidden이라 밖으로 밀린 제목은 조용히 잘린다 — 목록 안에 다 들어와야 한다
+      expect(h!.x + h!.width, '제목이 목록 오른쪽에서 잘리지 않는다').toBeLessThanOrEqual(list!.x + list!.width + 0.5);
+      expect(p!.x + p!.width, '본문이 목록 오른쪽에서 잘리지 않는다').toBeLessThanOrEqual(list!.x + list!.width + 0.5);
+    }
+
+    await expectRoomy(page.getByTestId('editor-preview').getByTestId('notice-bar'));
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/p/editor-notice');
+    await expectRoomy(page.getByTestId('notice-bar'));
+  });
+
+  /**
    * 거부 ①. 클라이언트에 maxLength를 걸지 않는다 — 서버 검증이 진짜고, 걸어 두면 이 경로가
    * 화면에서 도달 불가가 되어 검증이 죽어도 아무도 모른다.
    */
@@ -1025,6 +1071,48 @@ test.describe('미리보기', () => {
     // 링크 부재만 보면 미리보기가 아직 안 뜬 순간에도 0이라 통과한다. 먼저 뷰어가 그려졌는지 확인한다.
     await expect(pv.getByRole('heading', { name: '타임테이블 데모' })).toBeVisible();
     await expect(pv.getByRole('link', { name: '나도 플랜잇으로 모임 만들기' })).toHaveCount(0);
+  });
+
+  /**
+   * 보던 마지막 일차가 기간 축소로 사라지면 DayPager는 스크롤이 밀려 scroll 이벤트를 한 번 받는다.
+   * 그때 보여 주던 일차(at)와만 견주면 이미 같아서 index·바깥의 dayIndex가 낡은 채 남는다 —
+   * 카카오맵 CTA가 엉뚱한 일차(1일차) 장소를 가리키고, 일차를 되살리면 머리줄이 안 보이는 쪽을 가리킨다.
+   */
+  test('보던 마지막 일차가 사라졌다 되살아나도 미리보기가 보이는 일차를 따라간다', async ({ page }) => {
+    await page.goto(TT);
+    await hydrated(page.getByLabel('종료일'));
+    const start = await page.getByLabel('시작일').inputValue();
+    const pv = page.getByTestId('editor-preview');
+    const dots = pv.getByTestId('day-dots');
+    const dot = (n: number) => dots.getByRole('button', { name: `${n}일차` });
+    // 일차마다 장소가 다르다: 1일차 연남 카페, 2일차 합정 세미나실
+    const cta = pv.getByTestId('viewer-cta').getByRole('link');
+    const toward = (name: string) => expect(cta).toHaveAttribute('href', new RegExp(encodeURIComponent(name)));
+
+    // 3일차(빈 날)를 만들어 그 일차를 보고 있게 한다
+    await saveField(page, page.getByLabel('종료일'), addDays(start, 2));
+    await expect(dots.getByRole('button')).toHaveCount(3);
+    await dot(3).click();
+    await expect(dot(3)).toHaveAttribute('aria-current', 'true');
+
+    // 보던 3일차를 줄여 없앤다 — 이제 보이는 건 2일차다
+    await saveField(page, page.getByLabel('종료일'), addDays(start, 1));
+    await expect(dots.getByRole('button')).toHaveCount(2);
+    await expect(dot(2)).toHaveAttribute('aria-current', 'true');
+    await toward('합정 세미나실');
+
+    // 되살린다 — 보이던 건 2일차였으니 머리줄도 2일차여야 한다
+    await saveField(page, page.getByLabel('종료일'), addDays(start, 2));
+    await expect(dots.getByRole('button')).toHaveCount(3);
+    await expect(dot(2)).toHaveAttribute('aria-current', 'true');
+    await toward('합정 세미나실');
+
+    // 머리줄이 가리키는 쪽이 실제로 보이는(스크롤이 놓인) 페이지이고, 그 페이지는 inert가 아니다
+    const seen = await pv.getByTestId('day-track').evaluate((el) => Math.round(el.scrollLeft / el.clientWidth));
+    const cur = pv.locator('[data-testid="day-page"][data-current="true"]');
+    await expect(cur).toHaveCount(1);
+    await expect(cur).toHaveAttribute('data-day-page', String(seen));
+    expect(await cur.evaluate((el) => el.hasAttribute('inert')), '보이는 페이지가 inert면 안 눌린다').toBe(false);
   });
 });
 

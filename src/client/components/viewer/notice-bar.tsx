@@ -83,7 +83,10 @@ export function NoticeBar({
               key={n.id}
               className={["flex gap-2.5 py-2", i > 0 ? "border-t border-notice-border" : "", i === notices.length - 1 ? "mb-1" : ""].join(" ")}
             >
-              <h2 className="min-w-10 flex-none text-label font-bold text-tertiary">{n.title}</h2>
+              {/* 제목 칸은 폭의 45%까지만 — 한 줄 너비를 다 가지면 긴 제목(최대 60자)이 본문을 짓누르거나
+                  목록(overflow-hidden) 밖으로 밀려 잘린다. 집결·준비물 같은 짧은 라벨(시안의 13자 제목까지)은
+                  그대로 한 줄. 넘치면 띄어쓰기에서 줄을 바꾸고(keep-all), 띄어쓰기 없는 긴 낱말만 글자 사이에서 끊는다 */}
+              <h2 className="min-w-10 max-w-[45%] shrink-0 break-keep wrap-break-word text-label font-bold text-tertiary">{n.title}</h2>
               <p className="text-label text-primary">{n.body}</p>
             </li>
           ))}
